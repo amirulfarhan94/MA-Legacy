@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-gold-50: #fbf6ec;
+  --color-gold-100: #f5e9cf;
+  --color-gold-200: #ebd29d;
+  --color-gold-300: #e0b96a;
+  --color-gold-400: #d4a147;
+  --color-gold-500: #bf8a2c;
+  --color-gold-600: #a8741a;
+  --color-gold-700: #875b14;
+  --color-gold-800: #664411;
+  --color-gold-900: #45300e;
+  --color-ink-900: #16140f;
+  --color-ink-800: #211e17;
+  --color-ink-700: #2e2a21;
+}
+
+body {
+  background: #f7f6f3;
+  color: #1c1a16;
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Printable A4 sheet */
+.sheet {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 14mm 14mm 16mm;
+  background: white;
+  color: #1c1a16;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@page { size: A4; margin: 0; }
+
+@media print {
+  body { background: white; }
+  .no-print { display: none !important; }
+  .print-area { margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+  .sheet { box-shadow: none !important; margin: 0 !important; min-height: 296mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
