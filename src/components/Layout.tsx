@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import { DOC_META } from '../lib/types'
+import { InstallButton, PwaStatus } from './Pwa'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -31,7 +32,7 @@ const NAV = [
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <div className="flex h-full flex-col bg-ink-900 text-stone-300">
+    <div className="flex h-full flex-col bg-ink-900 pt-[env(safe-area-inset-top)] text-stone-300">
       <div className="flex items-center gap-3 px-5 py-5">
         <img src="./logo-mark.png" alt="" className="h-10 w-auto" />
         <div className="leading-tight">
@@ -63,7 +64,10 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           ),
         )}
       </nav>
-      <div className="border-t border-white/5 px-5 py-3 text-[11px] text-stone-500">Data saved in this browser</div>
+      <InstallButton />
+      <div className="border-t border-white/5 px-5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 text-[11px] text-stone-500">
+        Data saved in this browser
+      </div>
     </div>
   )
 }
@@ -78,7 +82,7 @@ export default function Layout() {
         <Sidebar />
       </aside>
 
-      <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b border-stone-200 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
+      <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b border-stone-200 bg-white/90 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur lg:hidden">
         <button onClick={() => setOpen(true)} className="rounded p-1.5 hover:bg-stone-100" aria-label="Open menu">
           <Menu size={20} />
         </button>
@@ -93,7 +97,7 @@ export default function Layout() {
             <Sidebar onNavigate={() => setOpen(false)} />
             <button
               onClick={() => setOpen(false)}
-              className="absolute right-2 top-4 rounded p-1 text-stone-400 hover:text-white"
+              className="absolute right-2 top-[calc(1rem+env(safe-area-inset-top))] rounded p-1 text-stone-400 hover:text-white"
               aria-label="Close menu"
             >
               <X size={18} />
@@ -102,9 +106,10 @@ export default function Layout() {
         </div>
       )}
 
-      <main key={pathname} className="print-area mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main key={pathname} className="print-area mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <Outlet />
       </main>
+      <PwaStatus />
     </div>
   )
 }

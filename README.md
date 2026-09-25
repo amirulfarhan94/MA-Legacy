@@ -16,6 +16,19 @@ Every document prints on A4 with the company logo, amount in words (Ringgit Mala
 blocks. Use **Print / PDF** and choose "Save as PDF" to get a PDF file. Customers with a phone number also get a
 **WhatsApp** button.
 
+## Install as an app (PWA)
+
+The app is a Progressive Web App: it installs to the home screen / desktop, opens full-screen without the
+browser bar, and keeps working **offline** after the first visit.
+
+- **Android / Chrome / Edge:** tap **Install app** in the menu (or the install icon in the address bar).
+- **iPhone / iPad:** open in Safari → **Share** → **Add to Home Screen**.
+- Long-press the icon for shortcuts to a new quotation, invoice or receipt.
+- When a new version is deployed, a prompt appears asking you to update — save any open form first.
+
+Installing needs HTTPS (any of the hosts below provide it). The installed app shares the same browser storage,
+so the backup advice below still applies.
+
 ## Running it
 
 ```bash
