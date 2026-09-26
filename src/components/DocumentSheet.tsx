@@ -74,6 +74,7 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
                 <MetaRow label="Location" value={doc.service.location || '—'} left />
                 <MetaRow label="Equipment" value={doc.service.equipment || '—'} left />
                 {doc.service.serialNo && <MetaRow label="Model / S/N" value={doc.service.serialNo} left />}
+                {doc.service.acknowledgedBy && <MetaRow label="Acknowledged by" value={doc.service.acknowledgedBy} left />}
                 {(doc.service.timeIn || doc.service.timeOut) && (
                   <MetaRow label="Time" value={`${doc.service.timeIn || '—'} to ${doc.service.timeOut || '—'}`} left />
                 )}
@@ -178,42 +179,23 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
 
       {/* Footer */}
       <div className="mt-8 grid grid-cols-2 gap-8 text-[11px]">
-        <div className="space-y-4">
-          {showBank && settings.bankAccountNo && (
-            <div>
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Payment details</div>
-              <div>Bank: {settings.bankName}</div>
-              <div>Account name: {settings.bankAccountName}</div>
-              <div>Account no.: {settings.bankAccountNo}</div>
-            </div>
-          )}
-          {doc.terms && (
-            <div>
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Terms & conditions</div>
-              <div className="whitespace-pre-line text-stone-600">{doc.terms}</div>
-            </div>
-          )}
-        </div>
-        <div className="flex items-end justify-end gap-6">
-          {doc.type === 'service_report' ? (
-            <>
-              <Signature label="Serviced by" name={doc.service?.technician} />
-              <Signature label="Customer acknowledgement" name={doc.service?.acknowledgedBy} />
-            </>
-          ) : doc.type === 'quotation' ? (
-            <>
-              <Signature label="Prepared by" name={settings.companyName} />
-              <Signature label="Accepted by (customer)" />
-            </>
-          ) : (
-            <Signature label="Authorised signature" name={settings.companyName} />
-          )}
-        </div>
+        {showBank && settings.bankAccountNo && (
+          <div>
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Payment details</div>
+            <div>Bank: {settings.bankName}</div>
+            <div>Account name: {settings.bankAccountName}</div>
+            <div>Account no.: {settings.bankAccountNo}</div>
+          </div>
+        )}
+        {doc.terms && (
+          <div className={showBank && settings.bankAccountNo ? '' : 'col-span-2'}>
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Terms & conditions</div>
+            <div className="whitespace-pre-line text-stone-600">{doc.terms}</div>
+          </div>
+        )}
       </div>
-      <div className="mt-6 border-t border-stone-200 pt-2 text-center text-[9.5px] text-stone-400">
-        {doc.type === 'receipt' || doc.type === 'invoice'
-          ? 'This is a computer-generated document. No signature is required.'
-          : `${settings.companyName} · Thank you for your business`}
+      <div className="mt-6 border-t border-stone-200 pt-2 text-center text-[10px] text-stone-500">
+        This is a computer-generated document. No signature is required.
       </div>
     </div>
   )
@@ -251,16 +233,6 @@ function Section({ title, text }: { title: string; text: string }) {
     <div>
       <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">{title}</div>
       <div className="min-h-[2.5em] whitespace-pre-line rounded border border-stone-200 px-3 py-2">{text || '—'}</div>
-    </div>
-  )
-}
-
-function Signature({ label, name }: { label: string; name?: string }) {
-  return (
-    <div className="w-44 text-center">
-      <div className="h-12 border-b border-stone-400" />
-      <div className="mt-1 font-medium">{name || ' '}</div>
-      <div className="text-[10px] text-stone-500">{label}</div>
     </div>
   )
 }
