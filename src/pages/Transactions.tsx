@@ -4,7 +4,7 @@ import { ArrowLeftRight, Download, Plus, Search } from 'lucide-react'
 import { formatDate, formatMoney, today } from '../lib/calc'
 import { customerLabel, uid, useStore } from '../lib/store'
 import { DOC_META, PAYMENT_METHODS, type PaymentMethod, type Transaction, type TxnKind } from '../lib/types'
-import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Select, StatusBadge, tableCls } from '../components/ui'
+import { Button, Card, EmptyState, Field, Input, Modal, NumberInput, PageHeader, Select, StatusBadge, tableCls } from '../components/ui'
 
 const CATEGORIES: Record<TxnKind, string[]> = {
   income: ['Sales', 'Service', 'Deposit', 'Other income'],
@@ -338,7 +338,7 @@ function TxnModal({
           <Input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} />
         </Field>
         <Field label={`Amount (${currency})`}>
-          <Input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => set('amount', Number(e.target.value) || 0)} />
+          <NumberInput value={form.amount} onValueChange={(v) => set('amount', v)} placeholder="0.00" />
         </Field>
         <Field label="Description" className="sm:col-span-2">
           <Input value={form.description} onChange={(e) => set('description', e.target.value)} />

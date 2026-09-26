@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { X } from 'lucide-react'
 
@@ -35,6 +36,50 @@ const fieldCls =
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cx(fieldCls, 'h-9 py-0', className)} {...props} />
+}
+
+const toText = (n: number) => (n ? String(n) : '')
+const parseNum = (t: string) => (t === '' || t === '.' ? 0 : Number(t))
+
+/**
+ * Numeric field that can be cleared while typing. It keeps its own text so an
+ * empty box stays empty (instead of snapping back to "0"), shows the decimal
+ * keypad on phones, and selects its content on focus for quick overwriting.
+ */
+export function NumberInput({
+  value,
+  onValueChange,
+  className,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> & {
+  value: number
+  onValueChange: (n: number) => void
+}) {
+  const [text, setText] = useState(toText(value))
+  // Follow outside changes (e.g. a receipt amount pre-filled from an invoice).
+  useEffect(() => {
+    setText((t) => (parseNum(t) === value ? t : toText(value)))
+  }, [value])
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      placeholder="0"
+      className={cx(fieldCls, 'tabular h-9 py-0', className)}
+      value={text}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => {
+        const t = e.target.value.replace(',', '.').replace(/\s/g, '')
+        if (!/^\d*\.?\d*$/.test(t)) return
+        setText(t)
+        onValueChange(parseNum(t))
+      }}
+      onBlur={() => setText(toText(value))}
+      {...props}
+    />
+  )
 }
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {

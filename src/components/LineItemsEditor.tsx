@@ -2,7 +2,7 @@ import { GripVertical, Plus, Trash2 } from 'lucide-react'
 import { formatMoney, lineTotal } from '../lib/calc'
 import { uid } from '../lib/store'
 import type { LineItem } from '../lib/types'
-import { Button, Input, Textarea } from './ui'
+import { Button, Input, NumberInput, Textarea } from './ui'
 
 export default function LineItemsEditor({
   items,
@@ -25,8 +25,6 @@ export default function LineItemsEditor({
     next.splice(to, 0, it)
     onChange(next)
   }
-
-  const num = (v: string) => (v === '' ? 0 : Number(v))
 
   return (
     <div>
@@ -57,15 +55,13 @@ export default function LineItemsEditor({
               value={item.description}
               onChange={(e) => update(item.id, { description: e.target.value })}
             />
-            <Input type="number" min="0" step="any" value={item.qty} onChange={(e) => update(item.id, { qty: num(e.target.value) })} aria-label="Quantity" />
+            <NumberInput value={item.qty} onValueChange={(qty) => update(item.id, { qty })} aria-label="Quantity" />
             <Input value={item.unit} onChange={(e) => update(item.id, { unit: e.target.value })} aria-label="Unit" />
             {showPrices ? (
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
+              <NumberInput
                 value={item.unitPrice}
-                onChange={(e) => update(item.id, { unitPrice: num(e.target.value) })}
+                onValueChange={(unitPrice) => update(item.id, { unitPrice })}
+                placeholder="0.00"
                 aria-label="Unit price"
               />
             ) : (

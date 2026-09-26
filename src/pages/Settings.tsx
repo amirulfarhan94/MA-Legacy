@@ -4,7 +4,7 @@ import { today } from '../lib/calc'
 import { sampleData } from '../lib/sample'
 import { useStore, type BackupData } from '../lib/store'
 import { DOC_META, DOC_TYPES, type Settings } from '../lib/types'
-import { Button, Card, CardHeader, Field, Input, PageHeader, Textarea } from '../components/ui'
+import { Button, Card, CardHeader, Field, Input, NumberInput, PageHeader, Textarea } from '../components/ui'
 
 export default function SettingsPage() {
   const store = useStore()
@@ -131,13 +131,13 @@ export default function SettingsPage() {
               <Input {...text('taxLabel')} />
             </Field>
             <Field label="Default tax rate (%)" hint="Set 8 for SST service tax, 0 if not registered.">
-              <Input type="number" min="0" step="0.01" value={form.defaultTaxRate} onChange={(e) => set('defaultTaxRate', Number(e.target.value) || 0)} />
+              <NumberInput value={form.defaultTaxRate} onValueChange={(v) => set('defaultTaxRate', v)} />
             </Field>
             <Field label="Invoice due (days)">
-              <Input type="number" min="0" value={form.defaultDueDays} onChange={(e) => set('defaultDueDays', Number(e.target.value) || 0)} />
+              <NumberInput value={form.defaultDueDays} onValueChange={(v) => set('defaultDueDays', v)} />
             </Field>
             <Field label="Quotation valid (days)">
-              <Input type="number" min="0" value={form.quotationValidDays} onChange={(e) => set('quotationValidDays', Number(e.target.value) || 0)} />
+              <NumberInput value={form.quotationValidDays} onValueChange={(v) => set('quotationValidDays', v)} />
             </Field>
           </Section>
         </div>

@@ -14,7 +14,7 @@ import {
 } from '../lib/types'
 import CustomerForm from '../components/CustomerForm'
 import LineItemsEditor from '../components/LineItemsEditor'
-import { Button, Card, CardHeader, Field, Input, PageHeader, Select, Textarea } from '../components/ui'
+import { Button, Card, CardHeader, Field, Input, NumberInput, PageHeader, Select, Textarea } from '../components/ui'
 
 export default function DocumentEditor() {
   const { typePath, id } = useParams()
@@ -196,13 +196,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                   </Select>
                 </Field>
                 <Field label={`Amount received (${settings.currency})`}>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={doc.amountPaid ?? 0}
-                    onChange={(e) => set('amountPaid', e.target.value === '' ? 0 : Number(e.target.value))}
-                  />
+                  <NumberInput value={doc.amountPaid ?? 0} onValueChange={(v) => set('amountPaid', v)} placeholder="0.00" />
                 </Field>
                 <Field label="Payment method">
                   <Select value={doc.paymentMethod} onChange={(e) => set('paymentMethod', e.target.value as PaymentMethod)}>
@@ -288,23 +282,17 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                 <Row label="Subtotal" value={formatMoney(totals.subtotal, settings.currency)} />
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-stone-600">Discount ({settings.currency})</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <NumberInput
                     value={doc.discount}
-                    onChange={(e) => set('discount', e.target.value === '' ? 0 : Number(e.target.value))}
+                    onValueChange={(v) => set('discount', v)}
                     className="w-28 text-right"
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-stone-600">{settings.taxLabel} rate (%)</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <NumberInput
                     value={doc.taxRate}
-                    onChange={(e) => set('taxRate', e.target.value === '' ? 0 : Number(e.target.value))}
+                    onValueChange={(v) => set('taxRate', v)}
                     className="w-28 text-right"
                   />
                 </div>
