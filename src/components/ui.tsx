@@ -13,10 +13,10 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: 'sm' | 'md' }) {
   const v: Record<Variant, string> = {
-    primary: 'bg-gold-600 text-white hover:bg-gold-700 shadow-sm',
-    secondary: 'bg-white text-stone-800 border border-stone-300 hover:bg-stone-50',
+    primary: 'bg-gold-600 text-white hover:bg-gold-700 dark:hover:bg-gold-500 shadow-sm',
+    secondary: 'bg-surface text-stone-800 border border-stone-300 hover:bg-stone-50',
     ghost: 'text-stone-600 hover:bg-stone-100',
-    danger: 'bg-white text-red-700 border border-red-200 hover:bg-red-50',
+    danger: 'bg-surface text-red-700 border border-red-200 hover:bg-red-50',
   }
   return (
     <button
@@ -31,11 +31,14 @@ export function Button({
   )
 }
 
+/** Fields fill their container unless the caller sets its own width (w-auto, w-28…). */
+const withWidth = (className?: string) => (className && /(^|\s)w-/.test(className) ? '' : 'w-full')
+
 const fieldCls =
-  'w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-200'
+  'rounded-lg border border-stone-300 bg-surface px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-200'
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={cx(fieldCls, 'h-9 py-0', className)} {...props} />
+  return <input className={cx(fieldCls, withWidth(className), 'h-9 py-0', className)} {...props} />
 }
 
 const toText = (n: number) => (n ? String(n) : '')
@@ -67,7 +70,7 @@ export function NumberInput({
       inputMode="decimal"
       autoComplete="off"
       placeholder="0"
-      className={cx(fieldCls, 'tabular h-9 py-0', className)}
+      className={cx(fieldCls, withWidth(className), 'tabular h-9 py-0', className)}
       value={text}
       onFocus={(e) => e.target.select()}
       onChange={(e) => {
@@ -83,11 +86,11 @@ export function NumberInput({
 }
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={cx(fieldCls, className)} rows={3} {...props} />
+  return <textarea className={cx(fieldCls, withWidth(className), className)} rows={3} {...props} />
 }
 
 export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className={cx(fieldCls, 'h-9 py-0 pr-8', className)} {...props} />
+  return <select className={cx(fieldCls, withWidth(className), 'h-9 py-0 pr-8', className)} {...props} />
 }
 
 export function Field({ label, children, className, hint }: { label: string; children: ReactNode; className?: string; hint?: string }) {
@@ -101,7 +104,7 @@ export function Field({ label, children, className, hint }: { label: string; chi
 }
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cx('min-w-0 rounded-xl border border-stone-200 bg-white shadow-sm', className)}>{children}</div>
+  return <div className={cx('min-w-0 rounded-xl border border-stone-200 bg-surface shadow-sm', className)}>{children}</div>
 }
 
 export function CardHeader({ title, action, subtitle }: { title: ReactNode; subtitle?: ReactNode; action?: ReactNode }) {
@@ -171,7 +174,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:items-center" onMouseDown={onClose}>
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-lg rounded-xl bg-surface shadow-xl" onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-stone-100 px-5 py-3.5">
           <h2 className="text-base font-semibold">{title}</h2>
           <button onClick={onClose} className="rounded p-1 text-stone-500 hover:bg-stone-100" aria-label="Close">

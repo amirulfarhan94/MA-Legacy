@@ -94,7 +94,7 @@ export function PwaStatus() {
   if (!needRefresh && !offlineReady) return null
 
   return (
-    <div className="no-print fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm shadow-lg sm:left-auto sm:right-6">
+    <div className="no-print fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl border border-stone-200 bg-surface px-4 py-3 text-sm shadow-lg sm:left-auto sm:right-6">
       <div className="flex-1">
         {needRefresh ? (
           <>
@@ -108,7 +108,7 @@ export function PwaStatus() {
       {needRefresh && (
         <button
           onClick={() => updateServiceWorker(true)}
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-gold-600 px-3 text-xs font-medium text-white hover:bg-gold-700"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-gold-600 px-3 text-xs font-medium text-white hover:bg-gold-700 dark:hover:bg-gold-500"
         >
           <RefreshCw size={14} /> Update
         </button>

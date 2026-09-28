@@ -36,7 +36,7 @@ export default function DocumentTable({
             const c = customers.find((x) => x.id === d.customerId)
             return (
               <tr key={d.id} className={tableCls.tr} onClick={() => nav(`/d/${DOC_META[d.type].path}/${d.id}`)}>
-                <td className={`${tableCls.td} font-medium text-stone-900`}>{d.number}</td>
+                <td className={`${tableCls.td} whitespace-nowrap font-medium text-stone-900`}>{d.number}</td>
                 {showType && <td className={`${tableCls.td} text-stone-600`}>{DOC_META[d.type].label}</td>}
                 {showCustomer && <td className={tableCls.td}>{customerLabel(c)}</td>}
                 <td className={`${tableCls.td} tabular whitespace-nowrap text-stone-600`}>{formatDate(d.date)}</td>

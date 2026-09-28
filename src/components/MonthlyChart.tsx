@@ -78,7 +78,7 @@ export default function MonthlyChart({ data, currency }: { data: MonthPoint[]; c
           {width > 0 && <svg width={width} height={height} role="img" aria-label="Money collected per month, last 12 months" className="block">
             {ticks.map((t) => (
               <g key={t}>
-                <line x1={pad.left} x2={width - pad.right} y1={y(t)} y2={y(t)} stroke="#e7e5e4" strokeWidth={1} />
+                <line x1={pad.left} x2={width - pad.right} y1={y(t)} y2={y(t)} stroke="var(--color-stone-200)" strokeWidth={1} />
                 <text x={pad.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="tabular fill-stone-500 text-[10.5px]">
                   {compact(t)}
                 </text>
@@ -97,8 +97,8 @@ export default function MonthlyChart({ data, currency }: { data: MonthPoint[]; c
               const showLabel = d.value > 0 && (i === maxIdx || i === lastIdx)
               return (
                 <g key={d.key}>
-                  {hover === i && <rect x={pad.left + band * i} y={pad.top} width={band} height={innerH} fill="#f5e9cf" opacity={0.45} />}
-                  {path && <path d={path} fill="#a8741a" opacity={hover === null || hover === i ? 1 : 0.55} />}
+                  {hover === i && <rect x={pad.left + band * i} y={pad.top} width={band} height={innerH} fill="var(--color-gold-100)" opacity={0.6} />}
+                  {path && <path d={path} fill="var(--chart-bar)" opacity={hover === null || hover === i ? 1 : 0.55} />}
                   {showLabel && (
                     <text x={cx} y={yTop - 5} textAnchor="middle" className="tabular fill-stone-700 text-[10.5px] font-medium">
                       {compact(Math.round(d.value))}
@@ -120,11 +120,11 @@ export default function MonthlyChart({ data, currency }: { data: MonthPoint[]; c
                 </g>
               )
             })}
-            <line x1={pad.left} x2={width - pad.right} y1={y(0)} y2={y(0)} stroke="#a8a29e" strokeWidth={1} />
+            <line x1={pad.left} x2={width - pad.right} y1={y(0)} y2={y(0)} stroke="var(--color-stone-400)" strokeWidth={1} />
           </svg>}
           {hover !== null && (
             <div
-              className="pointer-events-none absolute z-10 -translate-x-1/2 whitespace-nowrap rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs shadow-lg"
+              className="pointer-events-none absolute z-10 -translate-x-1/2 whitespace-nowrap rounded-lg border border-stone-200 bg-surface px-3 py-2 text-xs shadow-lg"
               style={{
                 left: Math.min(Math.max(pad.left + band * hover + band / 2, 70), width - 70),
                 top: Math.max(0, y(data[hover].value) - 58),

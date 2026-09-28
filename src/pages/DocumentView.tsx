@@ -125,7 +125,7 @@ export default function DocumentView() {
                 href={`https://wa.me/${waNumber(customer.phone)}?text=${waText}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg border border-stone-300 bg-white px-3.5 text-sm font-medium text-stone-800 hover:bg-stone-50"
+                className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg border border-stone-300 bg-surface px-3.5 text-sm font-medium text-stone-800 hover:bg-stone-50"
               >
                 <MessageCircle size={15} /> WhatsApp
               </a>

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Dark mode is class-based so the in-app toggle can override the phone setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-gold-50: #fbf6ec;
@@ -15,12 +18,87 @@
   --color-ink-900: #16140f;
   --color-ink-800: #211e17;
   --color-ink-700: #2e2a21;
+  --color-surface: #ffffff;
+  --color-canvas: #f7f6f3;
 }
 
+:root { --chart-bar: #a8741a; }
+
 body {
-  background: #f7f6f3;
-  color: #1c1a16;
+  background: var(--color-canvas);
+  color: var(--color-stone-900);
 }
+
+.dark {
+  --color-stone-50: #262219;
+  --color-stone-100: #2e2a22;
+  --color-stone-200: #3a352c;
+  --color-stone-300: #4a443a;
+  --color-stone-400: #7d766a;
+  --color-stone-500: #a39c8f;
+  --color-stone-600: #bdb6a9;
+  --color-stone-700: #d3cdc2;
+  --color-stone-800: #e4dfd6;
+  --color-stone-900: #f1ede6;
+  --color-gold-50: #2a2214;
+  --color-gold-100: #3a2e18;
+  --color-gold-200: #5a4520;
+  --color-gold-700: #e0b96a;
+  --color-emerald-50: #10281d;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #6ee7b7;
+  --color-sky-50: #0f2330;
+  --color-sky-800: #7dd3fc;
+  --color-amber-50: #2b2110;
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fcd34d;
+  --color-orange-50: #2d1b0f;
+  --color-orange-800: #fdba74;
+  --color-red-50: #2e1414;
+  --color-red-200: #5b2424;
+  --color-red-700: #fca5a5;
+  --color-surface: #1f1c17;
+  --color-canvas: #15130f;
+  --chart-bar: #bf8a2c;
+  color-scheme: dark;
+}
+
+/* The sidebar is designed dark-on-light-tokens, and printed documents are always white. */
+.dark .theme-light,
+.dark .sheet {
+  --color-stone-50: oklch(98.5% 0.001 106.423);
+  --color-stone-100: oklch(97% 0.001 106.424);
+  --color-stone-200: oklch(92.3% 0.003 48.717);
+  --color-stone-300: oklch(86.9% 0.005 56.366);
+  --color-stone-400: oklch(70.9% 0.01 56.259);
+  --color-stone-500: oklch(55.3% 0.013 58.071);
+  --color-stone-600: oklch(44.4% 0.011 73.639);
+  --color-stone-700: oklch(37.4% 0.01 67.558);
+  --color-stone-800: oklch(26.8% 0.007 34.298);
+  --color-stone-900: oklch(21.6% 0.006 56.043);
+  --color-gold-50: #fbf6ec;
+  --color-gold-100: #f5e9cf;
+  --color-gold-200: #ebd29d;
+  --color-gold-700: #875b14;
+  --color-emerald-50: oklch(97.9% 0.021 166.113);
+  --color-emerald-700: oklch(50.8% 0.118 165.612);
+  --color-emerald-800: oklch(43.2% 0.095 166.913);
+  --color-sky-50: oklch(97.7% 0.013 236.62);
+  --color-sky-800: oklch(44.3% 0.11 240.79);
+  --color-amber-50: oklch(98.7% 0.022 95.277);
+  --color-amber-700: oklch(55.5% 0.163 48.998);
+  --color-amber-800: oklch(47.3% 0.137 46.201);
+  --color-orange-50: oklch(98% 0.016 73.684);
+  --color-orange-800: oklch(47% 0.157 37.304);
+  --color-red-50: oklch(97.1% 0.013 17.38);
+  --color-red-200: oklch(88.5% 0.062 18.334);
+  --color-red-700: oklch(50.5% 0.213 27.518);
+  --color-surface: #ffffff;
+  --color-canvas: #f7f6f3;
+  --chart-bar: #a8741a;
+  color-scheme: light;
+}
+
 
 .tabular { font-variant-numeric: tabular-nums; }
 
@@ -38,7 +116,9 @@ body {
 @page { size: A4; margin: 0; }
 
 @media print {
-  body { background: white; }
+  /* Paper is always light, even when the app is in dark mode. */
+  :root, .dark { color-scheme: light; }
+  html, body { background: white !important; }
   .no-print { display: none !important; }
   .print-area { margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
   .sheet { box-shadow: none !important; margin: 0 !important; min-height: 296mm; }
