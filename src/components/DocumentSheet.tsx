@@ -217,7 +217,33 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
           </div>
         )}
       </div>
-      <ComputerGeneratedNote />
+      {doc.type === 'delivery_order' && <ReceivedBy />}
+      {/* A delivery order is signed on receipt, so it drops the "no signature" line. */}
+      <ComputerGeneratedNote signatureRequired={doc.type === 'delivery_order'} />
+    </div>
+  )
+}
+
+/** Acknowledgement box for the customer to sign when the goods arrive. */
+function ReceivedBy() {
+  return (
+    <div className="mt-6 rounded-md border border-stone-300 px-4 py-3 text-[11px]">
+      <div className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Received in good order and condition by</div>
+      <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+        <SignLine label="Name" />
+        <SignLine label="IC / Staff no." />
+        <SignLine label="Date & time" />
+        <SignLine label="Signature & company stamp" tall />
+      </div>
+    </div>
+  )
+}
+
+function SignLine({ label, tall }: { label: string; tall?: boolean }) {
+  return (
+    <div>
+      <div className={`border-b border-stone-400 ${tall ? 'h-12' : 'h-6'}`} />
+      <div className="mt-1 text-[10px] text-stone-500">{label}</div>
     </div>
   )
 }
@@ -338,10 +364,10 @@ export function PaymentBlock({ bank = true, qr = true }: { bank?: boolean; qr?: 
   )
 }
 
-export function ComputerGeneratedNote() {
+export function ComputerGeneratedNote({ signatureRequired = false }: { signatureRequired?: boolean }) {
   return (
     <div className="mt-6 border-t border-stone-200 pt-2 text-center text-[10px] text-stone-500">
-      This is a computer-generated document. No signature is required.
+      {signatureRequired ? 'This is a computer-generated document.' : 'This is a computer-generated document. No signature is required.'}
     </div>
   )
 }
