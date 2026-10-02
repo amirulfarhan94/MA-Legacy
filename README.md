@@ -49,8 +49,11 @@ npm run build    # static site in dist/
 Everything is saved in the browser's local storage on the device you use — no server, no login.
 That means:
 
-- Use the same browser on the same computer, or move data with **Settings → Download backup / Restore from backup**.
-- Clearing browser data deletes the records. **Download a backup regularly.**
+- Use the same browser on the same device, or move data with **Settings → Back up now / Restore from backup**.
+- Clearing browser data, uninstalling the app or losing the phone deletes the records.
+- The app reminds you when the last backup is 7+ days old. **Back up now** opens the phone's share sheet so the file
+  can go straight to Google Drive or WhatsApp (on a computer it downloads instead). Restore accepts the `.json` or
+  `.txt` file.
 
 ## Deploying
 

@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Download, ImagePlus, RotateCcw, Upload } from 'lucide-react'
-import { today } from '../lib/calc'
+import { backupNow, BACKUP_EVERY_DAYS, daysSince, useLastBackup } from '../lib/backup'
+import { formatDate, toISODate } from '../lib/calc'
 import { sampleData } from '../lib/sample'
 import { useStore, type BackupData } from '../lib/store'
 import { DOC_META, DOC_TYPES, type Settings } from '../lib/types'
@@ -35,14 +36,8 @@ export default function SettingsPage() {
     reader.readAsDataURL(file)
   }
 
-  const exportBackup = () => {
-    const blob = new Blob([JSON.stringify(store.exportData(), null, 2)], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `ma-legacy-backup-${today()}.json`
-    a.click()
-    URL.revokeObjectURL(a.href)
-  }
+  const lastBackup = useLastBackup()
+  const lastDays = daysSince(lastBackup)
 
   const importBackup = async (file?: File) => {
     if (!file) return
@@ -164,16 +159,26 @@ export default function SettingsPage() {
         <Card className="lg:col-span-2">
           <CardHeader
             title="Backup & data"
-            subtitle="All data is stored in this browser only. Download a backup regularly, and use it to move to another computer."
+            subtitle={`All data is stored on this device only. Back up at least every ${BACKUP_EVERY_DAYS} days to Google Drive or WhatsApp, and use the file to restore or move to another device.`}
           />
+          <p className="px-5 pt-4 text-sm">
+            <span className="text-stone-500">Last backup: </span>
+            {lastBackup ? (
+              <span className={`font-medium ${lastDays !== null && lastDays >= BACKUP_EVERY_DAYS ? 'text-amber-700' : 'text-stone-900'}`}>
+                {formatDate(toISODate(new Date(lastBackup)))} ({lastDays === 0 ? 'today' : lastDays === 1 ? 'yesterday' : `${lastDays} days ago`})
+              </span>
+            ) : (
+              <span className="font-medium text-amber-700">Never</span>
+            )}
+          </p>
           <div className="flex flex-wrap gap-2 p-5">
-            <Button onClick={exportBackup}>
-              <Download size={15} /> Download backup
+            <Button variant="primary" onClick={() => backupNow()}>
+              <Download size={15} /> Back up now
             </Button>
             <Button onClick={() => fileRef.current?.click()}>
               <Upload size={15} /> Restore from backup
             </Button>
-            <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => { importBackup(e.target.files?.[0]); e.target.value = '' }} />
+            <input ref={fileRef} type="file" accept="application/json,.json,text/plain,.txt" hidden onChange={(e) => { importBackup(e.target.files?.[0]); e.target.value = '' }} />
             {!hasData && (
               <Button
                 onClick={() => {

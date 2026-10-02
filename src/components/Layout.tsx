@@ -16,6 +16,7 @@ import {
 import { DOC_META } from '../lib/types'
 import { InstallButton, PwaStatus } from './Pwa'
 import ThemeSwitch from './ThemeSwitch'
+import BackupReminder from './BackupReminder'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -109,6 +110,7 @@ export default function Layout() {
       )}
 
       <main key={pathname} className="print-area mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <BackupReminder />
         <Outlet />
       </main>
       <PwaStatus />
