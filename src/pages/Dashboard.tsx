@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ClipboardCheck, FileCheck2, FileText, ReceiptText, Sparkles } from 'lucide-react'
-import { displayStatus, docTotals, formatDate, formatMoney, invoicePaid, today } from '../lib/calc'
+import { displayStatus, docTotals, formatDate, formatMoney, invoiceBalance, today } from '../lib/calc'
+import { cashMovements, isOpenInvoice } from '../lib/finance'
 import { customerLabel, useStore } from '../lib/store'
 import { DOC_META } from '../lib/types'
 import DocumentTable from '../components/DocumentTable'
@@ -21,12 +22,10 @@ export default function Dashboard() {
   const data = useMemo(() => {
     const thisMonth = today().slice(0, 7)
     const thisYear = today().slice(0, 4)
-    const receipts = documents.filter((d) => d.type === 'receipt' && d.status !== 'cancelled')
-    const cashIn = [
-      ...receipts.map((r) => ({ date: r.date, amount: Number(r.amountPaid) || 0 })),
-      ...transactions.filter((t) => t.kind === 'income').map((t) => ({ date: t.date, amount: t.amount })),
-    ]
-    const expenses = transactions.filter((t) => t.kind === 'expense')
+    const moves = cashMovements(documents, transactions)
+    // Money in is receipts + other income, net of refunds paid back to customers.
+    const cashIn = moves.filter((m) => m.amount > 0 || m.category === 'Refund')
+    const expenses = moves.filter((m) => m.amount < 0 && m.category !== 'Refund').map((m) => ({ ...m, amount: -m.amount }))
     const sum = (xs: { amount: number }[]) => xs.reduce((s, x) => s + x.amount, 0)
 
     const collectedMonth = sum(cashIn.filter((x) => x.date.startsWith(thisMonth)))
@@ -34,8 +33,8 @@ export default function Dashboard() {
     const expenseYear = sum(expenses.filter((x) => x.date.startsWith(thisYear)))
 
     const openInvoices = documents
-      .filter((d) => d.type === 'invoice' && d.status !== 'draft' && d.status !== 'cancelled')
-      .map((d) => ({ d, balance: docTotals(d).total - invoicePaid(d.id, documents), status: displayStatus(d, documents) }))
+      .filter(isOpenInvoice)
+      .map((d) => ({ d, balance: invoiceBalance(d, documents), status: displayStatus(d, documents) }))
       .filter((x) => x.balance > 0.005)
       .sort((a, b) => (a.d.dueDate || a.d.date).localeCompare(b.d.dueDate || b.d.date))
     const outstanding = openInvoices.reduce((s, x) => s + x.balance, 0)

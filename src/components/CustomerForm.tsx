@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { uid, useStore } from '../lib/store'
-import type { Customer } from '../lib/types'
-import { Button, Field, Input, Modal, Textarea } from './ui'
+import type { ContactKind, Customer } from '../lib/types'
+import { Button, Field, Input, Modal, Select, Textarea } from './ui'
 
-export const emptyCustomer = (): Customer => ({
+export const emptyCustomer = (kind: ContactKind = 'customer'): Customer => ({
   id: uid(),
+  kind,
   name: '',
   company: '',
   regNo: '',
@@ -20,18 +21,22 @@ export default function CustomerForm({
   onClose,
   customer,
   onSaved,
+  defaultKind = 'customer',
 }: {
   open: boolean
   onClose: () => void
   customer?: Customer
   onSaved?: (c: Customer) => void
+  /** Kind for a new contact (suppliers are used on purchase orders). */
+  defaultKind?: ContactKind
 }) {
   const saveCustomer = useStore((s) => s.saveCustomer)
-  const [form, setForm] = useState<Customer>(customer ?? emptyCustomer())
+  const [form, setForm] = useState<Customer>(customer ?? emptyCustomer(defaultKind))
 
   useEffect(() => {
-    if (open) setForm(customer ?? emptyCustomer())
-  }, [open, customer])
+    if (open) setForm(customer ?? emptyCustomer(defaultKind))
+  }, [open, customer, defaultKind])
+  const kind = form.kind ?? 'customer'
 
   const set = (k: keyof Customer) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value })
   const valid = form.name.trim() || form.company.trim()
@@ -47,14 +52,14 @@ export default function CustomerForm({
     <Modal
       open={open}
       onClose={onClose}
-      title={customer ? 'Edit customer' : 'New customer'}
+      title={`${customer ? 'Edit' : 'New'} ${kind}`}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button variant="primary" onClick={submit} disabled={!valid}>
-            Save customer
+            Save {kind}
           </Button>
         </>
       }
@@ -66,6 +71,12 @@ export default function CustomerForm({
           submit()
         }}
       >
+        <Field label="Type" className="sm:col-span-2">
+          <Select value={kind} onChange={(e) => setForm({ ...form, kind: e.target.value as ContactKind })}>
+            <option value="customer">Customer — you sell to them</option>
+            <option value="supplier">Supplier — you buy from them</option>
+          </Select>
+        </Field>
         <Field label="Contact person">
           <Input value={form.name} onChange={set('name')} autoFocus />
         </Field>

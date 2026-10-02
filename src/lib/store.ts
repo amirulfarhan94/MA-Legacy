@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { addDays, docTotals, invoicePaid, nextDocNumber, today } from './calc'
+import { addDays, invoiceBalance, nextDocNumber, today } from './calc'
 import type { Customer, Document, DocType, Settings, Transaction } from './types'
 
 export const uid = () =>
@@ -24,7 +24,16 @@ export const defaultSettings: Settings = {
   currency: 'RM',
   defaultTaxRate: 0,
   taxLabel: 'SST',
-  prefixes: { quotation: 'QT', proforma: 'PI', invoice: 'INV', receipt: 'OR', service_report: 'SR' },
+  prefixes: {
+    quotation: 'QT',
+    proforma: 'PI',
+    invoice: 'INV',
+    delivery_order: 'DO',
+    receipt: 'OR',
+    credit_note: 'CN',
+    service_report: 'SR',
+    purchase_order: 'PO',
+  },
   defaultTerms: {
     quotation:
       '1. This quotation is valid for the period stated above.\n2. 50% deposit is required upon confirmation.\n3. Prices are subject to change after the validity period.',
@@ -32,10 +41,25 @@ export const defaultSettings: Settings = {
     invoice: 'Please make payment within the due date to the bank account stated above.',
     receipt: 'Thank you for your payment.',
     service_report: 'The customer acknowledges that the above work has been carried out satisfactorily.',
+    delivery_order: 'Goods received in good order and condition. Please check upon delivery.',
+    credit_note: 'This credit note reduces the amount owed on the invoice stated above.',
+    purchase_order: 'Please quote our PO number on your delivery order and invoice.',
   },
   defaultDueDays: 14,
   quotationValidDays: 30,
   logoDataUrl: '',
+  paymentQrDataUrl: '',
+  paymentQrLabel: 'Scan to pay with DuitNow',
+}
+
+/** Fills settings keys added in later versions (new document types, QR…) from the defaults. */
+function normalizeSettings(s: Partial<Settings> | undefined): Settings {
+  return {
+    ...defaultSettings,
+    ...s,
+    prefixes: { ...defaultSettings.prefixes, ...s?.prefixes },
+    defaultTerms: { ...defaultSettings.defaultTerms, ...s?.defaultTerms },
+  }
 }
 
 export interface BackupData {
@@ -63,6 +87,8 @@ interface State {
   convertDocument: (id: string, to: DocType) => Document
   /** Receipt pre-filled with the invoice's outstanding balance. */
   receiptForInvoice: (invoiceId: string) => Document
+  /** Credit note pre-filled with the invoice's lines, to trim down to what is credited. */
+  creditNoteForInvoice: (invoiceId: string) => Document
 
   saveTransaction: (t: Transaction) => void
   deleteTransaction: (id: string) => void
@@ -76,7 +102,8 @@ interface State {
 function blankDocument(type: DocType, s: Settings, docs: Document[], customerId = ''): Document {
   const date = today()
   const dueDays = type === 'quotation' ? s.quotationValidDays : s.defaultDueDays
-  const hasDue = type === 'quotation' || type === 'invoice' || type === 'proforma'
+  const hasDue = type === 'quotation' || type === 'invoice' || type === 'proforma' || type === 'purchase_order'
+  const isCredit = type === 'credit_note'
   return {
     id: uid(),
     type,
@@ -93,10 +120,12 @@ function blankDocument(type: DocType, s: Settings, docs: Document[], customerId 
     taxRate: s.defaultTaxRate,
     notes: '',
     terms: s.defaultTerms[type] ?? '',
-    status: type === 'receipt' ? 'completed' : 'draft',
+    status: type === 'receipt' ? 'completed' : isCredit ? 'issued' : 'draft',
     amountPaid: type === 'receipt' ? 0 : undefined,
-    paymentMethod: type === 'receipt' ? 'bank_transfer' : undefined,
-    paymentRef: type === 'receipt' ? '' : undefined,
+    refundAmount: isCredit ? 0 : undefined,
+    refundDate: isCredit ? date : undefined,
+    paymentMethod: type === 'receipt' || isCredit ? 'bank_transfer' : undefined,
+    paymentRef: type === 'receipt' || isCredit ? '' : undefined,
     service:
       type === 'service_report'
         ? {
@@ -177,6 +206,7 @@ export const useStore = create<State>()(
           items: src.items.map((i) => ({ ...i, id: uid() })),
           discount: src.discount,
           taxRate: src.taxRate,
+          itemAdjustments: src.itemAdjustments,
           notes: src.notes,
         }
       },
@@ -186,14 +216,30 @@ export const useStore = create<State>()(
         const inv = docs.find((d) => d.id === invoiceId)
         if (!inv) throw new Error('Invoice not found')
         const base = blankDocument('receipt', get().settings, docs, inv.customerId)
-        const balance = Math.max(0, docTotals(inv).total - invoicePaid(inv.id, docs))
         return {
           ...base,
           invoiceId: inv.id,
           sourceId: inv.id,
           reference: inv.number,
-          amountPaid: Math.round(balance * 100) / 100,
+          amountPaid: invoiceBalance(inv, docs),
           notes: `Payment for ${inv.number}`,
+        }
+      },
+
+      creditNoteForInvoice: (invoiceId) => {
+        const docs = get().documents
+        const inv = docs.find((d) => d.id === invoiceId)
+        if (!inv) throw new Error('Invoice not found')
+        const base = blankDocument('credit_note', get().settings, docs, inv.customerId)
+        return {
+          ...base,
+          invoiceId: inv.id,
+          sourceId: inv.id,
+          reference: inv.number,
+          items: inv.items.map((i) => ({ ...i, id: uid() })),
+          taxRate: inv.taxRate,
+          itemAdjustments: inv.itemAdjustments,
+          notes: `Credit for invoice ${inv.number}`,
         }
       },
 
@@ -220,7 +266,7 @@ export const useStore = create<State>()(
           customers: data.customers,
           documents: data.documents,
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
-          settings: { ...defaultSettings, ...data.settings },
+          settings: normalizeSettings(data.settings),
         })
       },
       resetAll: () => set({ customers: [], documents: [], transactions: [], settings: defaultSettings }),
@@ -233,12 +279,7 @@ export const useStore = create<State>()(
         return {
           ...current,
           ...p,
-          settings: {
-            ...defaultSettings,
-            ...p.settings,
-            prefixes: { ...defaultSettings.prefixes, ...p.settings?.prefixes },
-            defaultTerms: { ...defaultSettings.defaultTerms, ...p.settings?.defaultTerms },
-          },
+          settings: normalizeSettings(p.settings),
         }
       },
     },
@@ -248,6 +289,8 @@ export const useStore = create<State>()(
 export function useCustomer(id: string | undefined) {
   return useStore((s) => s.customers.find((c) => c.id === id))
 }
+
+export const contactKind = (c: Customer | undefined) => c?.kind ?? 'customer'
 
 export function customerLabel(c: Customer | undefined): string {
   if (!c) return '—'

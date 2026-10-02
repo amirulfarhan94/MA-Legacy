@@ -1,7 +1,8 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Download, ImagePlus, RotateCcw, Upload } from 'lucide-react'
+import { Download, ImagePlus, QrCode, RotateCcw, Upload } from 'lucide-react'
 import { backupNow, BACKUP_EVERY_DAYS, daysSince, useLastBackup } from '../lib/backup'
 import { formatDate, toISODate } from '../lib/calc'
+import { shrinkImage } from '../lib/image'
 import { sampleData } from '../lib/sample'
 import { useStore, type BackupData } from '../lib/store'
 import { DOC_META, DOC_TYPES, type Settings } from '../lib/types'
@@ -13,6 +14,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const logoRef = useRef<HTMLInputElement>(null)
+  const qrRef = useRef<HTMLInputElement>(null)
 
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) => {
     setForm((f) => ({ ...f, [k]: v }))
@@ -28,12 +30,13 @@ export default function SettingsPage() {
     setSaved(true)
   }
 
-  const onLogo = (file?: File) => {
+  const onImage = async (key: 'logoDataUrl' | 'paymentQrDataUrl', file?: File) => {
     if (!file) return
-    if (file.size > 800_000) return alert('Please use an image under 800 KB so it fits in browser storage.')
-    const reader = new FileReader()
-    reader.onload = () => set('logoDataUrl', String(reader.result))
-    reader.readAsDataURL(file)
+    try {
+      set(key, await shrinkImage(file, 600))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Could not read that image.')
+    }
   }
 
   const lastBackup = useLastBackup()
@@ -79,7 +82,7 @@ export default function SettingsPage() {
                   Use default logo
                 </Button>
               )}
-              <input ref={logoRef} type="file" accept="image/*" hidden onChange={(e) => onLogo(e.target.files?.[0])} />
+              <input ref={logoRef} type="file" accept="image/*" hidden onChange={(e) => { onImage('logoDataUrl', e.target.files?.[0]); e.target.value = '' }} />
             </div>
           </div>
           <Field label="Company name" className="sm:col-span-2">
@@ -106,7 +109,7 @@ export default function SettingsPage() {
         </Section>
 
         <div className="space-y-5">
-          <Section title="Bank details" subtitle="Shown on quotations, proforma invoices and invoices.">
+          <Section title="Payment details" subtitle="Bank details show on quotations, proforma invoices and invoices; the QR code on invoices and proforma invoices.">
             <Field label="Bank">
               <Input {...text('bankName')} placeholder="e.g. Maybank" />
             </Field>
@@ -116,6 +119,30 @@ export default function SettingsPage() {
             <Field label="Account name" className="sm:col-span-2">
               <Input {...text('bankAccountName')} />
             </Field>
+            <div className="flex items-start gap-4 sm:col-span-2">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-dashed border-stone-300 bg-white p-1">
+                {form.paymentQrDataUrl ? (
+                  <img src={form.paymentQrDataUrl} alt="Payment QR" className="h-full w-full object-contain" />
+                ) : (
+                  <QrCode size={32} className="text-stone-400" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="text-xs font-medium text-stone-600">DuitNow / bank QR</div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => qrRef.current?.click()}>
+                    <ImagePlus size={14} /> {form.paymentQrDataUrl ? 'Change QR' : 'Upload QR'}
+                  </Button>
+                  {form.paymentQrDataUrl && (
+                    <Button size="sm" variant="ghost" onClick={() => set('paymentQrDataUrl', '')}>
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <Input {...text('paymentQrLabel')} placeholder="Caption under the QR" />
+                <input ref={qrRef} type="file" accept="image/*" hidden onChange={(e) => { onImage('paymentQrDataUrl', e.target.files?.[0]); e.target.value = '' }} />
+              </div>
+            </div>
           </Section>
 
           <Section title="Tax & defaults">

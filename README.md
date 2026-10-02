@@ -7,10 +7,19 @@ Web app for MA Legacy Solutions to issue and track:
 - **Invoices** — paid / partial / overdue status is worked out automatically from receipts
 - **Official receipts** — "Record payment" on an invoice pre-fills the outstanding balance
 - **Service reports** — technician, site, equipment, problem, work done, parts used, customer acknowledgement
+- **Delivery orders** — from a quotation, proforma or invoice; quantities only, with a delivery address
+- **Credit notes** — issued against an invoice to lower its balance, with an optional refund (shown as money out)
+- **Purchase orders** — to suppliers; "Record payment" logs the expense against the PO
+
+Any priced document can switch on **discount % and SST per item**; the document-level discount is spread across
+lines before tax, and the totals show tax per rate. Upload a **DuitNow / bank QR** in Settings to print it on
+invoices, proforma invoices and statements.
 
 Plus a **dashboard** (collected this month, outstanding, open quotations, net for the year, 12-month collection chart),
-**transactions** (all receipts + manual income/expense entries, date filters, CSV export) and **customer records**
-(contact details, every document per customer, billed / paid / outstanding).
+**transactions** (receipts, refunds and manual income/expense entries, date filters, CSV export), **customer and
+supplier records** (every document per contact, billed / paid / outstanding), a printable **statement of account** per
+customer (running balance and aging), and **reports** (outstanding invoices by age, monthly profit & loss, expenses by
+category).
 
 Every document prints on A4 with the company logo, amount in words (Ringgit Malaysia), bank details and signature
 blocks. Use **Print / PDF** and choose "Save as PDF" to get a PDF file. Customers with a phone number also get a

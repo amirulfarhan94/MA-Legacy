@@ -2,15 +2,20 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   ArrowLeftRight,
+  BarChart3,
   ClipboardCheck,
   FileCheck2,
+  FileMinus,
   FileSpreadsheet,
   FileText,
   LayoutDashboard,
   Menu,
   ReceiptText,
   Settings,
+  ShoppingCart,
+  Truck,
   Users,
+  Warehouse,
   X,
 } from 'lucide-react'
 import { DOC_META } from '../lib/types'
@@ -21,14 +26,20 @@ import BackupReminder from './BackupReminder'
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/customers', label: 'Customers', icon: Users },
-  { section: 'Documents' },
+  { to: '/suppliers', label: 'Suppliers', icon: Warehouse },
+  { section: 'Sales' },
   { to: `/d/${DOC_META.quotation.path}`, label: 'Quotations', icon: FileText },
   { to: `/d/${DOC_META.proforma.path}`, label: 'Proforma Invoices', icon: FileSpreadsheet },
   { to: `/d/${DOC_META.invoice.path}`, label: 'Invoices', icon: FileCheck2 },
+  { to: `/d/${DOC_META.delivery_order.path}`, label: 'Delivery Orders', icon: Truck },
   { to: `/d/${DOC_META.receipt.path}`, label: 'Receipts', icon: ReceiptText },
+  { to: `/d/${DOC_META.credit_note.path}`, label: 'Credit Notes', icon: FileMinus },
   { to: `/d/${DOC_META.service_report.path}`, label: 'Service Reports', icon: ClipboardCheck },
+  { section: 'Purchases' },
+  { to: `/d/${DOC_META.purchase_order.path}`, label: 'Purchase Orders', icon: ShoppingCart },
   { section: 'Finance' },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
+  { to: '/reports', label: 'Reports', icon: BarChart3 },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const
 

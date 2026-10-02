@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Mail, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react'
-import { docTotals, formatDate, formatMoney, invoicePaid } from '../lib/calc'
-import { customerLabel, useCustomer, useStore } from '../lib/store'
-import { DOC_META, DOC_TYPES, type DocType } from '../lib/types'
+import { ArrowLeft, FileText, Mail, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react'
+import { formatDate, formatMoney } from '../lib/calc'
+import { contactTotals } from '../lib/finance'
+import { contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
+import { DOC_META, DOC_TYPES, isPurchaseDoc, type DocType } from '../lib/types'
 import CustomerForm from '../components/CustomerForm'
 import DocumentTable from '../components/DocumentTable'
 import { Button, Card, CardHeader, EmptyState, PageHeader } from '../components/ui'
@@ -24,46 +25,53 @@ export default function CustomerDetail() {
     [documents, id],
   )
 
-  const stats = useMemo(() => {
-    const invoices = docs.filter((d) => d.type === 'invoice' && d.status !== 'cancelled' && d.status !== 'draft')
-    const billed = invoices.reduce((s, d) => s + docTotals(d).total, 0)
-    const paid = invoices.reduce((s, d) => s + invoicePaid(d.id, documents), 0)
-    const lastActivity = docs[0]?.date
-    return { billed, paid, outstanding: Math.max(0, billed - paid), lastActivity }
-  }, [docs, documents])
+  const kind = contactKind(customer)
+  const stats = useMemo(
+    () => ({ ...contactTotals(id ?? '', kind, documents, transactions), lastActivity: docs[0]?.date }),
+    [id, kind, documents, transactions, docs],
+  )
 
   if (!customer) {
     return (
       <Card>
-        <EmptyState title="Customer not found" action={<Link to="/customers" className="text-sm text-gold-700 underline">Back to customers</Link>} />
+        <EmptyState title="Contact not found" action={<Link to="/customers" className="text-sm text-gold-700 underline">Back to customers</Link>} />
       </Card>
     )
   }
 
   const hasLinks = docs.length > 0 || transactions.some((t) => t.customerId === customer.id)
   const shown = tab === 'all' ? docs : docs.filter((d) => d.type === tab)
+  const isSupplier = kind === 'supplier'
+  const base = isSupplier ? '/suppliers' : '/customers'
+  const creatable = DOC_TYPES.filter((t) => isPurchaseDoc(t) === isSupplier)
+  const tabs = DOC_TYPES.filter((t) => creatable.includes(t) || docs.some((d) => d.type === t))
 
   return (
     <>
-      <Link to="/customers" className="mb-3 inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800">
-        <ArrowLeft size={15} /> Customers
+      <Link to={base} className="mb-3 inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800">
+        <ArrowLeft size={15} /> {isSupplier ? 'Suppliers' : 'Customers'}
       </Link>
       <PageHeader
         title={customerLabel(customer)}
         subtitle={customer.company && customer.name ? customer.name : undefined}
         actions={
           <>
+            {!isSupplier && (
+              <Button onClick={() => nav(`/customers/${customer.id}/statement`)}>
+                <FileText size={15} /> Statement
+              </Button>
+            )}
             <Button onClick={() => setEditing(true)}>
               <Pencil size={15} /> Edit
             </Button>
             <Button
               variant="danger"
               disabled={hasLinks}
-              title={hasLinks ? 'Customers with documents or transactions cannot be deleted' : undefined}
+              title={hasLinks ? 'Contacts with documents or transactions cannot be deleted' : undefined}
               onClick={() => {
                 if (confirm(`Delete ${customerLabel(customer)}?`)) {
                   deleteCustomer(customer.id)
-                  nav('/customers')
+                  nav(base)
                 }
               }}
             >
@@ -75,7 +83,7 @@ export default function CustomerDetail() {
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-1">
-          <CardHeader title="Customer details" />
+          <CardHeader title={isSupplier ? 'Supplier details' : 'Customer details'} />
           <dl className="space-y-3 px-5 py-4 text-sm">
             {customer.phone && (
               <div className="flex gap-2.5">
@@ -108,15 +116,15 @@ export default function CustomerDetail() {
               </div>
             )}
             <div>
-              <dt className="text-xs text-stone-500">Customer since</dt>
+              <dt className="text-xs text-stone-500">{isSupplier ? 'Supplier since' : 'Customer since'}</dt>
               <dd>{formatDate(customer.createdAt.slice(0, 10))}</dd>
             </div>
           </dl>
           <div className="grid grid-cols-3 border-t border-stone-100 text-center">
             {[
-              ['Billed', stats.billed],
+              [isSupplier ? 'Purchases' : 'Billed', stats.billed],
               ['Paid', stats.paid],
-              ['Outstanding', stats.outstanding],
+              [isSupplier ? 'Unpaid' : 'Outstanding', stats.outstanding],
             ].map(([label, v]) => (
               <div key={label as string} className="px-2 py-3">
                 <div className="text-[11px] uppercase tracking-wide text-stone-500">{label}</div>
@@ -132,14 +140,14 @@ export default function CustomerDetail() {
             subtitle={stats.lastActivity ? `Last activity ${formatDate(stats.lastActivity)}` : undefined}
           />
           <div className="flex flex-wrap gap-2 border-b border-stone-100 px-5 py-3">
-            {DOC_TYPES.map((t) => (
+            {creatable.map((t) => (
               <Button key={t} size="sm" onClick={() => nav(`/d/${DOC_META[t].path}/new?customer=${customer.id}`)}>
                 <Plus size={14} /> {DOC_META[t].label}
               </Button>
             ))}
           </div>
           <div className="flex gap-1 overflow-x-auto border-b border-stone-100 px-4 pt-2 text-sm">
-            {(['all', ...DOC_TYPES] as const).map((t) => {
+            {(['all', ...tabs] as const).map((t) => {
               const count = t === 'all' ? docs.length : docs.filter((d) => d.type === t).length
               return (
                 <button

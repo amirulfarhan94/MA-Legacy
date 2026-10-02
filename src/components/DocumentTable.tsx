@@ -44,7 +44,7 @@ export default function DocumentTable({
                   <StatusBadge status={displayStatus(d, all)} />
                 </td>
                 <td className={`${tableCls.td} tabular whitespace-nowrap text-right`}>
-                  {d.type === 'service_report' ? '—' : formatMoney(docAmount(d), currency)}
+                  {d.type === 'service_report' || d.type === 'delivery_order' ? '—' : formatMoney(docAmount(d), currency)}
                 </td>
               </tr>
             )

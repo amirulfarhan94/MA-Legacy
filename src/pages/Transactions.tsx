@@ -1,14 +1,15 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeftRight, Download, Plus, Search } from 'lucide-react'
-import { formatDate, formatMoney, today } from '../lib/calc'
+import { docTotals, formatDate, formatMoney, today } from '../lib/calc'
+import { cashMovements } from '../lib/finance'
 import { customerLabel, uid, useStore } from '../lib/store'
 import { DOC_META, PAYMENT_METHODS, type PaymentMethod, type Transaction, type TxnKind } from '../lib/types'
 import { Button, Card, EmptyState, Field, Input, Modal, NumberInput, PageHeader, Select, StatusBadge, tableCls } from '../components/ui'
 
 const CATEGORIES: Record<TxnKind, string[]> = {
   income: ['Sales', 'Service', 'Deposit', 'Other income'],
-  expense: ['Materials', 'Equipment', 'Transport', 'Salary', 'Rental', 'Utilities', 'Marketing', 'Subcontractor', 'Other expense'],
+  expense: ['Purchases', 'Materials', 'Equipment', 'Transport', 'Salary', 'Rental', 'Utilities', 'Marketing', 'Subcontractor', 'Other expense'],
 }
 
 interface Row {
@@ -21,8 +22,8 @@ interface Row {
   method: PaymentMethod
   reference: string
   amount: number
-  /** Receipt-backed rows link to the receipt; manual rows are editable. */
-  receiptId?: string
+  /** Rows from receipts / credit-note refunds link to that document; manual rows are editable. */
+  docId?: string
   txn?: Transaction
 }
 
@@ -52,36 +53,46 @@ export default function Transactions() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [editing, setEditing] = useState<Transaction | null>(null)
+  const [params, setParams] = useSearchParams()
 
-  const allRows = useMemo<Row[]>(() => {
-    const fromReceipts: Row[] = documents
-      .filter((d) => d.type === 'receipt' && d.status !== 'cancelled')
-      .map((d) => ({
-        key: `r-${d.id}`,
-        date: d.date,
-        kind: 'income',
-        category: 'Receipt',
-        description: `${d.number}${d.notes ? ` — ${d.notes}` : ''}`,
-        customerId: d.customerId,
-        method: d.paymentMethod ?? 'other',
-        reference: d.paymentRef || d.reference,
-        amount: Number(d.amountPaid) || 0,
-        receiptId: d.id,
-      }))
-    const manual: Row[] = transactions.map((t) => ({
-      key: `t-${t.id}`,
-      date: t.date,
-      kind: t.kind,
-      category: t.category,
-      description: t.description,
-      customerId: t.customerId,
-      method: t.method,
-      reference: t.reference,
-      amount: Number(t.amount) || 0,
-      txn: t,
-    }))
-    return [...fromReceipts, ...manual].sort((a, b) => b.date.localeCompare(a.date))
-  }, [documents, transactions])
+  // "Record payment" on a purchase order lands here with ?po=<id>: open a pre-filled expense.
+  useEffect(() => {
+    const poId = params.get('po')
+    if (!poId) return
+    const po = documents.find((d) => d.id === poId)
+    if (po) {
+      const paid = transactions.filter((t) => t.docId === po.id).reduce((s, t) => s + t.amount, 0)
+      setEditing({
+        ...blankTxn('expense'),
+        category: 'Purchases',
+        description: `Payment for ${po.number}`,
+        amount: Math.max(0, Math.round((docTotals(po).total - paid) * 100) / 100),
+        customerId: po.customerId,
+        reference: po.number,
+        docId: po.id,
+      })
+    }
+    setParams({}, { replace: true })
+  }, [params, setParams, documents, transactions])
+
+  const allRows = useMemo<Row[]>(
+    () =>
+      cashMovements(documents, transactions).map((m) => ({
+        key: m.key,
+        date: m.date,
+        kind: m.amount < 0 ? 'expense' : 'income',
+        category: m.category,
+        description: m.description,
+        customerId: m.customerId,
+        method: m.method,
+        reference: m.reference,
+        amount: Math.abs(m.amount),
+        docId: m.docId,
+        txn: m.txn,
+      })),
+    [documents, transactions],
+  )
+
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase()
@@ -94,6 +105,11 @@ export default function Transactions() {
       return [r.description, r.category, r.reference, customerLabel(c)].some((v) => v.toLowerCase().includes(needle))
     })
   }, [allRows, kind, from, to, q, customers])
+
+  const docLink = (id: string) => {
+    const d = documents.find((x) => x.id === id)
+    return d ? `/d/${DOC_META[d.type].path}/${d.id}` : '#'
+  }
 
   const income = rows.filter((r) => r.kind === 'income').reduce((s, r) => s + r.amount, 0)
   const expense = rows.filter((r) => r.kind === 'expense').reduce((s, r) => s + r.amount, 0)
@@ -127,7 +143,7 @@ export default function Transactions() {
     <>
       <PageHeader
         title="Transactions"
-        subtitle="Receipts are recorded automatically. Add other income and expenses manually."
+        subtitle="Receipts and credit-note refunds are recorded automatically. Add other income and expenses manually."
         actions={
           <>
             <Button onClick={exportCsv} disabled={!rows.length}>
@@ -200,8 +216,8 @@ export default function Transactions() {
                           <div className="mt-1 text-xs text-stone-500">{r.category}</div>
                         </td>
                         <td className={tableCls.td}>
-                          {r.receiptId ? (
-                            <Link to={`/d/${DOC_META.receipt.path}/${r.receiptId}`} className="font-medium text-gold-700 hover:underline">
+                          {r.docId ? (
+                            <Link to={docLink(r.docId)} className="font-medium text-gold-700 hover:underline">
                               {r.description}
                             </Link>
                           ) : (
@@ -343,7 +359,7 @@ function TxnModal({
         <Field label="Description" className="sm:col-span-2">
           <Input value={form.description} onChange={(e) => set('description', e.target.value)} />
         </Field>
-        <Field label="Customer (optional)">
+        <Field label="Customer / supplier (optional)">
           <Select value={form.customerId ?? ''} onChange={(e) => set('customerId', e.target.value)}>
             <option value="">—</option>
             {customers.map((c) => (

@@ -31,7 +31,7 @@ describe('docTotals', () => {
       discount: 50.5,
       taxRate: 8,
     })
-    expect(t).toEqual({ subtotal: 500.5, discount: 50.5, taxable: 450, tax: 36, total: 486 })
+    expect(t).toMatchObject({ subtotal: 500.5, discount: 50.5, taxable: 450, tax: 36, total: 486 })
   })
 
   it('caps discount at subtotal', () => {

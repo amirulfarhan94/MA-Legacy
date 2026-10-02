@@ -2,31 +2,68 @@ import type { Document, DocType, LineItem } from './types'
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
 
-export function lineTotal(item: LineItem): number {
-  return round2((Number(item.qty) || 0) * (Number(item.unitPrice) || 0))
+/** Line amount after its own discount (the discount only counts when per-item adjustments are on). */
+export function lineTotal(item: LineItem, itemAdjustments = false): number {
+  const gross = (Number(item.qty) || 0) * (Number(item.unitPrice) || 0)
+  const pct = itemAdjustments ? Math.min(100, Math.max(0, Number(item.discountPct) || 0)) : 0
+  return round2(gross - (gross * pct) / 100)
+}
+
+export interface TaxLine {
+  rate: number
+  base: number
+  tax: number
 }
 
 export interface Totals {
   subtotal: number
   discount: number
   taxable: number
+  /** Tax grouped by rate (one entry when the whole document uses one rate). */
+  taxLines: TaxLine[]
   tax: number
   total: number
 }
 
-export function docTotals(doc: Pick<Document, 'items' | 'discount' | 'taxRate'>): Totals {
-  const subtotal = round2(doc.items.reduce((s, i) => s + lineTotal(i), 0))
+type TotalsInput = Pick<Document, 'items' | 'discount' | 'taxRate'> & Partial<Pick<Document, 'itemAdjustments'>>
+
+/**
+ * Subtotal of line amounts, minus a document-level discount, plus tax.
+ * With per-item adjustments each line can carry its own rate; the document
+ * discount is spread across lines in proportion before tax is worked out.
+ */
+export function docTotals(doc: TotalsInput): Totals {
+  const adj = !!doc.itemAdjustments
+  const lines = doc.items.map((i) => ({
+    net: lineTotal(i, adj),
+    rate: Number(adj && i.taxRate !== undefined ? i.taxRate : doc.taxRate) || 0,
+  }))
+  const subtotal = round2(lines.reduce((s, l) => s + l.net, 0))
   const discount = Math.min(round2(Number(doc.discount) || 0), subtotal)
   const taxable = round2(subtotal - discount)
-  const tax = round2((taxable * (Number(doc.taxRate) || 0)) / 100)
-  return { subtotal, discount, taxable, tax, total: round2(taxable + tax) }
+  const factor = subtotal ? taxable / subtotal : 0
+
+  const byRate = new Map<number, number>()
+  for (const l of lines) {
+    if (!l.rate) continue
+    byRate.set(l.rate, (byRate.get(l.rate) ?? 0) + l.net * factor)
+  }
+  const taxLines = [...byRate.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([rate, base]) => ({ rate, base: round2(base), tax: round2((base * rate) / 100) }))
+  const tax = round2(taxLines.reduce((s, t) => s + t.tax, 0))
+  return { subtotal, discount, taxable, taxLines, tax, total: round2(taxable + tax) }
 }
 
-/** The amount a document represents: receipts carry amountPaid, everything else its total. */
+/** The amount a document represents: receipts carry amountPaid; DO and service reports have none. */
 export function docAmount(doc: Document): number {
   if (doc.type === 'receipt') return round2(Number(doc.amountPaid) || 0)
+  if (doc.type === 'delivery_order' || doc.type === 'service_report') return 0
   return docTotals(doc).total
 }
+
+/** A credit note counts once it is issued (not while draft, not when cancelled). */
+export const isIssuedCredit = (d: Document) => d.type === 'credit_note' && d.status === 'issued'
 
 /** Sum of non-cancelled receipts issued against an invoice. */
 export function invoicePaid(invoiceId: string, docs: Document[]): number {
@@ -37,13 +74,26 @@ export function invoicePaid(invoiceId: string, docs: Document[]): number {
   )
 }
 
-export type PaymentState = 'unpaid' | 'partial' | 'paid'
+/** Sum of issued credit notes against an invoice. */
+export function invoiceCredited(invoiceId: string, docs: Document[]): number {
+  return round2(
+    docs.filter((d) => isIssuedCredit(d) && d.invoiceId === invoiceId).reduce((s, d) => s + docTotals(d).total, 0),
+  )
+}
+
+/** What the customer still owes on an invoice: total − payments − credit notes (never below 0). */
+export function invoiceBalance(invoice: Document, docs: Document[]): number {
+  return Math.max(0, round2(docTotals(invoice).total - invoicePaid(invoice.id, docs) - invoiceCredited(invoice.id, docs)))
+}
+
+export type PaymentState = 'unpaid' | 'partial' | 'paid' | 'credited'
 
 export function invoicePaymentState(invoice: Document, docs: Document[]): PaymentState {
   const total = docTotals(invoice).total
   const paid = invoicePaid(invoice.id, docs)
-  if (paid <= 0) return 'unpaid'
-  if (paid + 0.005 >= total) return 'paid'
+  const credited = invoiceCredited(invoice.id, docs)
+  if (paid + credited <= 0) return 'unpaid'
+  if (paid + credited + 0.005 >= total) return paid <= 0 ? 'credited' : 'paid'
   return 'partial'
 }
 
@@ -52,7 +102,7 @@ export function displayStatus(doc: Document, docs: Document[]): string {
   if (doc.type === 'invoice' && doc.status !== 'cancelled') {
     const state = invoicePaymentState(doc, docs)
     if (doc.status === 'draft' && state === 'unpaid') return 'draft'
-    if (state !== 'paid' && doc.dueDate && doc.dueDate < today()) return 'overdue'
+    if ((state === 'unpaid' || state === 'partial') && doc.dueDate && doc.dueDate < today()) return 'overdue'
     return state
   }
   return doc.status

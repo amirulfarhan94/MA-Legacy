@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, UserPlus } from 'lucide-react'
-import { docTotals, formatMoney, invoicePaid, invoicePaymentState } from '../lib/calc'
-import { customerLabel, useStore } from '../lib/store'
+import { docTotals, formatMoney, invoiceBalance } from '../lib/calc'
+import { contactKind, customerLabel, useStore } from '../lib/store'
 import {
   DOC_META,
   PAYMENT_METHODS,
   STATUS_OPTIONS,
   docTypeFromPath,
+  isPricedDoc,
+  isPurchaseDoc,
   type Document,
   type PaymentMethod,
   type ServiceReportFields,
@@ -37,7 +39,9 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
     if (existing) return structuredClone(existing)
     const from = params.get('from')
     const invoice = params.get('invoice')
+    const credit = params.get('credit')
     if (invoice) return store.receiptForInvoice(invoice)
+    if (credit) return store.creditNoteForInvoice(credit)
     if (from) return store.convertDocument(from, type)
     return store.newDocument(type, params.get('customer') ?? '')
   })
@@ -49,36 +53,54 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
     setDoc((d) => ({ ...d, service: { ...(d.service as ServiceReportFields), [k]: v } }))
 
   const totals = docTotals(doc)
-  const sortedCustomers = useMemo(
-    () => [...customers].sort((a, b) => customerLabel(a).localeCompare(customerLabel(b))),
-    [customers],
+  const isPurchase = isPurchaseDoc(type)
+  const partyKind = isPurchase ? 'supplier' : 'customer'
+  const partyLabel = isPurchase ? 'Supplier' : 'Customer'
+  const sortedParties = useMemo(
+    () =>
+      customers
+        .filter((c) => contactKind(c) === partyKind || c.id === doc.customerId)
+        .sort((a, b) => customerLabel(a).localeCompare(customerLabel(b))),
+    [customers, partyKind, doc.customerId],
   )
 
-  // Invoices this receipt can be applied to: the customer's non-draft, non-cancelled invoices
-  // that still have a balance (plus the one already linked, when editing).
-  const payableInvoices = useMemo(
+  // Balances ignore this document itself, so editing a receipt/credit note shows the balance before it.
+  const others = useMemo(() => documents.filter((x) => x.id !== doc.id), [documents, doc.id])
+  // Invoices a receipt or credit note can be applied to: the customer's issued invoices that
+  // still have a balance (plus the one already linked, when editing).
+  const linkableInvoices = useMemo(
     () =>
       documents.filter(
         (d) =>
           d.type === 'invoice' &&
           d.customerId === doc.customerId &&
           d.status !== 'cancelled' &&
-          (d.id === doc.invoiceId || invoicePaymentState(d, documents.filter((x) => x.id !== doc.id)) !== 'paid'),
+          (d.id === doc.invoiceId || invoiceBalance(d, others) > 0),
       ),
-    [documents, doc.customerId, doc.invoiceId, doc.id],
+    [documents, others, doc.customerId, doc.invoiceId],
   )
 
   const linkedInvoice = documents.find((d) => d.id === doc.invoiceId)
-  const invoiceBalance = linkedInvoice
-    ? docTotals(linkedInvoice).total - invoicePaid(linkedInvoice.id, documents.filter((x) => x.id !== doc.id))
-    : 0
+  const linkedBalance = linkedInvoice ? invoiceBalance(linkedInvoice, others) : 0
+
+  const toggleItemAdjustments = (on: boolean) =>
+    setDoc((d) => ({
+      ...d,
+      itemAdjustments: on || undefined,
+      items: d.items.map((i) => (on ? { ...i, discountPct: i.discountPct ?? 0, taxRate: i.taxRate ?? d.taxRate } : { ...i, discountPct: undefined, taxRate: undefined })),
+    }))
 
   const save = () => {
-    if (!doc.customerId) return setError('Please choose a customer.')
+    if (!doc.customerId) return setError(`Please choose a ${partyLabel.toLowerCase()}.`)
     if (!doc.number.trim()) return setError('Document number is required.')
     const dup = documents.some((d) => d.type === doc.type && d.id !== doc.id && d.number.trim() === doc.number.trim())
     if (dup) return setError(`${doc.number} is already used by another ${meta.label.toLowerCase()}.`)
     if (type === 'receipt' && !(Number(doc.amountPaid) > 0)) return setError('Enter the amount received.')
+    if (type === 'credit_note') {
+      if (!(totals.total > 0)) return setError('Add the items or amount being credited.')
+      if ((Number(doc.refundAmount) || 0) > totals.total + 0.005)
+        return setError(`The refund cannot be more than the credit note total (${formatMoney(totals.total, settings.currency)}).`)
+    }
     const saved = store.saveDocument({
       ...doc,
       number: doc.number.trim(),
@@ -87,10 +109,16 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
     nav(`/d/${meta.path}/${saved.id}`, { replace: true })
   }
 
-  const dueLabel = type === 'quotation' ? 'Valid until' : 'Due date'
-  const hasDue = type === 'quotation' || type === 'invoice' || type === 'proforma'
+  const dueLabel = type === 'quotation' ? 'Valid until' : type === 'purchase_order' ? 'Delivery date' : 'Due date'
+  const hasDue = type === 'quotation' || type === 'invoice' || type === 'proforma' || type === 'purchase_order'
   const showItems = type !== 'receipt'
-  const showPricing = type !== 'receipt' && type !== 'service_report'
+  const showPricing = isPricedDoc(type)
+  const refHint =
+    type === 'purchase_order'
+      ? "Supplier's quotation no., etc."
+      : type === 'credit_note'
+        ? 'Invoice no. being credited'
+        : 'PO number, quotation no., etc.'
   const backTo = existing ? `/d/${meta.path}/${existing.id}` : `/d/${meta.path}`
 
   return (
@@ -117,21 +145,27 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
           <Card>
             <CardHeader title="Details" />
             <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
-              <Field label="Customer" className="sm:col-span-2">
+              <Field label={partyLabel} className="sm:col-span-2">
                 <div className="flex gap-2">
                   <Select
                     value={doc.customerId}
-                    onChange={(e) => setDoc((d) => ({ ...d, customerId: e.target.value, invoiceId: d.type === 'receipt' ? undefined : d.invoiceId }))}
+                    onChange={(e) =>
+                      setDoc((d) => ({
+                        ...d,
+                        customerId: e.target.value,
+                        invoiceId: d.type === 'receipt' || d.type === 'credit_note' ? undefined : d.invoiceId,
+                      }))
+                    }
                   >
-                    <option value="">— Select customer —</option>
-                    {sortedCustomers.map((c) => (
+                    <option value="">— Select {partyLabel.toLowerCase()} —</option>
+                    {sortedParties.map((c) => (
                       <option key={c.id} value={c.id}>
                         {customerLabel(c)}
                         {c.company && c.name ? ` (${c.name})` : ''}
                       </option>
                     ))}
                   </Select>
-                  <Button type="button" onClick={() => setAddingCustomer(true)} title="New customer">
+                  <Button type="button" onClick={() => setAddingCustomer(true)} title={`New ${partyLabel.toLowerCase()}`}>
                     <UserPlus size={16} />
                   </Button>
                 </div>
@@ -147,7 +181,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                   <Input type="date" value={doc.dueDate} onChange={(e) => set('dueDate', e.target.value)} />
                 </Field>
               )}
-              <Field label="Reference" hint="PO number, quotation no., etc.">
+              <Field label="Reference" hint={refHint}>
                 <Input value={doc.reference} onChange={(e) => set('reference', e.target.value)} />
               </Field>
               <Field label="Status">
@@ -161,7 +195,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
               </Field>
               {type === 'invoice' && (
                 <p className="self-end pb-2 text-xs text-stone-500 sm:col-span-1">
-                  Paid / unpaid is tracked automatically from receipts.
+                  Paid / unpaid is tracked automatically from receipts and credit notes.
                 </p>
               )}
             </div>
@@ -171,7 +205,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
             <Card>
               <CardHeader title="Payment" />
               <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
-                <Field label="Apply to invoice" className="sm:col-span-2" hint={linkedInvoice ? `Balance before this receipt: ${formatMoney(invoiceBalance, settings.currency)}` : 'Optional — leave blank for a standalone receipt.'}>
+                <Field label="Apply to invoice" className="sm:col-span-2" hint={linkedInvoice ? `Balance before this receipt: ${formatMoney(linkedBalance, settings.currency)}` : 'Optional — leave blank for a standalone receipt.'}>
                   <Select
                     value={doc.invoiceId ?? ''}
                     onChange={(e) => {
@@ -180,15 +214,13 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                         ...d,
                         invoiceId: inv?.id,
                         reference: inv ? inv.number : d.reference,
-                        amountPaid: inv && !d.amountPaid
-                          ? Math.max(0, docTotals(inv).total - invoicePaid(inv.id, documents.filter((x) => x.id !== d.id)))
-                          : d.amountPaid,
+                        amountPaid: inv && !d.amountPaid ? invoiceBalance(inv, others) : d.amountPaid,
                       }))
                     }}
                     disabled={!doc.customerId}
                   >
                     <option value="">— No invoice —</option>
-                    {payableInvoices.map((i) => (
+                    {linkableInvoices.map((i) => (
                       <option key={i.id} value={i.id}>
                         {i.number} · {formatMoney(docTotals(i).total, settings.currency)}
                       </option>
@@ -209,6 +241,74 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                 </Field>
                 <Field label="Transaction / cheque ref." className="sm:col-span-2">
                   <Input value={doc.paymentRef ?? ''} onChange={(e) => set('paymentRef', e.target.value)} />
+                </Field>
+              </div>
+            </Card>
+          )}
+
+          {type === 'credit_note' && (
+            <Card>
+              <CardHeader title="Credit & refund" subtitle="The credit note total lowers what the customer owes on the invoice." />
+              <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+                <Field
+                  label="Credit against invoice"
+                  className="sm:col-span-2"
+                  hint={linkedInvoice ? `Balance before this credit note: ${formatMoney(linkedBalance, settings.currency)}` : 'Optional — leave blank for a general credit to the customer.'}
+                >
+                  <Select
+                    value={doc.invoiceId ?? ''}
+                    onChange={(e) => {
+                      const inv = documents.find((d) => d.id === e.target.value)
+                      setDoc((d) => ({ ...d, invoiceId: inv?.id, sourceId: inv?.id ?? d.sourceId, reference: inv ? inv.number : d.reference }))
+                    }}
+                    disabled={!doc.customerId}
+                  >
+                    <option value="">— No invoice —</option>
+                    {linkableInvoices.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.number} · {formatMoney(docTotals(i).total, settings.currency)}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label={`Refunded to customer (${settings.currency})`} hint="Leave 0 if the credit only reduces what they owe.">
+                  <NumberInput value={doc.refundAmount ?? 0} onValueChange={(v) => set('refundAmount', v)} placeholder="0.00" />
+                </Field>
+                {(doc.refundAmount ?? 0) > 0 && (
+                  <>
+                    <Field label="Refund date">
+                      <Input type="date" value={doc.refundDate || doc.date} onChange={(e) => set('refundDate', e.target.value)} />
+                    </Field>
+                    <Field label="Refund method">
+                      <Select value={doc.paymentMethod ?? 'bank_transfer'} onChange={(e) => set('paymentMethod', e.target.value as PaymentMethod)}>
+                        {Object.entries(PAYMENT_METHODS).map(([k, v]) => (
+                          <option key={k} value={k}>
+                            {v}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                    <Field label="Transaction / cheque ref.">
+                      <Input value={doc.paymentRef ?? ''} onChange={(e) => set('paymentRef', e.target.value)} />
+                    </Field>
+                  </>
+                )}
+                <p className="text-xs text-stone-500 sm:col-span-2">
+                  The credit note counts while its status is <b>issued</b> (set it to draft to hold it back).
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {(type === 'delivery_order' || type === 'purchase_order') && (
+            <Card>
+              <CardHeader title="Delivery" />
+              <div className="p-5">
+                <Field
+                  label="Deliver to"
+                  hint={type === 'purchase_order' ? 'Leave blank to use your company address from Settings.' : "Leave blank to use the customer's address."}
+                >
+                  <Textarea value={doc.deliverTo ?? ''} onChange={(e) => set('deliverTo', e.target.value)} />
                 </Field>
               </div>
             </Card>
@@ -254,9 +354,32 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
 
           {showItems && (
             <Card>
-              <CardHeader title={type === 'service_report' ? 'Parts / materials used' : 'Items'} />
+              <CardHeader
+                title={type === 'service_report' ? 'Parts / materials used' : type === 'credit_note' ? 'Items credited' : 'Items'}
+                action={
+                  showPricing && (
+                    <label className="flex cursor-pointer items-center gap-2 text-xs text-stone-600">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-gold-600"
+                        checked={!!doc.itemAdjustments}
+                        onChange={(e) => toggleItemAdjustments(e.target.checked)}
+                      />
+                      Discount & {settings.taxLabel} per item
+                    </label>
+                  )
+                }
+              />
               <div className="p-5">
-                <LineItemsEditor items={doc.items} onChange={(items) => set('items', items)} currency={settings.currency} showPrices={showPricing} />
+                <LineItemsEditor
+                  items={doc.items}
+                  onChange={(items) => set('items', items)}
+                  currency={settings.currency}
+                  showPrices={showPricing}
+                  itemAdjustments={!!doc.itemAdjustments}
+                  defaultTaxRate={doc.taxRate}
+                  taxLabel={settings.taxLabel}
+                />
               </div>
             </Card>
           )}
@@ -264,7 +387,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
           <Card>
             <CardHeader title="Notes & terms" />
             <div className="grid gap-4 p-5">
-              <Field label={type === 'receipt' ? 'Being payment for' : 'Notes'}>
+              <Field label={type === 'receipt' ? 'Being payment for' : type === 'credit_note' ? 'Reason for credit' : 'Notes'}>
                 <Textarea value={doc.notes} onChange={(e) => set('notes', e.target.value)} />
               </Field>
               <Field label="Terms & conditions">
@@ -288,15 +411,23 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                     className="w-28 text-right"
                   />
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-stone-600">{settings.taxLabel} rate (%)</span>
-                  <NumberInput
-                    value={doc.taxRate}
-                    onValueChange={(v) => set('taxRate', v)}
-                    className="w-28 text-right"
-                  />
-                </div>
-                <Row label={`${settings.taxLabel} amount`} value={formatMoney(totals.tax, settings.currency)} />
+                {doc.itemAdjustments ? (
+                  totals.taxLines.length ? (
+                    totals.taxLines.map((t) => (
+                      <Row key={t.rate} label={`${settings.taxLabel} ${t.rate}% on ${formatMoney(t.base, '').trim()}`} value={formatMoney(t.tax, settings.currency)} />
+                    ))
+                  ) : (
+                    <Row label={settings.taxLabel} value={formatMoney(0, settings.currency)} />
+                  )
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-stone-600">{settings.taxLabel} rate (%)</span>
+                      <NumberInput value={doc.taxRate} onValueChange={(v) => set('taxRate', v)} className="w-28 text-right" />
+                    </div>
+                    <Row label={`${settings.taxLabel} amount`} value={formatMoney(totals.tax, settings.currency)} />
+                  </>
+                )}
                 <div className="flex items-center justify-between border-t border-stone-200 pt-3 text-base font-semibold">
                   <span>Total</span>
                   <span className="tabular">{formatMoney(totals.total, settings.currency)}</span>
@@ -312,6 +443,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
 
       <CustomerForm
         open={addingCustomer}
+        defaultKind={partyKind}
         onClose={() => setAddingCustomer(false)}
         onSaved={(c) => setDoc((d) => ({ ...d, customerId: c.id }))}
       />

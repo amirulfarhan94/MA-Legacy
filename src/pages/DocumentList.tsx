@@ -43,8 +43,8 @@ export default function DocumentList() {
       <PageHeader
         title={meta.plural}
         subtitle={
-          type === 'service_report'
-            ? `${rows.length} report${rows.length === 1 ? '' : 's'}`
+          type === 'service_report' || type === 'delivery_order'
+            ? `${rows.length} ${meta.label.toLowerCase()}${rows.length === 1 ? '' : 's'}`
             : `${rows.length} shown · ${formatMoney(total, currency)} total (excluding cancelled)`
         }
         actions={

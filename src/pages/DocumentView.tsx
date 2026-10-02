@@ -1,15 +1,16 @@
 import { useEffect, useMemo } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRightLeft, Copy, MessageCircle, Pencil, Printer, ReceiptText, Trash2 } from 'lucide-react'
-import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoicePaid } from '../lib/calc'
-import { customerLabel, uid, useCustomer, useStore } from '../lib/store'
-import { DOC_META, STATUS_OPTIONS, docTypeFromPath, type Document, type DocType } from '../lib/types'
+import { ArrowLeft, ArrowRightLeft, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
+import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid } from '../lib/calc'
+import { contactKind, customerLabel, uid, useCustomer, useStore } from '../lib/store'
+import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
 import DocumentSheet from '../components/DocumentSheet'
 import { Button, Card, CardHeader, Select, StatusBadge } from '../components/ui'
 
 const CONVERSIONS: Partial<Record<DocType, DocType[]>> = {
-  quotation: ['proforma', 'invoice'],
-  proforma: ['invoice'],
+  quotation: ['proforma', 'invoice', 'delivery_order'],
+  proforma: ['invoice', 'delivery_order'],
+  invoice: ['delivery_order'],
   service_report: ['quotation', 'invoice'],
 }
 
@@ -26,6 +27,7 @@ export default function DocumentView() {
   const doc = useStore((s) => s.documents.find((d) => d.id === id))
   const documents = useStore((s) => s.documents)
   const settings = useStore((s) => s.settings)
+  const transactions = useStore((s) => s.transactions)
   const saveDocument = useStore((s) => s.saveDocument)
   const deleteDocument = useStore((s) => s.deleteDocument)
   const newDocument = useStore((s) => s.newDocument)
@@ -55,7 +57,10 @@ export default function DocumentView() {
   const meta = DOC_META[doc.type]
   const status = displayStatus(doc, documents)
   const paid = doc.type === 'invoice' ? invoicePaid(doc.id, documents) : 0
-  const balance = doc.type === 'invoice' ? Math.max(0, docTotals(doc).total - paid) : 0
+  const credited = doc.type === 'invoice' ? invoiceCredited(doc.id, documents) : 0
+  const balance = doc.type === 'invoice' ? invoiceBalance(doc, documents) : 0
+  const poPaid = doc.type === 'purchase_order' ? transactions.filter((t) => t.docId === doc.id).reduce((s, t) => s + t.amount, 0) : 0
+  const party = isPurchaseDoc(doc.type) ? 'Supplier' : 'Customer'
 
   const duplicate = () => {
     const fresh = newDocument(doc.type, doc.customerId)
@@ -88,7 +93,7 @@ export default function DocumentView() {
 
   const waText = encodeURIComponent(
     `Hi ${customer?.name || customerLabel(customer)}, here is ${meta.label} ${doc.number}` +
-      (doc.type === 'service_report' ? '' : ` for ${formatMoney(docAmount(doc), settings.currency)}`) +
+      (doc.type === 'service_report' || doc.type === 'delivery_order' ? '' : ` for ${formatMoney(docAmount(doc), settings.currency)}`) +
       `. — ${settings.companyName}`,
   )
 
@@ -113,6 +118,16 @@ export default function DocumentView() {
             {doc.type === 'invoice' && doc.status !== 'cancelled' && balance > 0 && (
               <Button onClick={() => nav(`/d/${DOC_META.receipt.path}/new?invoice=${doc.id}`)}>
                 <ReceiptText size={15} /> Record payment
+              </Button>
+            )}
+            {doc.type === 'invoice' && doc.status !== 'cancelled' && doc.status !== 'draft' && (
+              <Button onClick={() => nav(`/d/${DOC_META.credit_note.path}/new?credit=${doc.id}`)}>
+                <FileMinus size={15} /> Credit note
+              </Button>
+            )}
+            {doc.type === 'purchase_order' && doc.status !== 'cancelled' && poPaid + 0.005 < docTotals(doc).total && (
+              <Button onClick={() => nav(`/transactions?po=${doc.id}`)}>
+                <Wallet size={15} /> Record payment
               </Button>
             )}
             {CONVERSIONS[doc.type]?.map((t) => (
@@ -150,16 +165,16 @@ export default function DocumentView() {
             <CardHeader title="Overview" />
             <div className="space-y-3 p-5 text-sm">
               <div className="flex justify-between gap-2">
-                <span className="text-stone-500">Customer</span>
+                <span className="text-stone-500">{party}</span>
                 {customer ? (
-                  <Link to={`/customers/${customer.id}`} className="text-right font-medium text-gold-700 hover:underline">
+                  <Link to={`/${contactKind(customer) === "supplier" ? "suppliers" : "customers"}/${customer.id}`} className="text-right font-medium text-gold-700 hover:underline">
                     {customerLabel(customer)}
                   </Link>
                 ) : (
                   <span>—</span>
                 )}
               </div>
-              {doc.type !== 'service_report' && (
+              {doc.type !== 'service_report' && doc.type !== 'delivery_order' && (
                 <div className="flex justify-between">
                   <span className="text-stone-500">{doc.type === 'receipt' ? 'Amount received' : 'Total'}</span>
                   <span className="tabular font-medium">{formatMoney(docAmount(doc), settings.currency)}</span>
@@ -171,11 +186,29 @@ export default function DocumentView() {
                     <span className="text-stone-500">Paid</span>
                     <span className="tabular">{formatMoney(paid, settings.currency)}</span>
                   </div>
+                  {credited > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-stone-500">Credit notes</span>
+                      <span className="tabular">{formatMoney(credited, settings.currency)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-stone-500">Balance</span>
                     <span className={`tabular font-medium ${balance > 0 ? 'text-amber-700' : ''}`}>{formatMoney(balance, settings.currency)}</span>
                   </div>
                 </>
+              )}
+              {doc.type === 'credit_note' && (doc.refundAmount ?? 0) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-stone-500">Refunded</span>
+                  <span className="tabular">{formatMoney(doc.refundAmount ?? 0, settings.currency)}</span>
+                </div>
+              )}
+              {doc.type === 'purchase_order' && (
+                <div className="flex justify-between">
+                  <span className="text-stone-500">Paid to supplier</span>
+                  <span className="tabular">{formatMoney(poPaid, settings.currency)}</span>
+                </div>
               )}
               <label className="block pt-1">
                 <span className="mb-1 block text-xs text-stone-500">Status</span>
