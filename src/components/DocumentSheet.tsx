@@ -1,6 +1,9 @@
-import { amountInWords, docTotals, formatDate, formatMoney, invoiceCredited, invoicePaid, lineTotal } from '../lib/calc'
+import { Fragment } from 'react'
+import { amountInWords, docTotals, formatDate, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
 import { useStore } from '../lib/store'
 import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Customer, type Document } from '../lib/types'
+
+const money = (n: number) => formatMoney(n, '').trim()
 
 const PARTY_LABEL: Partial<Record<Document['type'], string>> = {
   receipt: 'Received from',
@@ -131,18 +134,46 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
                 </tr>
               </thead>
               <tbody>
-                {doc.items.map((it, i) => (
-                  <tr key={it.id} className="border-b border-stone-200 align-top">
-                    <td className="px-2 py-2 text-stone-500">{i + 1}</td>
-                    <td className="whitespace-pre-line px-2 py-2">{it.description}</td>
-                    <td className="tabular px-2 py-2 text-right">{it.qty}</td>
-                    <td className="px-2 py-2">{it.unit}</td>
-                    {isPriced && <td className="tabular px-2 py-2 text-right">{formatMoney(it.unitPrice, '').trim()}</td>}
-                    {adj && <td className="tabular px-2 py-2 text-right">{it.discountPct ? `${it.discountPct}%` : '—'}</td>}
-                    {adj && <td className="tabular px-2 py-2 text-right">{`${it.taxRate ?? doc.taxRate}%`}</td>}
-                    {isPriced && <td className="tabular px-2 py-2 text-right">{formatMoney(lineTotal(it, adj), '').trim()}</td>}
-                  </tr>
-                ))}
+                {doc.items.map((it, i) => {
+                  const subs = it.subItems ?? []
+                  const fromSubs = isPriced && hasPricedSubs(it)
+                  let n = 0
+                  return (
+                    <Fragment key={it.id}>
+                      <tr className={`align-top ${subs.length ? '' : 'border-b border-stone-200'}`}>
+                        <td className="px-2 pt-2 text-stone-500">{i + 1}</td>
+                        <td className={`whitespace-pre-line px-2 pt-2 ${subs.length ? 'pb-1 font-medium' : 'pb-2'}`}>{it.description}</td>
+                        <td className="tabular px-2 pt-2 text-right">{fromSubs ? '' : it.qty}</td>
+                        <td className="px-2 pt-2">{fromSubs ? '' : it.unit}</td>
+                        {isPriced && <td className="tabular px-2 pt-2 text-right">{fromSubs ? '' : money(it.unitPrice)}</td>}
+                        {adj && <td className="tabular px-2 pt-2 text-right">{it.discountPct ? `${it.discountPct}%` : '—'}</td>}
+                        {adj && <td className="tabular px-2 pt-2 text-right">{`${it.taxRate ?? doc.taxRate}%`}</td>}
+                        {isPriced && <td className="tabular px-2 pt-2 text-right font-medium">{money(lineTotal(it, adj))}</td>}
+                      </tr>
+                      {subs.map((sItem, k) => {
+                        const priced = isPriced && sItem.priced
+                        const last = k === subs.length - 1
+                        return (
+                          <tr key={sItem.id} className={`align-top text-[11px] text-stone-700 ${last ? 'border-b border-stone-200' : ''}`}>
+                            <td />
+                            <td className={`px-2 ${last ? 'pb-2' : 'pb-0.5'}`}>
+                              <div className="flex gap-2 pl-3">
+                                <span className={`shrink-0 ${priced ? 'w-7 text-stone-500' : 'w-3 text-stone-400'}`}>{priced ? `${i + 1}.${++n}` : '•'}</span>
+                                <span className="whitespace-pre-line">{sItem.description}</span>
+                              </div>
+                            </td>
+                            <td className="tabular px-2 text-right">{sItem.qty ? sItem.qty : ''}</td>
+                            <td className="px-2">{sItem.qty ? sItem.unit : ''}</td>
+                            {isPriced && <td className="tabular px-2 text-right">{priced ? money(sItem.unitPrice) : ''}</td>}
+                            {adj && <td />}
+                            {adj && <td />}
+                            {isPriced && <td className="tabular px-2 text-right">{priced ? money(subAmount(sItem)) : ''}</td>}
+                          </tr>
+                        )
+                      })}
+                    </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           )}

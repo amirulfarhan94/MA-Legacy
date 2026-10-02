@@ -55,6 +55,19 @@ export interface Customer {
   createdAt: string
 }
 
+/**
+ * A line under a main item. Priced sub items add up to the main item's amount;
+ * unpriced ones are notes (a bullet with optional qty/unit).
+ */
+export interface SubItem {
+  id: string
+  description: string
+  priced: boolean
+  qty: number
+  unit: string
+  unitPrice: number
+}
+
 export interface LineItem {
   id: string
   description: string
@@ -65,6 +78,7 @@ export interface LineItem {
   discountPct?: number
   /** Line tax rate in percent; only applied when the document has itemAdjustments on. */
   taxRate?: number
+  subItems?: SubItem[]
 }
 
 export type DocStatus =

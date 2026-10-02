@@ -1,10 +1,21 @@
-import type { Document, DocType, LineItem } from './types'
+import type { Document, DocType, LineItem, SubItem } from './types'
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
 
+export const subAmount = (s: SubItem) => round2((Number(s.qty) || 0) * (Number(s.unitPrice) || 0))
+
+/** True when the item's amount comes from its priced sub items rather than its own qty × price. */
+export const hasPricedSubs = (item: LineItem) => !!item.subItems?.some((s) => s.priced)
+
+/** Line amount before discount: the sum of priced sub items, or qty × unit price. */
+export function lineGross(item: LineItem): number {
+  if (hasPricedSubs(item)) return round2(item.subItems!.filter((s) => s.priced).reduce((t, s) => t + subAmount(s), 0))
+  return round2((Number(item.qty) || 0) * (Number(item.unitPrice) || 0))
+}
+
 /** Line amount after its own discount (the discount only counts when per-item adjustments are on). */
 export function lineTotal(item: LineItem, itemAdjustments = false): number {
-  const gross = (Number(item.qty) || 0) * (Number(item.unitPrice) || 0)
+  const gross = lineGross(item)
   const pct = itemAdjustments ? Math.min(100, Math.max(0, Number(item.discountPct) || 0)) : 0
   return round2(gross - (gross * pct) / 100)
 }

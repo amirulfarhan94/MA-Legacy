@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { addDays, invoiceBalance, nextDocNumber, today } from './calc'
-import type { Customer, Document, DocType, Settings, Transaction } from './types'
+import type { Customer, Document, DocType, LineItem, Settings, Transaction } from './types'
 
 export const uid = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -9,6 +9,10 @@ export const uid = () =>
     : Math.random().toString(36).slice(2) + Date.now().toString(36)
 
 const now = () => new Date().toISOString()
+
+/** Copies line items (and their sub items) with fresh ids, for converting or duplicating a document. */
+export const cloneItems = (items: LineItem[]): LineItem[] =>
+  items.map((i) => ({ ...i, id: uid(), subItems: i.subItems?.map((s) => ({ ...s, id: uid() })) }))
 
 export const defaultSettings: Settings = {
   companyName: 'MA Legacy Solutions',
@@ -203,7 +207,7 @@ export const useStore = create<State>()(
           ...base,
           sourceId: src.id,
           reference: src.number,
-          items: src.items.map((i) => ({ ...i, id: uid() })),
+          items: cloneItems(src.items),
           discount: src.discount,
           taxRate: src.taxRate,
           itemAdjustments: src.itemAdjustments,
@@ -236,7 +240,7 @@ export const useStore = create<State>()(
           invoiceId: inv.id,
           sourceId: inv.id,
           reference: inv.number,
-          items: inv.items.map((i) => ({ ...i, id: uid() })),
+          items: cloneItems(inv.items),
           taxRate: inv.taxRate,
           itemAdjustments: inv.itemAdjustments,
           notes: `Credit for invoice ${inv.number}`,

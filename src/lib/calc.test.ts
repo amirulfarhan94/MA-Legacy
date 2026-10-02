@@ -77,3 +77,25 @@ describe('addDays', () => {
     expect(addDays('2026-01-25', 14)).toBe('2026-02-08')
   })
 })
+
+describe('sub items', () => {
+  const sub = (priced: boolean, qty: number, unitPrice: number) => ({ id: String(Math.random()), description: 's', priced, qty, unit: 'u', unitPrice })
+
+  it('priced sub items replace the main qty × price', () => {
+    const t = docTotals({
+      items: [{ id: '1', description: 'CCTV package', qty: 1, unit: 'set', unitPrice: 9999, subItems: [sub(true, 8, 380), sub(true, 1, 1250), sub(false, 50, 0)] }],
+      discount: 0,
+      taxRate: 0,
+    })
+    expect(t.total).toBe(4290)
+  })
+
+  it('notes alone leave the main price in charge', () => {
+    const t = docTotals({
+      items: [{ id: '1', description: 'Servicing', qty: 2, unit: 'job', unitPrice: 150, subItems: [sub(false, 0, 0)] }],
+      discount: 0,
+      taxRate: 0,
+    })
+    expect(t.total).toBe(300)
+  })
+})

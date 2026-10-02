@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRightLeft, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
 import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid } from '../lib/calc'
-import { contactKind, customerLabel, uid, useCustomer, useStore } from '../lib/store'
+import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
 import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
 import DocumentSheet from '../components/DocumentSheet'
 import { Button, Card, CardHeader, Select, StatusBadge } from '../components/ui'
@@ -73,7 +73,7 @@ export default function DocumentView() {
       status: fresh.status,
       sourceId: undefined,
       invoiceId: undefined,
-      items: doc.items.map((i) => ({ ...i, id: uid() })),
+      items: cloneItems(doc.items),
       createdAt: fresh.createdAt,
     }
     const saved = saveDocument(copy)

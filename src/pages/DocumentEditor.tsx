@@ -104,7 +104,13 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
     const saved = store.saveDocument({
       ...doc,
       number: doc.number.trim(),
-      items: doc.items.filter((i) => i.description.trim() || i.unitPrice),
+      // Drop blank lines and blank sub items.
+      items: doc.items
+        .map((i) => {
+          const subItems = i.subItems?.filter((s) => s.description.trim() || s.unitPrice)
+          return { ...i, subItems: subItems?.length ? subItems : undefined }
+        })
+        .filter((i) => i.description.trim() || i.unitPrice || i.subItems?.length),
     })
     nav(`/d/${meta.path}/${saved.id}`, { replace: true })
   }
