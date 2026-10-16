@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, FileText, Mail, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react'
-import { formatDate, formatMoney } from '../lib/calc'
+import ContactActions, { Avatar } from '../components/ContactActions'
+import CreateSheet from '../components/CreateSheet'
+import { formatDate } from '../lib/calc'
 import { contactTotals } from '../lib/finance'
 import { contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
 import { DOC_META, DOC_TYPES, isPurchaseDoc, type DocType } from '../lib/types'
 import CustomerForm from '../components/CustomerForm'
 import DocumentTable from '../components/DocumentTable'
-import { Button, Card, CardHeader, EmptyState, PageHeader } from '../components/ui'
+import { Button, Card, CardHeader, ChipGroup, EmptyState, MetricStrip, PageHeader } from '../components/ui'
 
 export default function CustomerDetail() {
   const { id } = useParams()
@@ -18,6 +20,7 @@ export default function CustomerDetail() {
   const currency = useStore((s) => s.settings.currency)
   const [editing, setEditing] = useState(false)
   const [tab, setTab] = useState<DocType | 'all'>('all')
+  const [creating, setCreating] = useState(false)
   const nav = useNavigate()
 
   const docs = useMemo(
@@ -44,7 +47,9 @@ export default function CustomerDetail() {
   const isSupplier = kind === 'supplier'
   const base = isSupplier ? '/suppliers' : '/customers'
   const creatable = DOC_TYPES.filter((t) => isPurchaseDoc(t) === isSupplier)
-  const tabs = DOC_TYPES.filter((t) => creatable.includes(t) || docs.some((d) => d.type === t))
+  const tabs = DOC_TYPES.filter((t) => docs.some((d) => d.type === t))
+  const label = customerLabel(customer)
+  const newDoc = () => (creatable.length === 1 ? nav(`/d/${DOC_META[creatable[0]].path}/new?customer=${customer.id}`) : setCreating(true))
 
   return (
     <>
@@ -52,10 +57,16 @@ export default function CustomerDetail() {
         <ArrowLeft size={15} /> {isSupplier ? 'Suppliers' : 'Customers'}
       </Link>
       <PageHeader
-        title={customerLabel(customer)}
+        title={
+          <span className="flex items-center gap-3">
+            <Avatar name={label} size="lg" />
+            <span className="min-w-0">{label}</span>
+          </span>
+        }
         subtitle={customer.company && customer.name ? customer.name : undefined}
         actions={
           <>
+            <ContactActions phone={customer.phone} name={label} />
             {!isSupplier && (
               <Button onClick={() => nav(`/customers/${customer.id}/statement`)}>
                 <FileText size={15} /> Statement
@@ -66,20 +77,32 @@ export default function CustomerDetail() {
             </Button>
             <Button
               variant="danger"
+              aria-label="Delete"
               disabled={hasLinks}
               title={hasLinks ? 'Contacts with documents or transactions cannot be deleted' : undefined}
               onClick={() => {
-                if (confirm(`Delete ${customerLabel(customer)}?`)) {
+                if (confirm(`Delete ${label}?`)) {
                   deleteCustomer(customer.id)
                   nav(base)
                 }
               }}
             >
-              <Trash2 size={15} /> Delete
+              <Trash2 size={15} /> <span className="hidden sm:inline">Delete</span>
             </Button>
           </>
         }
       />
+
+      <div className="mb-5">
+        <MetricStrip
+          currency={currency}
+          items={[
+            { label: isSupplier ? 'Purchases' : 'Billed', value: stats.billed },
+            { label: 'Paid', value: stats.paid },
+            { label: isSupplier ? 'Unpaid' : 'Outstanding', value: stats.outstanding, tone: stats.outstanding > 0 ? 'warn' : undefined },
+          ]}
+        />
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-1">
@@ -120,57 +143,41 @@ export default function CustomerDetail() {
               <dd>{formatDate(customer.createdAt.slice(0, 10))}</dd>
             </div>
           </dl>
-          <div className="grid grid-cols-3 border-t border-stone-100 text-center">
-            {[
-              [isSupplier ? 'Purchases' : 'Billed', stats.billed],
-              ['Paid', stats.paid],
-              [isSupplier ? 'Unpaid' : 'Outstanding', stats.outstanding],
-            ].map(([label, v]) => (
-              <div key={label as string} className="px-2 py-3">
-                <div className="text-[11px] uppercase tracking-wide text-stone-500">{label}</div>
-                <div className="mt-0.5 text-sm font-semibold">{formatMoney(v as number, currency)}</div>
-              </div>
-            ))}
-          </div>
         </Card>
 
         <Card className="lg:col-span-2">
           <CardHeader
             title="Documents"
             subtitle={stats.lastActivity ? `Last activity ${formatDate(stats.lastActivity)}` : undefined}
-          />
-          <div className="flex flex-wrap gap-2 border-b border-stone-100 px-5 py-3">
-            {creatable.map((t) => (
-              <Button key={t} size="sm" onClick={() => nav(`/d/${DOC_META[t].path}/new?customer=${customer.id}`)}>
-                <Plus size={14} /> {DOC_META[t].label}
+            action={
+              <Button variant="primary" size="sm" onClick={newDoc}>
+                <Plus size={14} /> {creatable.length === 1 ? `New ${DOC_META[creatable[0]].label.toLowerCase()}` : 'New document'}
               </Button>
-            ))}
-          </div>
-          <div className="flex gap-1 overflow-x-auto border-b border-stone-100 px-4 pt-2 text-sm">
-            {(['all', ...tabs] as const).map((t) => {
-              const count = t === 'all' ? docs.length : docs.filter((d) => d.type === t).length
-              return (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`whitespace-nowrap border-b-2 px-3 py-2 ${
-                    tab === t ? 'border-gold-600 font-medium text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-800'
-                  }`}
-                >
-                  {t === 'all' ? 'All' : DOC_META[t].plural} <span className="text-stone-400">{count}</span>
-                </button>
-              )
-            })}
-          </div>
+            }
+          />
+          {tabs.length > 1 && (
+            <div className="border-b border-stone-200 px-3 py-2.5">
+              <ChipGroup
+                label="Document type"
+                value={tab}
+                onChange={setTab}
+                options={[
+                  { value: 'all' as const, label: 'All', count: docs.length },
+                  ...tabs.map((t) => ({ value: t, label: DOC_META[t].plural, count: docs.filter((d) => d.type === t).length })),
+                ]}
+              />
+            </div>
+          )}
           {shown.length ? (
             <DocumentTable docs={shown} showType showCustomer={false} />
           ) : (
-            <EmptyState title="No documents yet" text="Create one using the buttons above." />
+            <EmptyState title="No documents yet" text={`Use “${creatable.length === 1 ? `New ${DOC_META[creatable[0]].label.toLowerCase()}` : 'New document'}” to create the first one.`} />
           )}
         </Card>
       </div>
 
       <CustomerForm open={editing} onClose={() => setEditing(false)} customer={customer} />
+      <CreateSheet open={creating} onClose={() => setCreating(false)} types={creatable} customerId={customer.id} title={`New for ${label}`} />
     </>
   )
 }

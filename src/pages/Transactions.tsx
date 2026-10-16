@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeftRight, Download, Plus, Search } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Download, Plus, Search, X } from 'lucide-react'
 import { docTotals, formatDate, formatMoney, today } from '../lib/calc'
 import { cashMovements } from '../lib/finance'
 import { customerLabel, uid, useStore } from '../lib/store'
 import { DOC_META, PAYMENT_METHODS, type PaymentMethod, type Transaction, type TxnKind } from '../lib/types'
-import { Button, Card, EmptyState, Field, Input, Modal, NumberInput, PageHeader, Select, StatusBadge, tableCls } from '../components/ui'
+import { Button, Card, ChipGroup, EmptyState, Field, Input, MetricStrip, Modal, NumberInput, PageHeader, Select, StatusBadge, tableCls } from '../components/ui'
 
 const CATEGORIES: Record<TxnKind, string[]> = {
   income: ['Sales', 'Service', 'Deposit', 'Other income'],
@@ -111,6 +111,7 @@ export default function Transactions() {
     return d ? `/d/${DOC_META[d.type].path}/${d.id}` : '#'
   }
 
+  const filtered = !!(q || kind || from || to)
   const income = rows.filter((r) => r.kind === 'income').reduce((s, r) => s + r.amount, 0)
   const expense = rows.filter((r) => r.kind === 'expense').reduce((s, r) => s + r.amount, 0)
 
@@ -146,8 +147,8 @@ export default function Transactions() {
         subtitle="Receipts and credit-note refunds are recorded automatically. Add other income and expenses manually."
         actions={
           <>
-            <Button onClick={exportCsv} disabled={!rows.length}>
-              <Download size={15} /> Export CSV
+            <Button onClick={exportCsv} disabled={!rows.length} title="Export CSV" aria-label="Export CSV">
+              <Download size={15} /> <span className="hidden sm:inline">Export CSV</span>
             </Button>
             <Button onClick={() => setEditing(blankTxn('expense'))}>
               <Plus size={15} /> Expense
@@ -159,10 +160,15 @@ export default function Transactions() {
         }
       />
 
-      <div className="mb-5 grid gap-4 sm:grid-cols-3">
-        <Summary label="Money in" value={formatMoney(income, currency)} />
-        <Summary label="Money out" value={formatMoney(expense, currency)} />
-        <Summary label="Net" value={formatMoney(income - expense, currency)} emphasis />
+      <div className="mb-5">
+        <MetricStrip
+          currency={currency}
+          items={[
+            { label: 'Money in', value: income, tone: 'good' },
+            { label: 'Money out', value: expense, tone: 'bad' },
+            { label: filtered ? 'Net (filtered)' : 'Net', value: income - expense, tone: 'gold' },
+          ]}
+        />
       </div>
 
       <Card>
@@ -174,81 +180,126 @@ export default function Transactions() {
           />
         ) : (
           <>
-            <div className="flex flex-wrap items-center gap-2 border-b border-stone-100 p-3">
-              <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                <Input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
+            <div className="space-y-2.5 border-b border-stone-200 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative min-w-[180px] flex-1 sm:max-w-sm">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <Input placeholder="Search description, customer, ref…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
+                </div>
+                <div className="flex min-w-0 items-center gap-2 max-sm:w-full">
+                  <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="min-w-0 flex-1 sm:w-auto sm:flex-none" aria-label="From date" />
+                  <span className="text-sm text-stone-400">to</span>
+                  <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="min-w-0 flex-1 sm:w-auto sm:flex-none" aria-label="To date" />
+                </div>
+                {filtered && (
+                  <Button variant="ghost" onClick={() => { setQ(''); setKind(''); setFrom(''); setTo('') }}>
+                    <X size={14} /> Clear
+                  </Button>
+                )}
               </div>
-              <Select value={kind} onChange={(e) => setKind(e.target.value as '' | TxnKind)} className="w-auto">
-                <option value="">Income & expense</option>
-                <option value="income">Income only</option>
-                <option value="expense">Expense only</option>
-              </Select>
-              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-auto" aria-label="From date" />
-              <span className="text-sm text-stone-400">to</span>
-              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-auto" aria-label="To date" />
-              {(q || kind || from || to) && (
-                <Button variant="ghost" onClick={() => { setQ(''); setKind(''); setFrom(''); setTo('') }}>
-                  Clear
-                </Button>
-              )}
+              <ChipGroup
+                label="Type"
+                value={kind}
+                onChange={setKind}
+                options={[
+                  { value: '' as const, label: 'All', count: allRows.length },
+                  { value: 'income' as const, label: 'Income', count: allRows.filter((r) => r.kind === 'income').length, dot: 'var(--good)' },
+                  { value: 'expense' as const, label: 'Expense', count: allRows.filter((r) => r.kind === 'expense').length, dot: 'var(--critical)' },
+                ]}
+              />
             </div>
-            <div className="overflow-x-auto">
-              <table className={tableCls.table}>
-                <thead>
-                  <tr>
-                    <th className={tableCls.th}>Date</th>
-                    <th className={tableCls.th}>Type</th>
-                    <th className={tableCls.th}>Description</th>
-                    <th className={tableCls.th}>Customer</th>
-                    <th className={tableCls.th}>Method</th>
-                    <th className={`${tableCls.th} text-right`}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => {
-                    const c = customers.find((x) => x.id === r.customerId)
-                    const content = (
-                      <>
-                        <td className={`${tableCls.td} tabular whitespace-nowrap text-stone-600`}>{formatDate(r.date)}</td>
-                        <td className={tableCls.td}>
-                          <StatusBadge status={r.kind} />
-                          <div className="mt-1 text-xs text-stone-500">{r.category}</div>
-                        </td>
-                        <td className={tableCls.td}>
-                          {r.docId ? (
-                            <Link to={docLink(r.docId)} className="font-medium text-gold-700 hover:underline">
-                              {r.description}
-                            </Link>
-                          ) : (
-                            r.description || '—'
-                          )}
-                          {r.reference && <div className="text-xs text-stone-500">Ref: {r.reference}</div>}
-                        </td>
-                        <td className={tableCls.td}>{r.customerId ? customerLabel(c) : '—'}</td>
-                        <td className={`${tableCls.td} text-stone-600`}>{PAYMENT_METHODS[r.method]}</td>
-                        <td className={`${tableCls.td} tabular whitespace-nowrap text-right font-medium ${r.kind === 'expense' ? 'text-red-700' : 'text-emerald-700'}`}>
-                          {r.kind === 'expense' ? '−' : '+'} {formatMoney(r.amount, currency)}
-                        </td>
-                      </>
-                    )
-                    return r.txn ? (
-                      <tr key={r.key} className={tableCls.tr} onClick={() => setEditing(r.txn!)}>
-                        {content}
-                      </tr>
-                    ) : (
-                      <tr key={r.key}>{content}</tr>
-                    )
-                  })}
-                  {rows.length === 0 && (
+            <div className="@container">
+              {rows.length === 0 && <p className="px-4 py-10 text-center text-sm text-stone-500">Nothing matches these filters.</p>}
+              <ul className="divide-y divide-stone-200 @min-[760px]:hidden">
+                {rows.map((r) => {
+                  const c = customers.find((x) => x.id === r.customerId)
+                  const isIn = r.kind === 'income'
+                  const body = (
+                    <>
+                      <span className={`mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl ${isIn ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                        {isIn ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-start justify-between gap-3">
+                          <span className="line-clamp-2 text-sm font-semibold text-stone-900">{r.description || r.category}</span>
+                          <span className={`tabular shrink-0 whitespace-nowrap text-sm font-bold ${isIn ? 'text-emerald-700' : 'text-red-700'}`}>
+                            {isIn ? '+' : '−'} {formatMoney(r.amount, currency)}
+                          </span>
+                        </span>
+                        <span className="tabular mt-1 block text-xs text-stone-500">
+                          {[formatDate(r.date), r.category, r.customerId ? customerLabel(c) : '', PAYMENT_METHODS[r.method]].filter(Boolean).join(' · ')}
+                        </span>
+                      </span>
+                    </>
+                  )
+                  const cls = 'flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--item-hover)]'
+                  return (
+                    <li key={r.key}>
+                      {r.txn ? (
+                        <button type="button" className={cls} onClick={() => setEditing(r.txn!)}>
+                          {body}
+                        </button>
+                      ) : r.docId ? (
+                        <Link to={docLink(r.docId)} className={cls}>
+                          {body}
+                        </Link>
+                      ) : (
+                        <div className={cls}>{body}</div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="hidden overflow-x-auto @min-[760px]:block">
+                <table className={tableCls.table}>
+                  <thead>
                     <tr>
-                      <td colSpan={6} className="px-4 py-10 text-center text-sm text-stone-500">
-                        Nothing matches these filters.
-                      </td>
+                      <th className={tableCls.th}>Date</th>
+                      <th className={tableCls.th}>Type</th>
+                      <th className={tableCls.th}>Description</th>
+                      <th className={tableCls.th}>Customer</th>
+                      <th className={tableCls.th}>Method</th>
+                      <th className={`${tableCls.th} text-right`}>Amount</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => {
+                      const c = customers.find((x) => x.id === r.customerId)
+                      const content = (
+                        <>
+                          <td className={`${tableCls.td} tabular whitespace-nowrap text-stone-600`}>{formatDate(r.date)}</td>
+                          <td className={tableCls.td}>
+                            <StatusBadge status={r.kind} />
+                            <div className="mt-1 text-xs text-stone-500">{r.category}</div>
+                          </td>
+                          <td className={tableCls.td}>
+                            {r.docId ? (
+                              <Link to={docLink(r.docId)} className="font-medium text-gold-700 hover:underline">
+                                {r.description}
+                              </Link>
+                            ) : (
+                              r.description || '—'
+                            )}
+                            {r.reference && <div className="text-xs text-stone-500">Ref: {r.reference}</div>}
+                          </td>
+                          <td className={tableCls.td}>{r.customerId ? customerLabel(c) : '—'}</td>
+                          <td className={`${tableCls.td} text-stone-600`}>{PAYMENT_METHODS[r.method]}</td>
+                          <td className={`${tableCls.td} tabular whitespace-nowrap text-right font-medium ${r.kind === 'expense' ? 'text-red-700' : 'text-emerald-700'}`}>
+                            {r.kind === 'expense' ? '−' : '+'} {formatMoney(r.amount, currency)}
+                          </td>
+                        </>
+                      )
+                      return r.txn ? (
+                        <tr key={r.key} className={tableCls.tr} onClick={() => setEditing(r.txn!)}>
+                          {content}
+                        </tr>
+                      ) : (
+                        <tr key={r.key}>{content}</tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}
@@ -273,15 +324,6 @@ export default function Transactions() {
         }
       />
     </>
-  )
-}
-
-function Summary({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
-  return (
-    <Card className="px-5 py-4">
-      <div className="text-xs font-medium text-stone-500">{label}</div>
-      <div className={`mt-1 text-xl font-semibold ${emphasis ? 'text-gold-700' : 'text-stone-900'}`}>{value}</div>
-    </Card>
   )
 }
 

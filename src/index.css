@@ -86,6 +86,8 @@
   --name-a: #b07a22;
   --name-b: #7a520f;
   --good: #0ca30c;
+  --warn: #fab219;
+  --serious: #ec835a;
   --critical: #d03b3b;
 }
 

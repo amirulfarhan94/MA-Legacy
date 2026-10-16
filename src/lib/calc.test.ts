@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, amountInWords, docTotals, invoicePaymentState, nextDocNumber } from './calc'
+import { addDays, amountInWords, docTotals, formatDate, invoicePaymentState, monthLabel, nextDocNumber } from './calc'
 import type { Document } from './types'
 
 const baseDoc = (over: Partial<Document>): Document => ({
@@ -69,6 +69,16 @@ describe('amountInWords', () => {
     expect(amountInWords(1250.5)).toBe('Ringgit Malaysia One Thousand Two Hundred Fifty And Cents Fifty Only')
     expect(amountInWords(21)).toBe('Ringgit Malaysia Twenty-One Only')
     expect(amountInWords(1000000)).toBe('Ringgit Malaysia One Million Only')
+  })
+})
+
+describe('dates', () => {
+  it('writes every month with three letters', () => {
+    expect(formatDate('2026-09-21')).toBe('21 Sep 2026')
+    expect(formatDate('2026-10-04')).toBe('04 Oct 2026')
+    expect(formatDate('')).toBe('-')
+    expect(monthLabel('2026-09')).toBe('Sep 2026')
+    expect(monthLabel('2026-12', false)).toBe('Dec')
   })
 })
 

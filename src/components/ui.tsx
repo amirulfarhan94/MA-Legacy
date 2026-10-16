@@ -131,31 +131,100 @@ export function PageHeader({ title, subtitle, actions }: { title: ReactNode; sub
   )
 }
 
-const STATUS_STYLE: Record<string, string> = {
-  draft: 'bg-stone-100 text-stone-700',
-  sent: 'bg-sky-50 text-sky-800',
-  accepted: 'bg-emerald-50 text-emerald-800',
-  rejected: 'bg-red-50 text-red-700',
-  cancelled: 'bg-stone-100 text-stone-500 line-through',
-  unpaid: 'bg-amber-50 text-amber-800',
-  partial: 'bg-orange-50 text-orange-800',
-  paid: 'bg-emerald-50 text-emerald-800',
-  overdue: 'bg-red-50 text-red-700',
-  completed: 'bg-emerald-50 text-emerald-800',
-  income: 'bg-emerald-50 text-emerald-800',
-  expense: 'bg-red-50 text-red-700',
+/** Dot colour per status: green done, cyan in progress, amber/orange waiting on money, red needs action. */
+export const STATUS_DOT: Record<string, string> = {
+  draft: 'var(--color-stone-400)',
+  sent: 'var(--color-accent)',
+  issued: 'var(--color-accent)',
+  accepted: 'var(--good)',
+  paid: 'var(--good)',
+  credited: 'var(--good)',
+  completed: 'var(--good)',
+  delivered: 'var(--good)',
+  received: 'var(--good)',
+  income: 'var(--good)',
+  unpaid: 'var(--warn)',
+  partial: 'var(--serious)',
+  overdue: 'var(--critical)',
+  rejected: 'var(--critical)',
+  expense: 'var(--critical)',
+  cancelled: 'var(--color-stone-400)',
 }
 
+/** Lifecycle order for status filters. */
+export const STATUS_ORDER = ['draft', 'sent', 'unpaid', 'partial', 'overdue', 'paid', 'credited', 'accepted', 'rejected', 'issued', 'delivered', 'received', 'completed', 'cancelled']
+
 export function StatusBadge({ status }: { status: string }) {
+  const alert = status === 'overdue'
   return (
     <span
       className={cx(
-        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize',
-        STATUS_STYLE[status] ?? 'bg-stone-100 text-stone-700',
+        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold capitalize',
+        alert ? 'border-red-200 bg-red-50 text-red-700' : 'border-[var(--btn-line)] bg-[var(--btn)] text-stone-700',
       )}
     >
-      {status}
+      <i className="size-1.5 shrink-0 rounded-full" style={{ background: STATUS_DOT[status] ?? 'var(--color-stone-400)' }} />
+      <span className={status === 'cancelled' ? 'line-through' : undefined}>{status}</span>
     </span>
+  )
+}
+
+/** Single-choice filter as a row of chips (scrolls sideways on phones). */
+export function ChipGroup<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string
+  value: T
+  onChange: (v: T) => void
+  options: { value: T; label: string; count?: number; dot?: string }[]
+}) {
+  return (
+    <div role="group" aria-label={label} className="-mx-1 flex gap-1.5 overflow-x-auto px-1 py-0.5 [scrollbar-width:none]">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          aria-pressed={value === o.value}
+          onClick={() => onChange(o.value)}
+          className={cx(
+            'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-colors',
+            value === o.value
+              ? 'border-transparent bg-stone-900 text-[var(--color-canvas)]'
+              : 'border-[var(--btn-line)] bg-[var(--btn)] text-stone-600 hover:text-stone-900',
+          )}
+        >
+          {o.dot && <i className="size-1.5 rounded-full" style={{ background: o.dot }} />}
+          <span className="capitalize">{o.label}</span>
+          {o.count !== undefined && <span className="tabular opacity-60">{o.count}</span>}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export type Tone = 'good' | 'bad' | 'warn' | 'gold'
+const TONE: Record<Tone, string> = { good: 'text-emerald-700', bad: 'text-red-700', warn: 'text-amber-700', gold: 'text-gold-700' }
+
+/** Two to four money figures in one glass card: rows on phones, columns when there is room. */
+export function MetricStrip({ items, currency }: { items: { label: string; value: number; tone?: Tone }[]; currency: string }) {
+  const cols = { 2: '@min-[520px]:grid-cols-2', 3: '@min-[520px]:grid-cols-3', 4: '@min-[520px]:grid-cols-4' }[items.length] ?? '@min-[520px]:grid-cols-3'
+  return (
+    <div className="glass @container min-w-0 rounded-[22px]">
+      <dl className={cx('grid divide-y divide-stone-200 @min-[520px]:divide-x @min-[520px]:divide-y-0', cols)}>
+        {items.map((it) => (
+          <div key={it.label} className="flex items-baseline justify-between gap-3 px-4 py-3 @min-[520px]:block @min-[520px]:px-5 @min-[520px]:py-4">
+            <dt className="text-[12.5px] font-semibold text-stone-600">{it.label}</dt>
+            <dd className={cx('tabular whitespace-nowrap font-display text-[17px] tracking-[-0.02em] @min-[520px]:mt-2 @min-[520px]:text-[24px]', it.tone ? TONE[it.tone] : 'text-stone-900')}>
+              <span className="mr-[0.35em] text-[0.55em] font-medium text-stone-500">{currency}</span>
+              {(Number(it.value) || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   )
 }
 

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, MessageCircle, Printer } from 'lucide-react'
 import { addDays, formatDate, formatMoney, today } from '../lib/calc'
 import { AGING_BUCKETS, customerStatement } from '../lib/finance'
+import { waNumber } from '../lib/contact'
 import { customerLabel, useCustomer, useStore } from '../lib/store'
 import { ComputerGeneratedNote, PartyBlock, PaymentBlock, SheetHeader } from '../components/DocumentSheet'
 import { Button, Card, EmptyState, Field, Input } from '../components/ui'
@@ -13,11 +14,6 @@ const firstOfMonth = (iso: string, monthsBack = 0) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
 }
 
-/** Malaysian numbers: 012-345 6789 → 60123456789 for wa.me links. */
-const waNumber = (phone: string) => {
-  const digits = phone.replace(/\D/g, '')
-  return digits.startsWith('0') ? `6${digits}` : digits
-}
 
 export default function Statement() {
   const { id } = useParams()

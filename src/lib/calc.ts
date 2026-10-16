@@ -157,10 +157,20 @@ export function formatMoney(n: number, currency = 'RM'): string {
   return `${currency} ${s}`
 }
 
+/** Three-letter month names. Fixed here because some browsers write "Sept" for en-GB. */
+export const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** "2026-09-21" → "21 Sep 2026" */
 export function formatDate(iso: string): string {
   if (!iso) return '-'
   const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  return `${String(d).padStart(2, '0')} ${MONTHS_SHORT[m - 1]} ${y}`
+}
+
+/** "2026-09" → "Sep 2026", or "Sep" without the year. */
+export function monthLabel(ym: string, withYear = true): string {
+  const [y, m] = ym.split('-').map(Number)
+  return withYear ? `${MONTHS_SHORT[m - 1]} ${y}` : MONTHS_SHORT[m - 1]
 }
 
 const ONES = [

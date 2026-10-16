@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Moon, Plus, Sparkles, Sun, Sunrise } from 'lucide-react'
-import { displayStatus, docTotals, invoiceBalance, nextDocNumber, toISODate } from '../lib/calc'
+import { displayStatus, docTotals, invoiceBalance, monthLabel, MONTHS_SHORT, nextDocNumber, toISODate } from '../lib/calc'
 import { daypartOf, useNow } from '../lib/daypart'
 import { cashMovements, isOpenInvoice, monthlyTotals, monthToDate, weeklyTotals } from '../lib/finance'
 import { useStore } from '../lib/store'
@@ -20,15 +20,10 @@ const RANGES: { id: Range; label: string }[] = [
   { id: '90d', label: '90 days' },
 ]
 
-// Fixed three-letter names: some browsers write "Sept" for en-GB.
-const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const monthName = (key: string, withYear = false) => {
-  const [y, m] = key.split('-').map(Number)
-  return withYear ? `${MON[m - 1]} ${y}` : MON[m - 1]
-}
+const monthName = (key: string, withYear = false) => monthLabel(key, withYear)
 const dayMonth = (iso: string) => {
   const [, m, d] = iso.split('-').map(Number)
-  return `${d} ${MON[m - 1]}`
+  return `${d} ${MONTHS_SHORT[m - 1]}`
 }
 const money = (n: number) => n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const whole = (n: number) => n.toLocaleString('en-MY', { maximumFractionDigits: 0 })

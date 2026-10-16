@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRightLeft, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
 import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid } from '../lib/calc'
 import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
+import { waNumber } from '../lib/contact'
 import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
 import DocumentSheet from '../components/DocumentSheet'
 import { Button, Card, CardHeader, Select, StatusBadge } from '../components/ui'
@@ -14,12 +15,6 @@ const CONVERSIONS: Partial<Record<DocType, DocType[]>> = {
   service_report: ['quotation', 'invoice'],
 }
 
-/** Malaysian numbers: 012-345 6789 → 60123456789 for wa.me links. */
-function waNumber(phone: string): string {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.startsWith('0')) return `6${digits}`
-  return digits
-}
 
 export default function DocumentView() {
   const { typePath, id } = useParams()
