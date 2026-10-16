@@ -325,5 +325,8 @@ body {
   .print-area { margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
   .glass, .glass-strong { background: #fff !important; box-shadow: none !important; border-color: #d9dde3 !important; }
   .sheet { box-shadow: none !important; margin: 0 !important; min-height: 296mm; }
+  /* The phone preview scales the sheet down; paper always gets it at full size. */
+  .sheet-fit { height: auto !important; overflow: visible !important; padding: 0 !important; }
+  .sheet-fit > div { transform: none !important; margin: 0 !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

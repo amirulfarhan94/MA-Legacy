@@ -59,18 +59,29 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Settings"
-        subtitle="These details appear on every document you print."
-        actions={
-          <Button variant="primary" onClick={save}>
-            {saved ? 'Saved ✓' : 'Save settings'}
-          </Button>
-        }
-      />
+      <PageHeader title="Settings" subtitle="These details appear on every document you print." />
+
+      {/* Jump between sections and save from anywhere on this long page. */}
+      <div className="glass-strong no-print sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-20 mb-5 flex items-center gap-2 rounded-full p-1.5 sm:top-4">
+        <nav aria-label="Settings sections" className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none]">
+          {SECTIONS.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="h-8 shrink-0 rounded-full px-3 text-xs font-bold text-stone-600 hover:bg-[var(--item-hover)] hover:text-stone-900"
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+        <Button variant="primary" size="sm" onClick={save} className="shrink-0">
+          {saved ? 'Saved ✓' : 'Save'}
+        </Button>
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Section title="Company">
+        <Section id="set-company" title="Company">
           <div className="flex items-center gap-4 sm:col-span-2">
             <img src={form.logoDataUrl || './logo.png'} alt="Logo" className="h-16 w-28 rounded border border-stone-200 object-contain p-1" />
             <div className="flex flex-wrap gap-2">
@@ -112,7 +123,7 @@ export default function SettingsPage() {
         </Section>
 
         <div className="space-y-5">
-          <Section title="Payment details" subtitle="Bank details show on quotations, proforma invoices and invoices; the QR code on invoices and proforma invoices.">
+          <Section id="set-payment" title="Payment details" subtitle="Bank details show on quotations, proforma invoices and invoices; the QR code on invoices and proforma invoices.">
             <Field label="Bank">
               <Input {...text('bankName')} placeholder="e.g. Maybank" />
             </Field>
@@ -148,7 +159,7 @@ export default function SettingsPage() {
             </div>
           </Section>
 
-          <Section title="Tax & defaults">
+          <Section id="set-tax" title="Tax & defaults">
             <Field label="Currency symbol">
               <Input {...text('currency')} />
             </Field>
@@ -167,7 +178,7 @@ export default function SettingsPage() {
           </Section>
         </div>
 
-        <Section title="Document numbering" subtitle="Numbers look like PREFIX-YEAR-0001 and restart each year.">
+        <Section id="set-numbering" title="Document numbering" subtitle="Numbers look like PREFIX-YEAR-0001 and restart each year.">
           {DOC_TYPES.map((t) => (
             <Field key={t} label={DOC_META[t].label}>
               <Input
@@ -178,7 +189,7 @@ export default function SettingsPage() {
           ))}
         </Section>
 
-        <Section title="Default terms" subtitle="Pre-filled on new documents; you can still edit each one.">
+        <Section id="set-terms" title="Default terms" subtitle="Pre-filled on new documents; you can still edit each one.">
           {DOC_TYPES.map((t) => (
             <Field key={t} label={DOC_META[t].label} className="sm:col-span-2">
               <Textarea value={form.defaultTerms[t]} onChange={(e) => set('defaultTerms', { ...form.defaultTerms, [t]: e.target.value })} />
@@ -186,7 +197,7 @@ export default function SettingsPage() {
           ))}
         </Section>
 
-        <Card className="lg:col-span-2">
+        <Card id="set-backup" className="scroll-mt-36 lg:col-span-2">
           <CardHeader
             title="Backup & data"
             subtitle={`All data is stored on this device only. Back up at least every ${BACKUP_EVERY_DAYS} days to Google Drive or WhatsApp, and use the file to restore or move to another device.`}
@@ -238,9 +249,18 @@ export default function SettingsPage() {
   )
 }
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
+const SECTIONS: [string, string][] = [
+  ['set-company', 'Company'],
+  ['set-payment', 'Payment'],
+  ['set-tax', 'Tax'],
+  ['set-numbering', 'Numbering'],
+  ['set-terms', 'Terms'],
+  ['set-backup', 'Backup'],
+]
+
+function Section({ id, title, subtitle, children }: { id: string; title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <Card>
+    <Card id={id} className="scroll-mt-36">
       <CardHeader title={title} subtitle={subtitle} />
       <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">{children}</div>
     </Card>

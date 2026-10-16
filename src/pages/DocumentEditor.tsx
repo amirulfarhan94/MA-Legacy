@@ -136,12 +136,12 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
         title={existing ? `Edit ${meta.label.toLowerCase()}` : `New ${meta.label.toLowerCase()}`}
         subtitle={doc.reference ? `Ref: ${doc.reference}` : undefined}
         actions={
-          <>
+          <div className="hidden gap-2 xl:flex">
             <Button onClick={() => nav(backTo)}>Cancel</Button>
             <Button variant="primary" onClick={save}>
               Save {meta.label.toLowerCase()}
             </Button>
-          </>
+          </div>
         }
       />
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
@@ -438,13 +438,37 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                   <span>Total</span>
                   <span className="tabular">{formatMoney(totals.total, settings.currency)}</span>
                 </div>
-                <Button variant="primary" className="mt-2 w-full" onClick={save}>
-                  Save {meta.label.toLowerCase()}
-                </Button>
+                <div className="hidden pt-2 xl:block">
+                  <Button variant="primary" className="w-full" onClick={save}>
+                    Save {meta.label.toLowerCase()}
+                  </Button>
+                </div>
               </div>
             </Card>
           </div>
         )}
+      </div>
+
+      {/* Phones and tablets: the total and Save stay in reach at the bottom of the screen. */}
+      <div className="glass-strong no-print sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-20 mt-5 flex items-center gap-3 rounded-[22px] px-4 py-3 xl:hidden">
+        <div className="min-w-0 flex-1">
+          {error ? (
+            <div className="text-xs font-semibold text-red-700">{error}</div>
+          ) : showPricing || type === 'receipt' ? (
+            <>
+              <div className="text-[11px] font-semibold text-stone-500">{type === 'receipt' ? 'Amount received' : 'Total'}</div>
+              <div className="tabular truncate font-display text-[17px] tracking-[-0.02em] text-stone-900">
+                {formatMoney(type === 'receipt' ? Number(doc.amountPaid) || 0 : totals.total, settings.currency)}
+              </div>
+            </>
+          ) : (
+            <div className="truncate text-sm font-semibold text-stone-700">{doc.number}</div>
+          )}
+        </div>
+        <Button onClick={() => nav(backTo)}>Cancel</Button>
+        <Button variant="primary" onClick={save}>
+          Save
+        </Button>
       </div>
 
       <CustomerForm

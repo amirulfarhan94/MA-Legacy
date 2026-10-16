@@ -1,10 +1,26 @@
-import { useEffect, useState } from 'react'
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import type { ButtonHTMLAttributes, InputHTMLAttributes, KeyboardEvent, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import { MoreHorizontal, X, type LucideIcon } from 'lucide-react'
 
 const cx = (...c: (string | false | undefined | null)[]) => c.filter(Boolean).join(' ')
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
+
+const VARIANT: Record<Variant, string> = {
+  primary: 'btn-gold',
+  secondary: 'border border-[var(--btn-line)] bg-[var(--btn)] text-stone-900 hover:bg-stone-100',
+  ghost: 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+  danger: 'border border-red-200 bg-[var(--btn)] text-red-700 hover:bg-red-50',
+}
+
+/** Button look, also for links that act as buttons (WhatsApp, downloads). */
+export const buttonClass = (variant: Variant = 'secondary', size: 'sm' | 'md' = 'md', className?: string) =>
+  cx(
+    'inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap',
+    size === 'sm' ? 'h-8 px-3 text-xs' : 'h-9 px-4 text-sm',
+    VARIANT[variant],
+    className,
+  )
 
 export function Button({
   variant = 'secondary',
@@ -12,22 +28,75 @@ export function Button({
   className,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: 'sm' | 'md' }) {
-  const v: Record<Variant, string> = {
-    primary: 'btn-gold',
-    secondary: 'border border-[var(--btn-line)] bg-[var(--btn)] text-stone-900 hover:bg-stone-100',
-    ghost: 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
-    danger: 'border border-red-200 bg-[var(--btn)] text-red-700 hover:bg-red-50',
+  return <button className={buttonClass(variant, size, className)} {...props} />
+}
+
+export interface MenuItem {
+  label: string
+  icon: LucideIcon
+  onSelect: () => void
+  danger?: boolean
+}
+
+/** "More" button with a small menu of less common actions. */
+export function MoreMenu({ items, label = 'More' }: { items: MenuItem[]; label?: string }) {
+  const [open, setOpen] = useState(false)
+  const [alignLeft, setAlignLeft] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const el = box.current
+    // Open towards the side with room (the button can sit at either end of a wrapped row).
+    if (el) setAlignLeft(el.getBoundingClientRect().right < 260)
+    const onDown = (e: MouseEvent) => !el?.contains(e.target as Node) && setOpen(false)
+    const onKey = (e: globalThis.KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    el?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  if (!items.length) return null
+  const move = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+    e.preventDefault()
+    const all = [...(box.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])]
+    const i = all.indexOf(document.activeElement as HTMLElement)
+    all[(i + (e.key === 'ArrowDown' ? 1 : -1) + all.length) % all.length]?.focus()
   }
+
   return (
-    <button
-      className={cx(
-        'inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap',
-        size === 'sm' ? 'h-8 px-3 text-xs' : 'h-9 px-4 text-sm',
-        v[variant],
-        className,
+    <div ref={box} className="relative">
+      <Button aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <MoreHorizontal size={16} /> {label}
+      </Button>
+      {open && (
+        <div role="menu" onKeyDown={move} className={cx('glass-strong absolute top-full z-40 mt-2 w-64 rounded-2xl p-1.5', alignLeft ? 'left-0' : 'right-0')}>
+          {items.map((it) => (
+            <button
+              key={it.label}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false)
+                it.onSelect()
+              }}
+              className={cx(
+                'flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold outline-none hover:bg-[var(--item-hover)] focus-visible:bg-[var(--item-hover)]',
+                it.danger ? 'text-red-700' : 'text-stone-800',
+              )}
+            >
+              <it.icon size={16} className="shrink-0" />
+              {it.label}
+            </button>
+          ))}
+        </div>
       )}
-      {...props}
-    />
+    </div>
   )
 }
 
@@ -103,8 +172,12 @@ export function Field({ label, children, className, hint }: { label: string; chi
   )
 }
 
-export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cx('glass min-w-0 rounded-[22px]', className)}>{children}</div>
+export function Card({ children, className, id }: { children: ReactNode; className?: string; id?: string }) {
+  return (
+    <div id={id} className={cx('glass min-w-0 rounded-[22px]', className)}>
+      {children}
+    </div>
+  )
 }
 
 export function CardHeader({ title, action, subtitle }: { title: ReactNode; subtitle?: ReactNode; action?: ReactNode }) {
@@ -197,7 +270,7 @@ export function ChipGroup<T extends string>({
           )}
         >
           {o.dot && <i className="size-1.5 rounded-full" style={{ background: o.dot }} />}
-          <span className="capitalize">{o.label}</span>
+          <span className="inline-block first-letter:uppercase">{o.label}</span>
           {o.count !== undefined && <span className="tabular opacity-60">{o.count}</span>}
         </button>
       ))}
@@ -231,8 +304,8 @@ export function MetricStrip({ items, currency }: { items: { label: string; value
 export function EmptyState({ icon, title, text, action }: { icon?: ReactNode; title: string; text?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      {icon && <div className="mb-3 rounded-full bg-gold-50 p-3 text-gold-600">{icon}</div>}
-      <p className="text-sm font-medium text-stone-900">{title}</p>
+      {icon && <div className="mb-3 grid size-12 place-items-center rounded-2xl bg-gold-400/15 text-gold-700">{icon}</div>}
+      <p className="text-sm font-semibold text-stone-900">{title}</p>
       {text && <p className="mt-1 max-w-sm text-sm text-stone-500">{text}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>

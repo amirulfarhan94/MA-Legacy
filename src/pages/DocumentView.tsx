@@ -6,7 +6,8 @@ import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '.
 import { waNumber } from '../lib/contact'
 import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
 import DocumentSheet from '../components/DocumentSheet'
-import { Button, Card, CardHeader, Select, StatusBadge } from '../components/ui'
+import SheetPreview from '../components/SheetPreview'
+import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
 
 const CONVERSIONS: Partial<Record<DocType, DocType[]>> = {
   quotation: ['proforma', 'invoice', 'delivery_order'],
@@ -92,120 +93,108 @@ export default function DocumentView() {
       `. — ${settings.companyName}`,
   )
 
+  const canPay = doc.type === 'invoice' && doc.status !== 'cancelled' && balance > 0
+  const canPayPo = doc.type === 'purchase_order' && doc.status !== 'cancelled' && poPaid + 0.005 < docTotals(doc).total
+  const more: MenuItem[] = [
+    ...(doc.type === 'invoice' && doc.status !== 'cancelled' && doc.status !== 'draft'
+      ? [{ label: 'Credit note', icon: FileMinus, onSelect: () => nav(`/d/${DOC_META.credit_note.path}/new?credit=${doc.id}`) }]
+      : []),
+    ...(CONVERSIONS[doc.type] ?? []).map((t) => ({
+      label: `Turn into ${DOC_META[t].label.toLowerCase()}`,
+      icon: ArrowRightLeft,
+      onSelect: () => nav(`/d/${DOC_META[t].path}/new?from=${doc.id}`),
+    })),
+    { label: 'Duplicate', icon: Copy, onSelect: duplicate },
+    { label: 'Delete', icon: Trash2, onSelect: remove, danger: true },
+  ]
+
+  const facts: [string, string, string?][] = [
+    ...(doc.type !== 'service_report' && doc.type !== 'delivery_order'
+      ? [[doc.type === 'receipt' ? 'Amount received' : 'Total', formatMoney(docAmount(doc), settings.currency)] as [string, string]]
+      : []),
+    ...(doc.type === 'invoice'
+      ? ([
+          ['Paid', formatMoney(paid, settings.currency)],
+          ...(credited > 0 ? [['Credit notes', formatMoney(credited, settings.currency)]] : []),
+          ['Balance', formatMoney(balance, settings.currency), balance > 0 ? 'text-amber-700 font-semibold' : ''],
+        ] as [string, string, string?][])
+      : []),
+    ...(doc.type === 'credit_note' && (doc.refundAmount ?? 0) > 0 ? [['Refunded', formatMoney(doc.refundAmount ?? 0, settings.currency)] as [string, string]] : []),
+    ...(doc.type === 'purchase_order' ? [['Paid to supplier', formatMoney(poPaid, settings.currency)] as [string, string]] : []),
+  ]
+
   return (
     <>
       <div className="no-print">
         <Link to={`/d/${meta.path}`} className="mb-3 inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800">
           <ArrowLeft size={15} /> {meta.plural}
         </Link>
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold tracking-tight">{doc.number}</h1>
-            <StatusBadge status={status} />
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <h1 className="font-display text-[23px] font-normal leading-tight tracking-[-0.02em] text-stone-900 sm:text-[26px]">{doc.number}</h1>
+              <StatusBadge status={status} />
+            </div>
+            <p className="mt-1 text-sm text-stone-500">
+              {meta.label} · {customerLabel(customer)} · {formatDate(doc.date)}
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="primary" onClick={() => window.print()}>
               <Printer size={15} /> Print / PDF
             </Button>
+            {customer?.phone && (
+              <a href={`https://wa.me/${waNumber(customer.phone)}?text=${waText}`} target="_blank" rel="noreferrer" className={buttonClass()}>
+                <MessageCircle size={15} className="text-[var(--good)]" /> WhatsApp
+              </a>
+            )}
             <Button onClick={() => nav(`/d/${meta.path}/${doc.id}/edit`)}>
               <Pencil size={15} /> Edit
             </Button>
-            {doc.type === 'invoice' && doc.status !== 'cancelled' && balance > 0 && (
+            {canPay && (
               <Button onClick={() => nav(`/d/${DOC_META.receipt.path}/new?invoice=${doc.id}`)}>
                 <ReceiptText size={15} /> Record payment
               </Button>
             )}
-            {doc.type === 'invoice' && doc.status !== 'cancelled' && doc.status !== 'draft' && (
-              <Button onClick={() => nav(`/d/${DOC_META.credit_note.path}/new?credit=${doc.id}`)}>
-                <FileMinus size={15} /> Credit note
-              </Button>
-            )}
-            {doc.type === 'purchase_order' && doc.status !== 'cancelled' && poPaid + 0.005 < docTotals(doc).total && (
+            {canPayPo && (
               <Button onClick={() => nav(`/transactions?po=${doc.id}`)}>
                 <Wallet size={15} /> Record payment
               </Button>
             )}
-            {CONVERSIONS[doc.type]?.map((t) => (
-              <Button key={t} onClick={() => nav(`/d/${DOC_META[t].path}/new?from=${doc.id}`)}>
-                <ArrowRightLeft size={15} /> To {DOC_META[t].label.toLowerCase()}
-              </Button>
-            ))}
-            {customer?.phone && (
-              <a
-                href={`https://wa.me/${waNumber(customer.phone)}?text=${waText}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg border border-stone-300 bg-surface px-3.5 text-sm font-medium text-stone-800 hover:bg-stone-50"
-              >
-                <MessageCircle size={15} /> WhatsApp
-              </a>
-            )}
-            <Button onClick={duplicate} title="Duplicate">
-              <Copy size={15} />
-            </Button>
-            <Button variant="danger" onClick={remove} title="Delete">
-              <Trash2 size={15} />
-            </Button>
+            <MoreMenu items={more} />
           </div>
         </div>
       </div>
 
-      <div className="grid gap-5 min-[1440px]:grid-cols-[auto_280px] print:block">
-        <div className="overflow-x-auto pb-4 print:overflow-visible print:pb-0">
-          <DocumentSheet doc={doc} customer={customer} />
+      {/* Narrow: overview, sheet, linked documents. Wide: sheet on the left, both cards on the right. */}
+      <div className="grid gap-5 min-[1440px]:grid-cols-[auto_280px] min-[1440px]:grid-rows-[auto_1fr] print:block">
+        <div className="order-2 min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-span-2 min-[1440px]:row-start-1">
+          <SheetPreview>
+            <DocumentSheet doc={doc} customer={customer} />
+          </SheetPreview>
         </div>
 
-        <div className="no-print space-y-5">
-          <Card>
-            <CardHeader title="Overview" />
-            <div className="space-y-3 p-5 text-sm">
+        <Card className="no-print order-1 min-[1440px]:col-start-2 min-[1440px]:row-start-1">
+          <CardHeader title="Overview" />
+          <div className="@container">
+            <div className="grid gap-3 p-5 text-sm @min-[520px]:grid-cols-2 @min-[520px]:gap-x-10">
               <div className="flex justify-between gap-2">
                 <span className="text-stone-500">{party}</span>
                 {customer ? (
-                  <Link to={`/${contactKind(customer) === "supplier" ? "suppliers" : "customers"}/${customer.id}`} className="text-right font-medium text-gold-700 hover:underline">
+                  <Link to={`/${contactKind(customer) === 'supplier' ? 'suppliers' : 'customers'}/${customer.id}`} className="text-right font-semibold text-gold-700 hover:underline">
                     {customerLabel(customer)}
                   </Link>
                 ) : (
                   <span>—</span>
                 )}
               </div>
-              {doc.type !== 'service_report' && doc.type !== 'delivery_order' && (
-                <div className="flex justify-between">
-                  <span className="text-stone-500">{doc.type === 'receipt' ? 'Amount received' : 'Total'}</span>
-                  <span className="tabular font-medium">{formatMoney(docAmount(doc), settings.currency)}</span>
+              {facts.map(([label, value, cls]) => (
+                <div key={label} className="flex justify-between gap-2">
+                  <span className="text-stone-500">{label}</span>
+                  <span className={`tabular ${cls || 'font-medium'}`}>{value}</span>
                 </div>
-              )}
-              {doc.type === 'invoice' && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-stone-500">Paid</span>
-                    <span className="tabular">{formatMoney(paid, settings.currency)}</span>
-                  </div>
-                  {credited > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-stone-500">Credit notes</span>
-                      <span className="tabular">{formatMoney(credited, settings.currency)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-stone-500">Balance</span>
-                    <span className={`tabular font-medium ${balance > 0 ? 'text-amber-700' : ''}`}>{formatMoney(balance, settings.currency)}</span>
-                  </div>
-                </>
-              )}
-              {doc.type === 'credit_note' && (doc.refundAmount ?? 0) > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-stone-500">Refunded</span>
-                  <span className="tabular">{formatMoney(doc.refundAmount ?? 0, settings.currency)}</span>
-                </div>
-              )}
-              {doc.type === 'purchase_order' && (
-                <div className="flex justify-between">
-                  <span className="text-stone-500">Paid to supplier</span>
-                  <span className="tabular">{formatMoney(poPaid, settings.currency)}</span>
-                </div>
-              )}
-              <label className="block pt-1">
+              ))}
+              <label className="block pt-1 @min-[520px]:col-span-2 @min-[520px]:max-w-xs">
                 <span className="mb-1 block text-xs text-stone-500">Status</span>
                 <Select
                   value={doc.status}
@@ -220,29 +209,29 @@ export default function DocumentView() {
                 </Select>
               </label>
             </div>
-          </Card>
+          </div>
+        </Card>
 
-          {related.length > 0 && (
-            <Card>
-              <CardHeader title="Linked documents" />
-              <ul className="divide-y divide-stone-100 text-sm">
-                {related.map((r) => (
-                  <li key={r.id}>
-                    <Link to={`/d/${DOC_META[r.type].path}/${r.id}`} className="flex items-center justify-between gap-2 px-5 py-2.5 hover:bg-gold-50/40">
-                      <span>
-                        <span className="font-medium">{r.number}</span>
-                        <span className="block text-xs text-stone-500">
-                          {DOC_META[r.type].label} · {formatDate(r.date)}
-                        </span>
+        {related.length > 0 && (
+          <Card className="no-print order-3 self-start min-[1440px]:col-start-2 min-[1440px]:row-start-2">
+            <CardHeader title="Linked documents" />
+            <ul className="divide-y divide-stone-200 text-sm">
+              {related.map((r) => (
+                <li key={r.id}>
+                  <Link to={`/d/${DOC_META[r.type].path}/${r.id}`} className="flex items-center justify-between gap-2 px-5 py-2.5 hover:bg-[var(--item-hover)]">
+                    <span>
+                      <span className="font-semibold">{r.number}</span>
+                      <span className="block text-xs text-stone-500">
+                        {DOC_META[r.type].label} · {formatDate(r.date)}
                       </span>
-                      <StatusBadge status={displayStatus(r, documents)} />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-        </div>
+                    </span>
+                    <StatusBadge status={displayStatus(r, documents)} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
       </div>
     </>
   )

@@ -6,7 +6,8 @@ import { AGING_BUCKETS, customerStatement } from '../lib/finance'
 import { waNumber } from '../lib/contact'
 import { customerLabel, useCustomer, useStore } from '../lib/store'
 import { ComputerGeneratedNote, PartyBlock, PaymentBlock, SheetHeader } from '../components/DocumentSheet'
-import { Button, Card, EmptyState, Field, Input } from '../components/ui'
+import SheetPreview from '../components/SheetPreview'
+import { Button, buttonClass, Card, ChipGroup, EmptyState, Field, Input } from '../components/ui'
 
 const firstOfMonth = (iso: string, monthsBack = 0) => {
   const [y, m] = iso.split('-').map(Number)
@@ -65,7 +66,12 @@ export default function Statement() {
           <ArrowLeft size={15} /> {customerLabel(customer)}
         </Link>
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <h1 className="text-xl font-semibold tracking-tight">Statement of account</h1>
+          <div>
+            <h1 className="font-display text-[23px] font-normal leading-tight tracking-[-0.02em] text-stone-900 sm:text-[26px]">Statement of account</h1>
+            <p className="mt-1 text-sm text-stone-500">
+              {periodLabel} · balance due <b className="tabular font-semibold text-stone-900">{formatMoney(st.closing, cur)}</b>
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="primary" onClick={() => window.print()}>
               <Printer size={15} /> Print / PDF
@@ -75,41 +81,39 @@ export default function Statement() {
                 href={`https://wa.me/${waNumber(customer.phone)}?text=${waText}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg border border-stone-300 bg-surface px-3.5 text-sm font-medium text-stone-800 hover:bg-stone-50"
+                className={buttonClass()}
               >
-                <MessageCircle size={15} /> WhatsApp
+                <MessageCircle size={15} className="text-[var(--good)]" /> WhatsApp
               </a>
             )}
           </div>
         </div>
         <Card className="mb-5">
-          <div className="flex flex-wrap items-end gap-3 p-4">
-            <Field label="From">
-              <Input type="date" value={from <= '1900-01-01' ? '' : from} onChange={(e) => setFrom(e.target.value || '1900-01-01')} className="w-auto" />
-            </Field>
-            <Field label="To">
-              <Input type="date" value={to} onChange={(e) => setTo(e.target.value || t)} className="w-auto" />
-            </Field>
-            <div className="flex flex-wrap gap-1.5">
-              {presets.map(([label, f, tt]) => (
-                <Button
-                  key={label}
-                  size="sm"
-                  variant={from === f && to === tt ? 'primary' : 'secondary'}
-                  onClick={() => {
-                    setFrom(f)
-                    setTo(tt)
-                  }}
-                >
-                  {label}
-                </Button>
-              ))}
+          <div className="space-y-3 p-4">
+            <ChipGroup
+              label="Period"
+              value={presets.find(([, f, tt]) => from === f && to === tt)?.[0] ?? ''}
+              onChange={(label) => {
+                const p = presets.find(([l]) => l === label)
+                if (!p) return
+                setFrom(p[1])
+                setTo(p[2])
+              }}
+              options={presets.map(([label]) => ({ value: label, label }))}
+            />
+            <div className="grid grid-cols-2 gap-3 sm:flex">
+              <Field label="From">
+                <Input type="date" value={from <= '1900-01-01' ? '' : from} onChange={(e) => setFrom(e.target.value || '1900-01-01')} className="min-w-0 sm:w-auto" />
+              </Field>
+              <Field label="To">
+                <Input type="date" value={to} onChange={(e) => setTo(e.target.value || t)} className="min-w-0 sm:w-auto" />
+              </Field>
             </div>
           </div>
         </Card>
       </div>
 
-      <div className="overflow-x-auto pb-4 print:overflow-visible print:pb-0">
+      <SheetPreview>
         <div className="sheet mx-auto flex flex-col shadow-lg">
           <SheetHeader
             title="STATEMENT OF ACCOUNT"
@@ -222,7 +226,7 @@ export default function Statement() {
           </div>
           <ComputerGeneratedNote />
         </div>
-      </div>
+      </SheetPreview>
     </>
   )
 }
