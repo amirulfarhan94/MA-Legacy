@@ -210,4 +210,8 @@ export interface Settings {
   paymentQrLabel: string
   /** Name in the dashboard greeting ("Good morning, Bos Farhan"). Blank shows no name. */
   greetingName: string
+  /** Look of printed documents and statements. */
+  documentStyle: DocumentStyle
 }
+
+export type DocumentStyle = 'classic' | 'engineering'

@@ -6,6 +6,7 @@ import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '.
 import { waNumber } from '../lib/contact'
 import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
 import DocumentSheet from '../components/DocumentSheet'
+import EngineeringSheet from '../components/EngineeringSheet'
 import SheetPreview from '../components/SheetPreview'
 import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
 
@@ -170,7 +171,7 @@ export default function DocumentView() {
       <div className="grid gap-5 min-[1440px]:grid-cols-[auto_280px] min-[1440px]:grid-rows-[auto_1fr] print:block">
         <div className="order-2 min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-span-2 min-[1440px]:row-start-1">
           <SheetPreview>
-            <DocumentSheet doc={doc} customer={customer} />
+            {settings.documentStyle === 'engineering' ? <EngineeringSheet doc={doc} customer={customer} /> : <DocumentSheet doc={doc} customer={customer} />}
           </SheetPreview>
         </div>
 

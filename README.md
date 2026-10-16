@@ -28,6 +28,10 @@ Every document prints on A4 with the company logo, amount in words (Ringgit Mala
 blocks. Use **Print / PDF** and choose "Save as PDF" to get a PDF file. Customers with a phone number also get a
 **WhatsApp** button.
 
+Pick the look of printed documents under **Settings → Document style**: **Engineering** (the default — a title
+block, mono figures, and page numbers with a running header on long documents) or **Classic** (the original look).
+Its fonts ship with the app, so it prints the same offline. Page numbers need a recent Chrome or Edge (131+).
+
 ## Install as an app (PWA)
 
 The app is a Progressive Web App: it installs to the home screen / desktop, opens full-screen without the

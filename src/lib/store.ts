@@ -55,6 +55,7 @@ export const defaultSettings: Settings = {
   paymentQrDataUrl: '',
   paymentQrLabel: 'Scan to pay with DuitNow',
   greetingName: 'Bos Farhan',
+  documentStyle: 'engineering',
 }
 
 /** Fills settings keys added in later versions (new document types, QR…) from the defaults. */

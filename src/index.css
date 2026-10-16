@@ -30,6 +30,29 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* Monospace for figures and codes on Engineering-style documents. */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url('../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
+}
+
 @theme {
   --font-sans: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   /* Headings and big figures */
@@ -316,6 +339,121 @@ body {
 
 @page { size: A4; margin: 0; }
 
+/* ---------------------------------------------------------------- Engineering document style
+   A4 at 96 dpi is 794 x 1123 px (1 mm = 3.78 px). Paper colours are fixed: never themed. */
+.sheet.eng {
+  --e-ink: #14181f;
+  --e-ink-2: #4e5663;
+  --e-ink-3: #7c8491;
+  --e-hair: #d7dbe1;
+  --e-hair-2: #e8ebef;
+  --e-tint: #f4f5f7;
+  --e-gold: #9a6a12;
+  --e-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --e-display: 'Unbounded Variable', 'Unbounded', 'Manrope Variable', ui-sans-serif, sans-serif;
+  position: relative;
+  padding: 44px 53px 34px;
+  color: var(--e-ink);
+  font: 400 10.5px/1.45 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.eng-ruler { position: absolute; top: 0; left: 0; right: 0; height: 11px;
+  background-image: linear-gradient(to right, var(--e-ink-3) 1px, transparent 1px), linear-gradient(to right, var(--e-hair) 1px, transparent 1px);
+  background-size: 37.8px 9px, 3.78px 4px; background-repeat: repeat-x; }
+.eng-ruler::after { content: 'A4 · 210 × 297 MM'; position: absolute; right: 12px; top: 12px; font: 500 6.5px/1 var(--e-mono); letter-spacing: .14em; color: var(--e-ink-3); }
+.eng-mono { font-family: var(--e-mono); }
+
+.eng-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: start; }
+.eng-co { display: flex; gap: 14px; align-items: flex-start; min-width: 0; }
+.eng-co img { width: auto; height: 52px; max-width: 120px; object-fit: contain; flex: none; }
+.eng-co-name { font: 500 15px/1.15 var(--e-display); letter-spacing: -.01em; }
+.eng-co-info { margin-top: 5px; color: var(--e-ink-2); font-size: 9px; line-height: 1.5; white-space: pre-line; }
+.eng-title { text-align: right; }
+.eng-title b { display: block; font: 300 30px/1.05 var(--e-display); letter-spacing: .14em; color: var(--e-gold); margin-right: -.14em; white-space: nowrap; }
+.eng-title b.mid { font-size: 22px; }
+.eng-title b.long { font-size: 17px; }
+.eng-title span { display: block; margin-top: 8px; font: 500 7.5px/1 var(--e-mono); letter-spacing: .16em; color: var(--e-ink-3); text-transform: uppercase; }
+
+.eng-block { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin-top: 20px; border-top: 1.4px solid var(--e-ink); border-bottom: .8px solid var(--e-ink); }
+.eng-block > div { padding: 7px 9px 8px; border-left: .6px solid var(--e-hair); min-width: 0; }
+.eng-block > div:first-child { border-left: 0; padding-left: 0; }
+.eng-lab { display: block; font: 500 6.8px/1 var(--e-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--e-ink-3); }
+.eng-v { display: block; margin-top: 5px; font: 600 11px/1.15 var(--e-mono); overflow-wrap: anywhere; }
+
+.eng-parties { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 28px; margin-top: 20px; align-items: start; }
+.eng-stack { display: grid; gap: 14px; min-width: 0; }
+.eng-cap { display: flex; align-items: center; gap: 7px; font: 600 7.2px/1 var(--e-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--e-gold); }
+.eng-cap::before { content: ''; width: 14px; height: 1px; background: var(--e-gold); }
+.eng-party-name { margin-top: 7px; font-size: 12px; font-weight: 700; }
+.eng-party-info { color: var(--e-ink-2); font-size: 10px; line-height: 1.5; white-space: pre-line; }
+.eng-due { position: relative; border: .8px solid var(--e-ink); padding: 10px 12px 11px; }
+.eng-due::before { content: ''; position: absolute; left: -.8px; top: -.8px; width: 6px; height: 6px; background: var(--e-gold); }
+.eng-due-amt { display: flex; align-items: baseline; gap: 6px; margin-top: 7px; font: 400 21px/1 var(--e-display); letter-spacing: -.02em; white-space: nowrap; }
+.eng-due-amt small { font: 500 8.5px/1 var(--e-mono); color: var(--e-ink-3); letter-spacing: .08em; }
+.eng-due-sub { margin-top: 7px; font: 500 8.2px/1.35 var(--e-mono); color: var(--e-ink-2); letter-spacing: .04em; text-transform: uppercase; }
+.eng-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; margin-top: 8px; font-size: 9.8px; }
+.eng-facts dt { color: var(--e-ink-3); }
+.eng-facts dd { margin: 0; font-weight: 600; white-space: pre-line; }
+
+.eng-items { width: 100%; border-collapse: collapse; margin-top: 20px; }
+.eng-items caption { caption-side: top; text-align: left; padding-bottom: 8px; }
+.eng-items th { padding: 7px 6px 6px; font: 500 6.8px/1 var(--e-mono); letter-spacing: .13em; text-transform: uppercase; color: var(--e-ink-2); text-align: left; border-top: 1.4px solid var(--e-ink); border-bottom: .8px solid var(--e-ink); white-space: nowrap; }
+.eng-items td { padding: 7px 6px; border-bottom: .6px solid var(--e-hair); vertical-align: top; font-size: 10.5px; }
+.eng-items th:first-child, .eng-items td:first-child { padding-left: 0; }
+.eng-items th:last-child, .eng-items td:last-child { padding-right: 0; }
+.eng-items th.r, .eng-items td.r { text-align: right; }
+.eng-items td.r { font-family: var(--e-mono); font-size: 10px; white-space: nowrap; }
+.eng-items td.idx { width: 26px; font-family: var(--e-mono); font-size: 9px; color: var(--e-ink-3); }
+.eng-items td.desc { white-space: pre-line; }
+.eng-items tr.has-subs td { border-bottom: 0; padding-bottom: 3px; }
+.eng-items tr.has-subs td.desc { font-weight: 600; }
+.eng-items tr.sub td { padding-top: 2px; padding-bottom: 4px; border-bottom: 0; font-size: 9.5px; color: var(--e-ink-2); }
+.eng-items tr.sub.last td { padding-bottom: 7px; border-bottom: .6px solid var(--e-hair); }
+.eng-items .mk { display: inline-block; min-width: 26px; padding-right: 4px; font-family: var(--e-mono); font-size: 8.5px; color: var(--e-gold); }
+.eng-items .empty td { padding: 14px 0; color: var(--e-ink-3); text-align: center; }
+
+.eng-sum { display: grid; grid-template-columns: minmax(0, 1fr) 262px; gap: 30px; margin-top: 16px; align-items: start; }
+.eng-sum.solo { grid-template-columns: minmax(0, 1fr); }
+.eng-left { display: grid; gap: 14px; min-width: 0; }
+.eng-box { border: .6px solid var(--e-hair); padding: 9px 11px 10px; }
+.eng-box p { margin: 6px 0 0; font-size: 9.6px; line-height: 1.5; color: var(--e-ink-2); white-space: pre-line; }
+.eng-pay { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.eng-pay dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 10px; margin: 7px 0 0; font-size: 9.6px; }
+.eng-pay dt { color: var(--e-ink-3); }
+.eng-pay dd { margin: 0; font-weight: 600; }
+.eng-pay dd.m { font-family: var(--e-mono); font-weight: 500; }
+.eng-qr img { display: block; width: 86px; height: 86px; object-fit: contain; border: .6px solid var(--e-hair); padding: 4px; }
+.eng-qr div { margin-top: 4px; max-width: 86px; text-align: center; font: 500 6.4px/1.25 var(--e-mono); letter-spacing: .08em; color: var(--e-ink-3); text-transform: uppercase; }
+.eng-totals .row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 10px; color: var(--e-ink-2); }
+.eng-totals .row > span:last-child { font-family: var(--e-mono); color: var(--e-ink); white-space: nowrap; }
+.eng-totals .total { margin-top: 4px; padding: 8px 0 7px; border-top: 1.4px solid var(--e-ink); border-bottom: .6px solid var(--e-hair); color: var(--e-ink); align-items: baseline; }
+.eng-totals .total > span:first-child { font: 600 8px/1 var(--e-mono); letter-spacing: .14em; }
+.eng-totals .total > span:last-child { font: 400 16px/1 var(--e-display); letter-spacing: -.01em; }
+.eng-totals .bal { margin-top: 6px; padding: 8px 10px; background: var(--e-tint); box-shadow: inset 3px 0 0 var(--e-gold); color: var(--e-ink); font-weight: 700; }
+.eng-totals .bal > span:last-child { font-weight: 600; }
+
+.eng-section { margin-top: 18px; }
+.eng-section .eng-box { margin-top: 8px; min-height: 40px; }
+.eng-receipt { display: grid; grid-template-columns: auto minmax(0, 1fr); margin-top: 20px; border-top: 1.4px solid var(--e-ink); }
+.eng-receipt dt, .eng-receipt dd { margin: 0; padding: 9px 0; border-bottom: .6px solid var(--e-hair); font-size: 11px; }
+.eng-receipt dt { padding-right: 24px; font: 500 7px/1.9 var(--e-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--e-ink-3); }
+.eng-receipt dd { font-weight: 600; }
+.eng-note { margin-top: 10px; font-size: 9.6px; color: var(--e-ink-2); }
+
+.eng-grow { flex: 1; }
+.eng-terms { margin-top: 18px; max-width: 64ch; }
+.eng-terms p { margin: 6px 0 0; font-size: 9.4px; color: var(--e-ink-2); line-height: 1.5; white-space: pre-line; }
+.eng-sign { margin-top: 18px; border: .8px solid var(--e-ink); padding: 10px 12px 12px; }
+.eng-sign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; margin-top: 12px; }
+.eng-sign-grid div { border-bottom: .8px solid var(--e-ink-3); height: 22px; }
+.eng-sign-grid div.tall { height: 44px; }
+.eng-sign-grid span { display: block; margin-top: 4px; font: 500 6.8px/1 var(--e-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--e-ink-3); }
+.eng-foot { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-top: 14px; padding-top: 8px; border-top: .8px solid var(--e-ink); font-size: 8.4px; color: var(--e-ink-3); }
+.eng-foot b { font: 500 7.5px/1 var(--e-mono); letter-spacing: .14em; color: var(--e-ink-2); white-space: nowrap; }
+
+/* Paper: page numbers and the running head come from @page rules each sheet writes for itself. */
+@page eng { size: A4; margin: 10mm 14mm 14mm; }
+
 @media print {
   /* Paper is always light, even when the app is in dark mode. */
   :root, .dark { color-scheme: light; }
@@ -325,6 +463,10 @@ body {
   .print-area { margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
   .glass, .glass-strong { background: #fff !important; box-shadow: none !important; border-color: #d9dde3 !important; }
   .sheet { box-shadow: none !important; margin: 0 !important; min-height: 296mm; }
+  .sheet.eng { page: eng; width: 182mm; min-height: 268mm; padding: 16px 0 0; }
+  .eng-items thead { display: table-header-group; }
+  .eng-items tr, .eng-sum, .eng-box, .eng-sign, .eng-due, .eng-receipt { break-inside: avoid; }
+  .eng-foot b { display: none; }
   /* The phone preview scales the sheet down; paper always gets it at full size. */
   .sheet-fit { height: auto !important; overflow: visible !important; padding: 0 !important; }
   .sheet-fit > div { transform: none !important; margin: 0 !important; }
