@@ -88,6 +88,9 @@ export default function SettingsPage() {
           <Field label="Company name" className="sm:col-span-2">
             <Input {...text('companyName')} />
           </Field>
+          <Field label="Your name on the dashboard" className="sm:col-span-2" hint="Shown in the greeting, e.g. “Good morning, Bos Farhan”. Leave blank for no name.">
+            <Input {...text('greetingName')} placeholder="e.g. Bos Farhan" />
+          </Field>
           <Field label="SSM registration no.">
             <Input {...text('regNo')} placeholder="e.g. 202601012345 (1234567-X)" />
           </Field>

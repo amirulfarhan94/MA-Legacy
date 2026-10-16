@@ -13,16 +13,16 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: 'sm' | 'md' }) {
   const v: Record<Variant, string> = {
-    primary: 'bg-gold-600 text-white hover:bg-gold-700 dark:hover:bg-gold-500 shadow-sm',
-    secondary: 'bg-surface text-stone-800 border border-stone-300 hover:bg-stone-50',
-    ghost: 'text-stone-600 hover:bg-stone-100',
-    danger: 'bg-surface text-red-700 border border-red-200 hover:bg-red-50',
+    primary: 'btn-gold',
+    secondary: 'border border-[var(--btn-line)] bg-[var(--btn)] text-stone-900 hover:bg-stone-100',
+    ghost: 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+    danger: 'border border-red-200 bg-[var(--btn)] text-red-700 hover:bg-red-50',
   }
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap',
-        size === 'sm' ? 'h-8 px-2.5 text-xs' : 'h-9 px-3.5 text-sm',
+        'inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap',
+        size === 'sm' ? 'h-8 px-3 text-xs' : 'h-9 px-4 text-sm',
         v[variant],
         className,
       )}
@@ -35,7 +35,7 @@ export function Button({
 const withWidth = (className?: string) => (className && /(^|\s)w-/.test(className) ? '' : 'w-full')
 
 const fieldCls =
-  'rounded-lg border border-stone-300 bg-surface px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-200'
+  'rounded-xl border border-stone-300 bg-[var(--field)] px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-400/25'
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cx(fieldCls, withWidth(className), 'h-9 py-0', className)} {...props} />
@@ -96,7 +96,7 @@ export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectE
 export function Field({ label, children, className, hint }: { label: string; children: ReactNode; className?: string; hint?: string }) {
   return (
     <label className={cx('block', className)}>
-      <span className="mb-1 block text-xs font-medium text-stone-600">{label}</span>
+      <span className="mb-1 block text-xs font-semibold text-stone-600">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-stone-500">{hint}</span>}
     </label>
@@ -104,14 +104,14 @@ export function Field({ label, children, className, hint }: { label: string; chi
 }
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cx('min-w-0 rounded-xl border border-stone-200 bg-surface shadow-sm', className)}>{children}</div>
+  return <div className={cx('glass min-w-0 rounded-[22px]', className)}>{children}</div>
 }
 
 export function CardHeader({ title, action, subtitle }: { title: ReactNode; subtitle?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-stone-100 px-5 py-3.5">
+    <div className="flex items-start justify-between gap-3 border-b border-stone-200 px-5 py-4">
       <div>
-        <h2 className="text-sm font-semibold text-stone-900">{title}</h2>
+        <h2 className="font-display text-[14.5px] font-medium tracking-[-0.01em] text-stone-900">{title}</h2>
         {subtitle && <p className="mt-0.5 text-xs text-stone-500">{subtitle}</p>}
       </div>
       {action}
@@ -123,7 +123,7 @@ export function PageHeader({ title, subtitle, actions }: { title: ReactNode; sub
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-stone-900">{title}</h1>
+        <h1 className="font-display text-[23px] font-normal leading-tight tracking-[-0.02em] text-stone-900 sm:text-[26px]">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-stone-500">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -173,16 +173,16 @@ export function EmptyState({ icon, title, text, action }: { icon?: ReactNode; ti
 export function Modal({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:items-center" onMouseDown={onClose}>
-      <div className="w-full max-w-lg rounded-xl bg-surface shadow-xl" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-stone-100 px-5 py-3.5">
-          <h2 className="text-base font-semibold">{title}</h2>
-          <button onClick={onClose} className="rounded p-1 text-stone-500 hover:bg-stone-100" aria-label="Close">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/45 p-4 backdrop-blur-sm sm:items-center" onMouseDown={onClose}>
+      <div className="glass-strong w-full max-w-lg rounded-[26px]" role="dialog" aria-modal="true" aria-label={title} onMouseDown={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+          <h2 className="font-display text-base font-medium tracking-[-0.01em]">{title}</h2>
+          <button onClick={onClose} className="rounded-full p-1.5 text-stone-500 hover:bg-stone-100" aria-label="Close">
             <X size={18} />
           </button>
         </div>
         <div className="px-5 py-4">{children}</div>
-        {footer && <div className="flex justify-end gap-2 border-t border-stone-100 px-5 py-3">{footer}</div>}
+        {footer && <div className="flex justify-end gap-2 border-t border-stone-200 px-5 py-3">{footer}</div>}
       </div>
     </div>
   )
@@ -190,7 +190,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
 
 export const tableCls = {
   table: 'w-full text-sm',
-  th: 'px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-stone-500 bg-stone-50 border-b border-stone-200',
+  th: 'px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-stone-500 bg-stone-50 border-b border-stone-200',
   td: 'px-4 py-3 border-b border-stone-100 align-top',
   tr: 'hover:bg-gold-50/40 cursor-pointer',
 }

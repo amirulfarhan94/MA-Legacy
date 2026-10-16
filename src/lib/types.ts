@@ -208,4 +208,6 @@ export interface Settings {
   /** DuitNow / bank QR image shown on invoices and proforma invoices. */
   paymentQrDataUrl: string
   paymentQrLabel: string
+  /** Name in the dashboard greeting ("Good morning, Bos Farhan"). Blank shows no name. */
+  greetingName: string
 }

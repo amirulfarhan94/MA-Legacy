@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { docTotals, invoiceBalance, invoicePaymentState, displayStatus } from './calc'
-import { agingBucket, agingByCustomer, cashMovements, customerStatement, monthlyPnL } from './finance'
+import { agingBucket, agingByCustomer, cashMovements, customerStatement, monthlyPnL, monthlyTotals, monthToDate, weeklyTotals } from './finance'
 import type { Document, Transaction } from './types'
 
 const doc = (over: Partial<Document>): Document => ({
@@ -110,5 +110,38 @@ describe('monthly P&L', () => {
     const rows = monthlyPnL('2026', [inv, cn, r], [t])
     expect(rows[2]).toMatchObject({ month: '2026-03', sales: 900, moneyIn: -100, moneyOut: 0, net: -100 })
     expect(rows[3]).toMatchObject({ month: '2026-04', sales: 0, moneyIn: 900, moneyOut: 250, net: 650 })
+  })
+})
+
+describe('dashboard figures', () => {
+  const e = (date: string, amount: number) => ({ date, amount })
+
+  it('compares this month with the same days of last month', () => {
+    const r = monthToDate([e('2026-10-02', 100), e('2026-10-15', 50), e('2026-09-10', 80), e('2026-09-20', 500), e('2026-08-01', 999)], '2026-10-16')
+    expect(r).toEqual({ current: 150, previous: 80, previousMonth: '2026-09', upToDay: 16 })
+  })
+
+  it('caps the comparison at the length of last month', () => {
+    const r = monthToDate([e('2026-02-28', 10), e('2026-03-31', 5)], '2026-03-31')
+    expect(r).toMatchObject({ current: 5, previous: 10, previousMonth: '2026-02', upToDay: 28 })
+  })
+
+  it('crosses the year for January', () => {
+    expect(monthToDate([e('2025-12-03', 7)], '2026-01-05')).toMatchObject({ previous: 7, previousMonth: '2025-12' })
+  })
+
+  it('totals the last 12 months', () => {
+    const m = monthlyTotals([e('2026-10-01', 1), e('2025-11-30', 2), e('2025-10-31', 99)], 12, '2026-10-16')
+    expect(m).toHaveLength(12)
+    expect(m[0]).toEqual({ key: '2025-11', value: 2 })
+    expect(m[11]).toEqual({ key: '2026-10', value: 1 })
+  })
+
+  it('totals 7-day weeks ending today', () => {
+    const w = weeklyTotals([e('2026-10-16', 1), e('2026-10-10', 2), e('2026-10-09', 4), e('2026-07-17', 8), e('2026-07-16', 16), e('2026-10-17', 32)], 13, '2026-10-16')
+    expect(w).toHaveLength(13)
+    expect(w[12]).toEqual({ start: '2026-10-10', end: '2026-10-16', value: 3 })
+    expect(w[11]).toMatchObject({ end: '2026-10-09', value: 4 })
+    expect(w[0]).toMatchObject({ start: '2026-07-18', value: 0 })
   })
 })

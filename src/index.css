@@ -3,8 +3,37 @@
 /* Dark mode is class-based so the in-app toggle can override the phone setting. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* App fonts ship with the app (latin only) so they work offline from the first launch.
+   Printed documents keep Inter, loaded in index.html (see .sheet below). */
+@font-face {
+  font-family: 'Manrope Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url('../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Manrope Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url('../node_modules/@fontsource-variable/manrope/files/manrope-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Unbounded Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 900;
+  src: url('../node_modules/@fontsource-variable/unbounded/files/unbounded-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Headings and big figures */
+  --font-display: 'Unbounded Variable', 'Unbounded', 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
   --color-gold-50: #fbf6ec;
   --color-gold-100: #f5e9cf;
   --color-gold-200: #ebd29d;
@@ -18,54 +47,110 @@
   --color-ink-900: #16140f;
   --color-ink-800: #211e17;
   --color-ink-700: #2e2a21;
-  --color-surface: #ffffff;
-  --color-canvas: #f7f6f3;
+  /* Spatial Glass neutrals. Fills and lines are see-through so they sit on glass. */
+  --color-stone-50: rgb(15 30 50 / 0.035);
+  --color-stone-100: rgb(15 30 50 / 0.06);
+  --color-stone-200: rgb(15 30 50 / 0.1);
+  --color-stone-300: rgb(15 30 50 / 0.17);
+  --color-stone-400: #8a94a3;
+  --color-stone-500: #5b6779;
+  --color-stone-600: #445064;
+  --color-stone-700: #333d4e;
+  --color-stone-800: #1d2533;
+  --color-stone-900: #0b1220;
+  --color-surface: rgb(255 255 255 / 0.66);
+  --color-canvas: #e6ebf0;
+  --color-accent: #0b8e9a;
 }
 
-:root { --chart-bar: #a8741a; }
+:root {
+  --chart-bar: #a8741a;
+  /* glass surfaces */
+  --glass: rgb(255 255 255 / 0.62);
+  --glass-strong: rgb(255 255 255 / 0.9);
+  --glass-line: rgb(255 255 255 / 0.85);
+  --glass-hi: rgb(255 255 255 / 0.95);
+  --glass-shadow: 0 18px 50px rgb(20 35 60 / 0.12);
+  --item-hover: rgb(15 30 50 / 0.05);
+  --item-active: rgb(255 255 255 / 0.85);
+  --item-active-shadow: 0 4px 14px rgb(20 35 60 / 0.08);
+  --btn: rgb(15 30 50 / 0.05);
+  --btn-line: rgb(15 30 50 / 0.12);
+  --field: rgb(255 255 255 / 0.75);
+  --scrim: rgb(20 30 45 / 0.32);
+  /* ambient light behind the app */
+  --ambient-1: rgb(212 161 71 / 0.36);
+  --ambient-2: rgb(11 142 154 / 0.24);
+  --ambient-3: rgb(212 161 71 / 0.16);
+  --on-gold: #17110a;
+  --name-a: #b07a22;
+  --name-b: #7a520f;
+  --good: #0ca30c;
+  --critical: #d03b3b;
+}
 
 body {
   background: var(--color-canvas);
   color: var(--color-stone-900);
 }
 
-.dark {
-  --color-stone-50: #262219;
-  --color-stone-100: #2e2a22;
-  --color-stone-200: #3a352c;
-  --color-stone-300: #4a443a;
-  --color-stone-400: #7d766a;
-  --color-stone-500: #a39c8f;
-  --color-stone-600: #bdb6a9;
-  --color-stone-700: #d3cdc2;
-  --color-stone-800: #e4dfd6;
-  --color-stone-900: #f1ede6;
-  --color-gold-50: #2a2214;
-  --color-gold-100: #3a2e18;
-  --color-gold-200: #5a4520;
-  --color-gold-700: #e0b96a;
-  --color-emerald-50: #10281d;
-  --color-emerald-700: #6ee7b7;
-  --color-emerald-800: #6ee7b7;
-  --color-sky-50: #0f2330;
-  --color-sky-800: #7dd3fc;
-  --color-amber-50: #2b2110;
-  --color-amber-700: #fcd34d;
-  --color-amber-800: #fcd34d;
-  --color-orange-50: #2d1b0f;
-  --color-orange-800: #fdba74;
-  --color-red-50: #2e1414;
-  --color-red-200: #5b2424;
-  --color-red-700: #fca5a5;
-  --color-surface: #1f1c17;
-  --color-canvas: #15130f;
-  --chart-bar: #bf8a2c;
-  color-scheme: dark;
+/* Dark tokens are for the screen only: anything printed (reports, lists) comes out light on paper. */
+@media screen {
+  .dark {
+    --color-stone-50: rgb(255 255 255 / 0.04);
+    --color-stone-100: rgb(255 255 255 / 0.07);
+    --color-stone-200: rgb(255 255 255 / 0.1);
+    --color-stone-300: rgb(255 255 255 / 0.17);
+    --color-stone-400: #7c8794;
+    --color-stone-500: #9aa5b2;
+    --color-stone-600: #aeb8c4;
+    --color-stone-700: #c9d1da;
+    --color-stone-800: #e0e6ec;
+    --color-stone-900: #f3f6fa;
+    --color-gold-50: rgb(212 161 71 / 0.1);
+    --color-gold-100: rgb(212 161 71 / 0.16);
+    --color-gold-200: rgb(212 161 71 / 0.3);
+    --color-gold-700: #e8c27a;
+    --color-emerald-50: #10281d;
+    --color-emerald-700: #6ee7b7;
+    --color-emerald-800: #6ee7b7;
+    --color-sky-50: #0f2330;
+    --color-sky-800: #7dd3fc;
+    --color-amber-50: #2b2110;
+    --color-amber-700: #fcd34d;
+    --color-amber-800: #fcd34d;
+    --color-orange-50: #2d1b0f;
+    --color-orange-800: #fdba74;
+    --color-red-50: #2e1414;
+    --color-red-200: #5b2424;
+    --color-red-700: #fca5a5;
+    --color-surface: rgb(20 25 33 / 0.62);
+    --color-canvas: #04060a;
+    --color-accent: #1ca4b0;
+    --chart-bar: #bf8a2c;
+    --glass: rgb(20 25 33 / 0.56);
+    --glass-strong: rgb(13 17 23 / 0.9);
+    --glass-line: rgb(255 255 255 / 0.1);
+    --glass-hi: rgb(255 255 255 / 0.1);
+    --glass-shadow: 0 24px 60px rgb(0 0 0 / 0.42);
+    --item-hover: rgb(255 255 255 / 0.05);
+    --item-active: rgb(255 255 255 / 0.08);
+    --item-active-shadow: none;
+    --btn: rgb(255 255 255 / 0.06);
+    --btn-line: rgb(255 255 255 / 0.12);
+    --field: rgb(255 255 255 / 0.045);
+    --scrim: rgb(2 4 8 / 0.55);
+    --ambient-1: rgb(212 161 71 / 0.34);
+    --ambient-2: rgb(28 164 176 / 0.3);
+    --ambient-3: rgb(212 161 71 / 0.14);
+    --name-a: #f6dda0;
+    --name-b: #d4a147;
+    color-scheme: dark;
+  }
 }
 
-/* The sidebar is designed dark-on-light-tokens, and printed documents are always white. */
-.dark .theme-light,
-.dark .sheet {
+/* Printed documents keep their original look in both themes: white paper, Inter, warm greys. */
+.sheet {
   --color-stone-50: oklch(98.5% 0.001 106.423);
   --color-stone-100: oklch(97% 0.001 106.424);
   --color-stone-200: oklch(92.3% 0.003 48.717);
@@ -95,12 +180,126 @@ body {
   --color-red-700: oklch(50.5% 0.213 27.518);
   --color-surface: #ffffff;
   --color-canvas: #f7f6f3;
-  --chart-bar: #a8741a;
   color-scheme: light;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
-
 .tabular { font-variant-numeric: tabular-nums; }
+
+@layer components {
+  /* ---------------------------------------------------------------- glass */
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-line);
+    box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+  }
+  /* For layers above content (bars, drawer, dialogs): nearly opaque, blurred behind. */
+  .glass-strong {
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-line);
+    box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+  }
+  .btn-gold {
+    color: var(--on-gold);
+    background: radial-gradient(circle at 30% 20%, #f6dda0, #d4a147 60%, #b07e2a);
+    box-shadow: 0 8px 22px rgb(212 161 71 / 0.32), inset 0 1px 0 rgb(255 255 255 / 0.55);
+  }
+  .btn-gold:hover { filter: brightness(1.06); }
+  .greet-name {
+    color: var(--name-b);
+    background: linear-gradient(100deg, var(--name-a), var(--name-b));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ---------------------------------------------------------------- ambient light */
+  .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .ambient i { position: absolute; border-radius: 9999px; will-change: transform; transition: opacity 1.5s ease; }
+  .ambient .a1 { width: 70vmax; height: 70vmax; left: -26vmax; top: -34vmax; background: radial-gradient(closest-side, var(--ambient-1), transparent); animation: amb1 28s ease-in-out infinite alternate; }
+  .ambient .a2 { width: 76vmax; height: 76vmax; right: -32vmax; top: 10%; background: radial-gradient(closest-side, var(--ambient-2), transparent); animation: amb2 34s ease-in-out infinite alternate; }
+  .ambient .a3 { width: 60vmax; height: 60vmax; left: 22%; bottom: -38vmax; background: radial-gradient(closest-side, var(--ambient-3), transparent); animation: amb3 40s ease-in-out infinite alternate; }
+  /* The light follows the time of day: warmer in the morning, cooler at night. */
+  [data-daypart='morning'] .ambient .a2 { opacity: 0.6; }
+  [data-daypart='evening'] .ambient .a1 { opacity: 0.5; }
+  [data-daypart='evening'] .ambient .a3 { opacity: 0.45; }
+
+  /* ---------------------------------------------------------------- shell */
+  .shell { min-height: 100vh; }
+  @media (min-width: 640px) {
+    .shell { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 16px; padding: 16px; transition: grid-template-columns 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .shell > .side { position: sticky; top: 16px; height: calc(100vh - 32px); height: calc(100dvh - 32px); padding: 14px 10px; border-radius: 26px; }
+  }
+  @media (min-width: 1024px) {
+    .shell { grid-template-columns: 252px minmax(0, 1fr); gap: 24px; padding: 20px; }
+    .shell > .side { top: 20px; height: calc(100vh - 40px); height: calc(100dvh - 40px); padding: 18px 14px; }
+    .shell.is-compact { grid-template-columns: 84px minmax(0, 1fr); }
+    .shell.is-compact > .side { padding: 18px 10px; }
+  }
+
+  /* The sidebar and the phone menu are size containers: a narrow one (the rail) shows icons only. */
+  .side { container: side / inline-size; display: flex; flex-direction: column; min-height: 0; }
+  .side-brand { display: flex; flex: none; align-items: center; gap: 10px; padding: 4px 8px 14px; }
+  .side-brand img { height: 38px; width: auto; flex: none; }
+  .side-nav { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-height: 0; margin: 0 -4px; padding: 0 4px; overflow-y: auto; scrollbar-width: none; }
+  .side-nav::-webkit-scrollbar { display: none; }
+  .side-nav.is-clipped { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); }
+  .side-group { flex: none; margin: 12px 12px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-stone-500); }
+  .side-item { position: relative; display: flex; flex: none; align-items: center; gap: 12px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 13px; background: transparent; color: var(--color-stone-600); font-size: 13.5px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: background-color 0.15s, color 0.15s; }
+  .side-item:hover { background: var(--item-hover); color: var(--color-stone-900); }
+  .side-item.active { background: var(--item-active); color: var(--color-stone-900); box-shadow: var(--item-active-shadow), inset 0 1px 0 var(--glass-hi); }
+  .side-item.active > svg { color: var(--color-gold-700); }
+  .side-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .side-count { margin-left: auto; min-width: 22px; padding: 3px 7px; border-radius: 9999px; border: 1px solid var(--btn-line); background: var(--btn); color: var(--color-stone-900); font-size: 11px; font-weight: 700; line-height: 1; text-align: center; }
+  .side-foot { display: grid; flex: none; gap: 6px; margin-top: 12px; }
+  .side-backup { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 16px; border: 1px solid var(--btn-line); background: var(--btn); }
+  .side-tools { display: flex; align-items: center; gap: 6px; }
+  .side-tools > .full-only { flex: 1 1 auto; min-width: 0; }
+  .side-collapse { flex: none; width: 40px; justify-content: center; padding: 0; }
+  .theme-label { display: none; }
+  @container side (min-width: 250px) { .theme-label { display: inline; } }
+
+  /* Phone menu: the same sidebar, sliding in from the left. */
+  .drawer { position: fixed; inset-block: 0; left: 0; z-index: 50; width: min(304px, 86vw); border-left: 0; border-radius: 0 26px 26px 0; padding: calc(16px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom)); transform: translateX(-104%); visibility: hidden; transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.38s; }
+  .drawer.is-open { transform: none; visibility: visible; transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .scrim { position: fixed; inset: 0; z-index: 40; background: var(--scrim); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0s linear 0.3s; }
+  .scrim.is-open { opacity: 1; visibility: visible; transition: opacity 0.3s; }
+  .rail-only { display: none; }
+  @container side (max-width: 120px) {
+    .side-brand { justify-content: center; padding: 2px 0 10px; }
+    .side-brand img { height: 32px; }
+    .side-label, .full-only { display: none; }
+    .rail-only { display: flex; }
+    .side-item { justify-content: center; min-height: 40px; padding: 0; }
+    .side-count { position: absolute; top: 3px; right: 8px; min-width: 17px; padding: 2px 4px; font-size: 9.5px; }
+    .side-group { height: 1px; margin: 6px 14px; background: var(--color-stone-200); font-size: 0; }
+    .side-tools { flex-direction: column; align-items: stretch; }
+    .side-collapse { width: auto; }
+  }
+  /* Laptops with short screens: tighter rows so the whole menu fits without scrolling. */
+  @media (min-width: 640px) and (max-height: 860px) {
+    .shell > .side { padding-top: 14px; padding-bottom: 14px; }
+    .shell > .side .side-item { min-height: 32px; }
+    .shell > .side .side-group { margin-top: 8px; }
+    .shell > .side .side-brand { padding-bottom: 10px; }
+    .shell > .side .side-brand img { height: 32px; }
+  }
+  @media (min-width: 640px) and (max-height: 780px) {
+    .shell > .side .side-item { min-height: 30px; }
+    .shell > .side .side-group { margin-top: 6px; }
+    .shell > .side .side-backup { padding: 8px 10px; }
+  }
+}
+
+@keyframes amb1 { to { transform: translate(8vmax, 6vmax) scale(1.1); } }
+@keyframes amb2 { to { transform: translate(-9vmax, 5vmax) scale(0.92); } }
+@keyframes amb3 { to { transform: translate(6vmax, -8vmax) scale(1.12); } }
+@media (prefers-reduced-motion: reduce) {
+  .ambient i { animation: none; }
+  .shell, .drawer, .drawer.is-open, .scrim, .scrim.is-open { transition: none; }
+}
 
 /* Printable A4 sheet */
 .sheet {
@@ -120,7 +319,9 @@ body {
   :root, .dark { color-scheme: light; }
   html, body { background: white !important; }
   .no-print { display: none !important; }
+  .shell { display: block !important; padding: 0 !important; }
   .print-area { margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+  .glass, .glass-strong { background: #fff !important; box-shadow: none !important; border-color: #d9dde3 !important; }
   .sheet { box-shadow: none !important; margin: 0 !important; min-height: 296mm; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

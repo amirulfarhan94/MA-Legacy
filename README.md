@@ -15,7 +15,10 @@ Any priced document can switch on **discount % and SST per item**; the document-
 lines before tax, and the totals show tax per rate. Upload a **DuitNow / bank QR** in Settings to print it on
 invoices, proforma invoices and statements.
 
-Plus a **dashboard** (collected this month, outstanding, open quotations, net for the year, 12-month collection chart),
+Plus a **dashboard** (a greeting that follows the time of day — set your name in Settings — quick create buttons with
+the next document number, collected this month, outstanding, open quotations, net for the year, and a money-collected
+chart for 12 months, this year or 90 days), **search** (Ctrl K / ⌘K or the search bar: documents, customers, suppliers,
+pages and "new …" shortcuts),
 **transactions** (receipts, refunds and manual income/expense entries, date filters, CSV export), **customer and
 supplier records** (every document per contact, billed / paid / outstanding), a printable **statement of account** per
 customer (running balance and aging), and **reports** (outstanding invoices by age, monthly profit & loss, expenses by

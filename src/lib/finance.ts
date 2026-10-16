@@ -1,4 +1,4 @@
-import { docTotals, invoiceBalance, isIssuedCredit, today } from './calc'
+import { addDays, docTotals, invoiceBalance, isIssuedCredit, today } from './calc'
 import type { Document, PaymentMethod, Transaction } from './types'
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
@@ -315,4 +315,61 @@ export function contactTotals(contactId: string, kind: 'customer' | 'supplier', 
   const paid = mine.filter((d) => d.type === 'receipt' && d.status !== 'cancelled').reduce((s, d) => s + (Number(d.amountPaid) || 0), 0)
   const outstanding = mine.filter(isOpenInvoice).reduce((s, d) => s + invoiceBalance(d, docs), 0)
   return { billed: round2(invoiced - credited), paid: round2(paid), outstanding: round2(outstanding) }
+}
+
+// ---------------------------------------------------------------- dashboard
+
+export interface DatedAmount {
+  date: string
+  amount: number
+}
+
+const monthKeyOf = (y: number, m0: number) => {
+  const d = new Date(y, m0, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+/**
+ * Money in this month, against the same days of last month (the 1st up to today's day,
+ * capped at last month's length), so early in the month the comparison is like for like.
+ */
+export function monthToDate(entries: DatedAmount[], asOf = today()) {
+  const [y, m, d] = asOf.split('-').map(Number)
+  const thisKey = asOf.slice(0, 7)
+  const previousMonth = monthKeyOf(y, m - 2)
+  const upToDay = Math.min(d, new Date(y, m - 1, 0).getDate())
+  let current = 0
+  let previous = 0
+  for (const e of entries) {
+    if (e.date.startsWith(thisKey)) current += e.amount
+    else if (e.date.startsWith(previousMonth) && Number(e.date.slice(8, 10)) <= upToDay) previous += e.amount
+  }
+  return { current: round2(current), previous: round2(previous), previousMonth, upToDay }
+}
+
+/** Money in per calendar month for the `count` months ending with the month of `asOf`. */
+export function monthlyTotals(entries: DatedAmount[], count = 12, asOf = today()): { key: string; value: number }[] {
+  const [y, m] = asOf.split('-').map(Number)
+  const keys = Array.from({ length: count }, (_, i) => monthKeyOf(y, m - count + i))
+  const sums = new Map(keys.map((k) => [k, 0]))
+  for (const e of entries) {
+    const k = e.date.slice(0, 7)
+    if (sums.has(k)) sums.set(k, sums.get(k)! + e.amount)
+  }
+  return keys.map((key) => ({ key, value: round2(sums.get(key)!) }))
+}
+
+/** Money in per 7-day week for the last `weeks` weeks; the last week ends on `asOf`. */
+export function weeklyTotals(entries: DatedAmount[], weeks = 13, asOf = today()): { start: string; end: string; value: number }[] {
+  const out = Array.from({ length: weeks }, (_, i) => {
+    const end = addDays(asOf, -7 * (weeks - 1 - i))
+    return { start: addDays(end, -6), end, value: 0 }
+  })
+  for (const e of entries) {
+    const back = daysBetween(e.date, asOf)
+    if (back < 0) continue
+    const idx = weeks - 1 - Math.floor(back / 7)
+    if (idx >= 0) out[idx].value += e.amount
+  }
+  return out.map((w) => ({ ...w, value: round2(w.value) }))
 }
