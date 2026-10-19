@@ -3,12 +3,13 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRightLeft, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
 import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid } from '../lib/calc'
 import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
+import { brandName, brandOf } from '../lib/brand'
 import { waNumber } from '../lib/contact'
 import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
 import DocumentSheet from '../components/DocumentSheet'
 import EngineeringSheet from '../components/EngineeringSheet'
 import SheetPreview from '../components/SheetPreview'
-import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
+import { BrandBadge, Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
 
 const CONVERSIONS: Partial<Record<DocType, DocType[]>> = {
   quotation: ['proforma', 'invoice', 'delivery_order'],
@@ -24,6 +25,7 @@ export default function DocumentView() {
   const doc = useStore((s) => s.documents.find((d) => d.id === id))
   const documents = useStore((s) => s.documents)
   const settings = useStore((s) => s.settings)
+  const brands = useStore((s) => s.brands)
   const transactions = useStore((s) => s.transactions)
   const saveDocument = useStore((s) => s.saveDocument)
   const deleteDocument = useStore((s) => s.deleteDocument)
@@ -52,6 +54,7 @@ export default function DocumentView() {
   if (!doc) return <Navigate to={`/d/${typePath}`} replace />
 
   const meta = DOC_META[doc.type]
+  const brand = brandOf(doc, brands)
   const status = displayStatus(doc, documents)
   const paid = doc.type === 'invoice' ? invoicePaid(doc.id, documents) : 0
   const credited = doc.type === 'invoice' ? invoiceCredited(doc.id, documents) : 0
@@ -60,7 +63,7 @@ export default function DocumentView() {
   const party = isPurchaseDoc(doc.type) ? 'Supplier' : 'Customer'
 
   const duplicate = () => {
-    const fresh = newDocument(doc.type, doc.customerId)
+    const fresh = newDocument(doc.type, doc.customerId, doc.brandId)
     const copy: Document = {
       ...doc,
       id: fresh.id,
@@ -91,7 +94,7 @@ export default function DocumentView() {
   const waText = encodeURIComponent(
     `Hi ${customer?.name || customerLabel(customer)}, here is ${meta.label} ${doc.number}` +
       (doc.type === 'service_report' || doc.type === 'delivery_order' ? '' : ` for ${formatMoney(docAmount(doc), settings.currency)}`) +
-      `. — ${settings.companyName}`,
+      `. — ${brandName(brand, settings)}`,
   )
 
   const canPay = doc.type === 'invoice' && doc.status !== 'cancelled' && balance > 0
@@ -135,6 +138,7 @@ export default function DocumentView() {
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <h1 className="font-display text-[23px] font-normal leading-tight tracking-[-0.02em] text-stone-900 sm:text-[26px]">{doc.number}</h1>
               <StatusBadge status={status} />
+              {brands.length > 1 && <BrandBadge name={brandName(brand, settings)} primary={brand.primaryColor} accent={brand.accentColor} />}
             </div>
             <p className="mt-1 text-sm text-stone-500">
               {meta.label} · {customerLabel(customer)} · {formatDate(doc.date)}

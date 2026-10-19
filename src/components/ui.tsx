@@ -243,6 +243,16 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 /** Single-choice filter as a row of chips (scrolls sideways on phones). */
+/** Which brand a document was issued under: the brand's colours in the dot, its name beside it. */
+export function BrandBadge({ name, primary, accent }: { name: string; primary: string; accent: string }) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--btn-line)] bg-[var(--btn)] px-2 py-0.5 text-xs font-semibold text-stone-700">
+      <i className="size-2 shrink-0 rounded-full" style={{ background: primary, boxShadow: `0 0 0 1.5px ${accent}` }} />
+      <span className="truncate">{name}</span>
+    </span>
+  )
+}
+
 export function ChipGroup<T extends string>({
   label,
   value,

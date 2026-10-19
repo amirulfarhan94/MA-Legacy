@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Plus, Search, X } from 'lucide-react'
 import { displayStatus, docAmount, formatMoney, monthLabel } from '../lib/calc'
+import { brandName, brandOf } from '../lib/brand'
 import { customerLabel, useStore } from '../lib/store'
 import { DOC_META, docTypeFromPath } from '../lib/types'
 import DocumentTable from '../components/DocumentTable'
@@ -13,9 +14,12 @@ export default function DocumentList() {
   const type = docTypeFromPath(typePath)
   const documents = useStore((s) => s.documents)
   const customers = useStore((s) => s.customers)
-  const currency = useStore((s) => s.settings.currency)
+  const settings = useStore((s) => s.settings)
+  const brands = useStore((s) => s.brands)
+  const currency = settings.currency
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
+  const [brand, setBrand] = useState('')
   const [month, setMonth] = useState('')
   const nav = useNavigate()
 
@@ -28,12 +32,17 @@ export default function DocumentList() {
     for (const { status } of ofType) counts.set(status, (counts.get(status) ?? 0) + 1)
     return [...counts.entries()].sort((a, b) => STATUS_ORDER.indexOf(a[0]) - STATUS_ORDER.indexOf(b[0]))
   }, [ofType])
+  const brandCounts = useMemo(
+    () => brands.map((b) => ({ b, n: ofType.filter(({ d }) => brandOf(d, brands).id === b.id).length })),
+    [brands, ofType],
+  )
   const months = useMemo(() => [...new Set(ofType.map(({ d }) => d.date.slice(0, 7)))].sort().reverse(), [ofType])
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return ofType
       .filter((r) => !status || r.status === status)
+      .filter(({ d }) => !brand || brandOf(d, brands).id === brand)
       .filter(({ d }) => !month || d.date.startsWith(month))
       .filter(({ d }) => {
         if (!needle) return true
@@ -42,13 +51,13 @@ export default function DocumentList() {
       })
       .map(({ d }) => d)
       .sort((a, b) => b.date.localeCompare(a.date) || b.number.localeCompare(a.number))
-  }, [ofType, status, month, q, customers])
+  }, [ofType, status, brand, brands, month, q, customers])
 
   if (!type) return <Navigate to="/" replace />
   const meta = DOC_META[type]
   const Icon = DOC_ICON[type]
   const total = rows.filter((d) => d.status !== 'cancelled').reduce((s, d) => s + docAmount(d), 0)
-  const filtered = !!(q || status || month)
+  const filtered = !!(q || status || brand || month)
 
   return (
     <>
@@ -93,11 +102,22 @@ export default function DocumentList() {
                   ))}
                 </Select>
                 {filtered && (
-                  <Button variant="ghost" onClick={() => { setQ(''); setStatus(''); setMonth('') }}>
+                  <Button variant="ghost" onClick={() => { setQ(''); setStatus(''); setBrand(''); setMonth('') }}>
                     <X size={14} /> Clear
                   </Button>
                 )}
               </div>
+              {brands.length > 1 && (
+                <ChipGroup
+                  label="Brand"
+                  value={brand}
+                  onChange={setBrand}
+                  options={[
+                    { value: '', label: 'All brands', count: ofType.length },
+                    ...brandCounts.map(({ b, n }) => ({ value: b.id, label: brandName(b, settings), count: n, dot: b.primaryColor })),
+                  ]}
+                />
+              )}
               {statusCounts.length > 1 && (
                 <ChipGroup
                   label="Status"

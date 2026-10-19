@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LayoutGrid, Moon, Search, ShieldCheck, Sun, Users, Warehouse, type LucideIcon } from 'lucide-react'
 import { backupNow, daysSince, useLastBackup } from '../lib/backup'
-import { displayStatus, docAmount, formatMoney, invoiceBalance, nextDocNumber, today } from '../lib/calc'
+import { displayStatus, docAmount, formatMoney, invoiceBalance, today } from '../lib/calc'
+import { defaultBrand, nextBrandNumber } from '../lib/brand'
 import { customerLabel, useStore } from '../lib/store'
 import { isDarkNow, useTheme } from '../lib/theme'
 import { DOC_META, DOC_TYPES, type DocType, type Document } from '../lib/types'
@@ -37,6 +38,7 @@ function PaletteBody({ onClose, onMoreDocuments }: { onClose: () => void; onMore
   const documents = useStore((s) => s.documents)
   const customers = useStore((s) => s.customers)
   const settings = useStore((s) => s.settings)
+  const brands = useStore((s) => s.brands)
   const lastBackup = useLastBackup()
   const [, setTheme] = useTheme()
   const [q, setQ] = useState('')
@@ -54,7 +56,7 @@ function PaletteBody({ onClose, onMoreDocuments }: { onClose: () => void; onMore
       key: `new-${t}`,
       icon: DOC_ICON[t],
       title: `New ${DOC_META[t].label.toLowerCase()}`,
-      sub: `Next number ${nextDocNumber(t, settings.prefixes[t], today(), documents)}`,
+      sub: `Next number ${nextBrandNumber(t, defaultBrand(brands), settings, today(), documents)}`,
       run: () => nav(`/d/${DOC_META[t].path}/new`),
     })
     const create: Result[] = searching
@@ -143,7 +145,7 @@ function PaletteBody({ onClose, onMoreDocuments }: { onClose: () => void; onMore
       { label: 'Pages', items: pages },
       { label: 'Actions', items: actions },
     ].filter((g) => g.items.length)
-  }, [q, documents, customers, settings, lastBackup, nav, onMoreDocuments, setTheme])
+  }, [q, documents, customers, settings, brands, lastBackup, nav, onMoreDocuments, setTheme])
 
   const flat = groups.flatMap((g) => g.items)
   useEffect(() => setSel(0), [q])

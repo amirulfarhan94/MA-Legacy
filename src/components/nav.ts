@@ -7,6 +7,7 @@ import {
   FileSpreadsheet,
   FileText,
   LayoutDashboard,
+  Palette,
   ReceiptText,
   Settings,
   ShoppingCart,
@@ -70,6 +71,7 @@ export const NAV: NavItem[] = [
   { section: 'Finance' },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/brands', label: 'Brands', icon: Palette },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 

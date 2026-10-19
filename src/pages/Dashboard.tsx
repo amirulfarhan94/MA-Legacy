@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Moon, Plus, Sparkles, Sun, Sunrise } from 'lucide-react'
-import { displayStatus, docTotals, invoiceBalance, monthLabel, MONTHS_SHORT, nextDocNumber, toISODate } from '../lib/calc'
+import { displayStatus, docTotals, invoiceBalance, monthLabel, MONTHS_SHORT, toISODate } from '../lib/calc'
+import { defaultBrand, nextBrandNumber } from '../lib/brand'
 import { daypartOf, useNow } from '../lib/daypart'
 import { cashMovements, isOpenInvoice, monthlyTotals, monthToDate, weeklyTotals } from '../lib/finance'
 import { useStore } from '../lib/store'
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const customers = useStore((s) => s.customers)
   const transactions = useStore((s) => s.transactions)
   const settings = useStore((s) => s.settings)
+  const brands = useStore((s) => s.brands)
   const cur = settings.currency
   const nav = useNavigate()
   const now = useNow(30_000)
@@ -138,7 +140,7 @@ export default function Dashboard() {
               <span className="min-w-0 max-w-full">
                 <span className="block text-[14.5px] font-bold text-stone-900">{DOC_META[t].label}</span>
                 <span className="tabular mt-1 block truncate text-[11.5px] font-semibold text-stone-500">
-                  Next {nextDocNumber(t, settings.prefixes[t], asOf, documents)}
+                  Next {nextBrandNumber(t, defaultBrand(brands), settings, asOf, documents)}
                 </span>
               </span>
             </button>

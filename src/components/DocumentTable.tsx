@@ -1,10 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { displayStatus, docAmount, formatDate, formatMoney, today } from '../lib/calc'
+import { brandName, brandOf } from '../lib/brand'
 import { daysBetween } from '../lib/finance'
 import { customerLabel, useStore } from '../lib/store'
 import { DOC_META, type Document } from '../lib/types'
 import { DOC_ICON } from './nav'
-import { StatusBadge, tableCls } from './ui'
+import { BrandBadge, StatusBadge, tableCls } from './ui'
 
 const overdueText = (days: number) => `${days} day${days === 1 ? '' : 's'} overdue`
 
@@ -21,14 +22,18 @@ export default function DocumentTable({
   const nav = useNavigate()
   const customers = useStore((s) => s.customers)
   const all = useStore((s) => s.documents)
-  const currency = useStore((s) => s.settings.currency)
+  const settings = useStore((s) => s.settings)
+  const brands = useStore((s) => s.brands)
+  const currency = settings.currency
   const asOf = today()
 
   const rows = docs.map((d) => {
     const status = displayStatus(d, all)
+    const b = brandOf(d, brands)
     return {
       d,
       status,
+      brand: <BrandBadge name={brandName(b, settings)} primary={b.primaryColor} accent={b.accentColor} />,
       href: `/d/${DOC_META[d.type].path}/${d.id}`,
       customer: customerLabel(customers.find((x) => x.id === d.customerId)),
       amount: d.type === 'service_report' || d.type === 'delivery_order' ? '—' : formatMoney(docAmount(d), currency),
@@ -39,7 +44,7 @@ export default function DocumentTable({
   return (
     <div className="@container">
       <ul className="divide-y divide-stone-200 @min-[560px]:hidden">
-        {rows.map(({ d, status, href, customer, amount, overdue }) => {
+        {rows.map(({ d, status, brand, href, customer, amount, overdue }) => {
           const Icon = DOC_ICON[d.type]
           return (
             <li key={d.id}>
@@ -57,6 +62,7 @@ export default function DocumentTable({
                     {showType && <span>{DOC_META[d.type].label}</span>}
                     <span className="tabular">{formatDate(d.date)}</span>
                     <StatusBadge status={status} />
+                    {brand}
                     {overdue > 0 && <span className="font-semibold text-red-700">{overdueText(overdue)}</span>}
                   </span>
                 </span>
@@ -75,11 +81,12 @@ export default function DocumentTable({
               {showCustomer && <th className={tableCls.th}>Customer</th>}
               <th className={tableCls.th}>Date</th>
               <th className={tableCls.th}>Status</th>
+              <th className={tableCls.th}>Brand</th>
               <th className={`${tableCls.th} text-right`}>Amount</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ d, status, href, customer, amount, overdue }) => (
+            {rows.map(({ d, status, brand, href, customer, amount, overdue }) => (
               <tr key={d.id} className={tableCls.tr} onClick={() => nav(href)}>
                 <td className={`${tableCls.td} whitespace-nowrap font-semibold text-stone-900`}>
                   <Link to={href} onClick={(e) => e.stopPropagation()} className="hover:underline">
@@ -93,6 +100,7 @@ export default function DocumentTable({
                   <StatusBadge status={status} />
                   {overdue > 0 && <div className="mt-1 whitespace-nowrap text-xs font-semibold text-red-700">{overdueText(overdue)}</div>}
                 </td>
+                <td className={tableCls.td}>{brand}</td>
                 <td className={`${tableCls.td} tabular whitespace-nowrap text-right`}>{amount}</td>
               </tr>
             ))}

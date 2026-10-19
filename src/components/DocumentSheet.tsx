@@ -1,7 +1,9 @@
 import { Fragment } from 'react'
 import { amountInWords, docTotals, formatDate, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
+import { brandOfLine } from '../lib/brand'
 import { useStore } from '../lib/store'
-import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Customer, type Document } from '../lib/types'
+import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Brand, type Customer, type Document } from '../lib/types'
+import { BrandFooter, BrandLogo, BrandSignature, brandVars, usePrintBrand } from './BrandPrint'
 
 const money = (n: number) => formatMoney(n, '').trim()
 
@@ -17,6 +19,7 @@ const PARTY_LABEL: Partial<Record<Document['type'], string>> = {
 export default function DocumentSheet({ doc, customer }: { doc: Document; customer?: Customer }) {
   const settings = useStore((s) => s.settings)
   const documents = useStore((s) => s.documents)
+  const brand = usePrintBrand(doc)
   const cur = settings.currency
   const meta = DOC_META[doc.type]
   const totals = docTotals(doc)
@@ -37,8 +40,9 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
   const refund = doc.type === 'credit_note' ? Number(doc.refundAmount) || 0 : 0
 
   return (
-    <div className="sheet mx-auto flex flex-col shadow-lg">
+    <div className={`sheet mx-auto flex flex-col shadow-lg${brand ? ' brand' : ''}`} style={brand && brandVars(brand)}>
       <SheetHeader
+        brand={brand}
         title={meta.title}
         rows={[
           ['No.', doc.number, true],
@@ -240,7 +244,7 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
 
       {/* Footer */}
       <div className="mt-8 grid grid-cols-2 gap-8 text-[11px]">
-        {(showBank || showQr) && <PaymentBlock bank={showBank} qr={showQr} />}
+        {(showBank || showQr) && <PaymentBlock bank={showBank} qr={showQr} legalName={!!brand} />}
         {doc.terms && (
           <div className={showBank || showQr ? '' : 'col-span-2'}>
             <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Terms & conditions</div>
@@ -249,8 +253,15 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
         )}
       </div>
       {doc.type === 'delivery_order' && <ReceivedBy />}
-      {/* A delivery order is signed on receipt, so it drops the "no signature" line. */}
-      <ComputerGeneratedNote signatureRequired={doc.type === 'delivery_order'} />
+      {brand ? (
+        <>
+          <BrandSignature brand={brand} />
+          <BrandFooter brand={brand} />
+        </>
+      ) : (
+        // A delivery order is signed on receipt, so it drops the "no signature" line.
+        <ComputerGeneratedNote signatureRequired={doc.type === 'delivery_order'} />
+      )}
     </div>
   )
 }
@@ -317,10 +328,37 @@ function Section({ title, text }: { title: string; text: string }) {
 
 export type MetaEntry = [label: string, value: string, bold?: boolean]
 
-/** Company letterhead with the document title and its meta rows (no., date…). */
-export function SheetHeader({ title, rows }: { title: string; rows: MetaEntry[] }) {
+/**
+ * Company letterhead with the document title and its meta rows (no., date…). A trading brand gets its
+ * own logo with the legal entity under it.
+ */
+export function SheetHeader({ title, rows, brand }: { title: string; rows: MetaEntry[]; brand?: Brand }) {
   const settings = useStore((s) => s.settings)
   const logo = settings.logoDataUrl || './logo.png'
+  if (brand) {
+    return (
+      <div className="flex items-start justify-between gap-6 border-b-2 border-gold-600 pb-5">
+        <div className="min-w-0 text-[11px] leading-snug text-stone-600">
+          <BrandLogo brand={brand} className="h-16 w-auto max-w-[220px] object-contain object-left" />
+          <div className="mt-2 font-semibold text-stone-800">{brandOfLine(settings)}</div>
+          {settings.address && <div className="whitespace-pre-line">{settings.address}</div>}
+          <div>{[settings.phone && `Tel: ${settings.phone}`, settings.email].filter(Boolean).join(' · ')}</div>
+          {settings.website && <div>{settings.website}</div>}
+          {settings.sstNo && <div>SST No: {settings.sstNo}</div>}
+        </div>
+        <div className="text-right">
+          <div className={`brand-display whitespace-nowrap font-bold tracking-wider text-gold-700 ${title.length > 16 ? 'text-[18px]' : 'text-[22px]'}`}>{title}</div>
+          <table className="ml-auto mt-2 text-[11px]">
+            <tbody>
+              {rows.map(([label, value, bold]) => (
+                <MetaRow key={label} label={label} value={value} bold={bold} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="flex items-start justify-between gap-6 border-b-2 border-gold-600 pb-5">
       <div className="flex items-start gap-4">
@@ -369,8 +407,8 @@ export function PartyBlock({ label, party }: { label: string; party?: Customer }
   )
 }
 
-/** Bank details and payment QR, as shown on invoices. */
-export function PaymentBlock({ bank = true, qr = true }: { bank?: boolean; qr?: boolean }) {
+/** Bank details and payment QR, as shown on invoices. legalName: the account is always in the legal entity's name (trading brands). */
+export function PaymentBlock({ bank = true, qr = true, legalName = false }: { bank?: boolean; qr?: boolean; legalName?: boolean }) {
   const settings = useStore((s) => s.settings)
   const showQr = qr && !!settings.paymentQrDataUrl
   const showBank = bank && !!settings.bankAccountNo
@@ -387,7 +425,7 @@ export function PaymentBlock({ bank = true, qr = true }: { bank?: boolean; qr?: 
         <div>
           <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Payment details</div>
           <div>Bank: {settings.bankName}</div>
-          <div>Account name: {settings.bankAccountName}</div>
+          <div>Account name: {legalName ? settings.companyName : settings.bankAccountName}</div>
           <div>Account no.: {settings.bankAccountNo}</div>
         </div>
       )}

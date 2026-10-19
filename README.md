@@ -32,6 +32,21 @@ Pick the look of printed documents under **Settings → Document style**: **Engi
 block, mono figures, and page numbers with a running header on long documents) or **Classic** (the original look).
 Its fonts ship with the app, so it prints the same offline. Page numbers need a recent Chrome or Edge (131+).
 
+## Brands
+
+MA Legacy Solutions is the only legal entity; **HandalServ** is a trading brand under it. Pick the brand when creating
+any document (default MA Legacy). Lists show a brand badge and can be filtered by brand; converting a quotation to an
+invoice, recording a payment or issuing a credit note keeps the brand.
+
+- **MA Legacy Solutions** documents look and number exactly as before (`INV-2026-0001`, prefixes in Settings).
+- **Trading brands** number per brand, type and year: `HS-QT-2026-001`, `HS-INV-…`, `HS-PI-…`, `HS-RCT-…`, `HS-SR-…`
+  (also `HS-DO`, `HS-CN`, `HS-PO`). They print with the brand logo and colours (Archivo headings, Figtree text),
+  "a brand of MA Legacy Solutions (SSM: …)" with the company address, payment to the company's account,
+  a "for MA Legacy Solutions (HandalServ)" signature line and a footer with the tagline.
+
+Edit names, logos, colours, taglines and prefixes under **Brands**. The default HandalServ logo is
+`public/handalserv-logo-warna.svg`; until that file is added (or a logo is uploaded) the brand name prints as a wordmark.
+
 ## Install as an app (PWA)
 
 The app is a Progressive Web App: it installs to the home screen / desktop, opens full-screen without the

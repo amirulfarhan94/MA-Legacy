@@ -140,7 +140,7 @@ export function addDays(isoDate: string, days: number): string {
  * Next running number for a doc type, e.g. INV-2026-0007.
  * Numbering restarts every year and never reuses a number already taken.
  */
-export function nextDocNumber(type: DocType, prefix: string, date: string, docs: Document[]): string {
+export function nextDocNumber(type: DocType, prefix: string, date: string, docs: Document[], digits = 4): string {
   const year = date.slice(0, 4)
   const head = `${prefix}-${year}-`
   let max = 0
@@ -149,7 +149,7 @@ export function nextDocNumber(type: DocType, prefix: string, date: string, docs:
     const n = parseInt(d.number.slice(head.length), 10)
     if (!Number.isNaN(n) && n > max) max = n
   }
-  return `${head}${String(max + 1).padStart(4, '0')}`
+  return `${head}${String(max + 1).padStart(digits, '0')}`
 }
 
 export function formatMoney(n: number, currency = 'RM'): string {

@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { Download, ImagePlus, QrCode, RotateCcw, Upload } from 'lucide-react'
 import { backupNow, BACKUP_EVERY_DAYS, daysSince, useLastBackup } from '../lib/backup'
 import { formatDate, toISODate } from '../lib/calc'
@@ -59,7 +60,18 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="These details appear on every document you print." />
+      <PageHeader
+        title="Settings"
+        subtitle={
+          <>
+            These details appear on every document you print. Trading brands (logo, colours, numbering) are under{' '}
+            <Link to="/brands" className="font-semibold text-gold-700 hover:underline">
+              Brands
+            </Link>
+            .
+          </>
+        }
+      />
 
       {/* Jump between sections and save from anywhere on this long page. */}
       <div className="glass-strong no-print sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-20 mb-5 flex items-center gap-2 rounded-full p-1.5 sm:top-4">

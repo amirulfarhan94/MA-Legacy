@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, UserPlus } from 'lucide-react'
+import { brandName, brandOf, nextBrandNumber } from '../lib/brand'
 import { docTotals, formatMoney, invoiceBalance } from '../lib/calc'
 import { contactKind, customerLabel, useStore } from '../lib/store'
 import {
@@ -32,7 +33,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
   const [params] = useSearchParams()
   const nav = useNavigate()
   const store = useStore()
-  const { customers, documents, settings } = store
+  const { customers, documents, settings, brands } = store
   const meta = DOC_META[type]
 
   const [doc, setDoc] = useState<Document>(() => {
@@ -49,6 +50,17 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
   const [error, setError] = useState('')
 
   const set = <K extends keyof Document>(k: K, v: Document[K]) => setDoc((d) => ({ ...d, [k]: v }))
+
+  // The brand is chosen when a document is created; follow-on documents keep their source's brand.
+  const brand = brandOf(doc, brands)
+  const brandLocked = !!existing || !!doc.sourceId
+  const source = documents.find((d) => d.id === doc.sourceId)
+  /** Moves a new document to another brand, with that brand's next number. */
+  const withBrand = (d: Document, brandId: string): Document => {
+    const b = brands.find((x) => x.id === brandId)
+    if (existing || !b || b.id === brandOf(d, brands).id) return d
+    return { ...d, brandId: b.id, number: nextBrandNumber(d.type, b, settings, d.date, documents) }
+  }
   const setService = (k: keyof ServiceReportFields, v: string) =>
     setDoc((d) => ({ ...d, service: { ...(d.service as ServiceReportFields), [k]: v } }))
 
@@ -151,6 +163,28 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
           <Card>
             <CardHeader title="Details" />
             <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+              {brands.length > 1 && (
+                <Field
+                  label="Brand"
+                  className="sm:col-span-2"
+                  hint={
+                    existing
+                      ? 'The brand is fixed once the document is saved.'
+                      : source
+                        ? `Same brand as ${source.number}.`
+                        : 'Sets the logo, colours and numbering on the printed document.'
+                  }
+                >
+                  <Select value={brand.id} disabled={brandLocked} onChange={(e) => setDoc((d) => withBrand(d, e.target.value))}>
+                    {brands.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {brandName(b, settings)}
+                        {b.isLegalEntity ? ' (company)' : ''}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
               <Field label={partyLabel} className="sm:col-span-2">
                 <div className="flex gap-2">
                   <Select
@@ -217,7 +251,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                     onChange={(e) => {
                       const inv = documents.find((d) => d.id === e.target.value)
                       setDoc((d) => ({
-                        ...d,
+                        ...(inv ? withBrand(d, brandOf(inv, brands).id) : d),
                         invoiceId: inv?.id,
                         reference: inv ? inv.number : d.reference,
                         amountPaid: inv && !d.amountPaid ? invoiceBalance(inv, others) : d.amountPaid,
@@ -265,7 +299,12 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                     value={doc.invoiceId ?? ''}
                     onChange={(e) => {
                       const inv = documents.find((d) => d.id === e.target.value)
-                      setDoc((d) => ({ ...d, invoiceId: inv?.id, sourceId: inv?.id ?? d.sourceId, reference: inv ? inv.number : d.reference }))
+                      setDoc((d) => ({
+                        ...(inv ? withBrand(d, brandOf(inv, brands).id) : d),
+                        invoiceId: inv?.id,
+                        sourceId: inv?.id ?? d.sourceId,
+                        reference: inv ? inv.number : d.reference,
+                      }))
                     }}
                     disabled={!doc.customerId}
                   >

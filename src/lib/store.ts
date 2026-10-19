@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { addDays, invoiceBalance, nextDocNumber, today } from './calc'
-import type { Customer, Document, DocType, LineItem, Settings, Transaction } from './types'
+import { addDays, invoiceBalance, today } from './calc'
+import { brandOf, defaultBrand, defaultBrands, LEGAL_BRAND_ID, nextBrandNumber, normalizeBrands } from './brand'
+import type { Brand, Customer, Document, DocType, LineItem, Settings, Transaction } from './types'
 
 export const uid = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -68,6 +69,9 @@ function normalizeSettings(s: Partial<Settings> | undefined): Settings {
   }
 }
 
+/** Documents made before brands belong to the legal entity. */
+const withBrand = (docs: Document[]) => docs.map((d) => (d.brandId ? d : { ...d, brandId: LEGAL_BRAND_ID }))
+
 export interface BackupData {
   version: 1
   exportedAt: string
@@ -75,6 +79,8 @@ export interface BackupData {
   documents: Document[]
   transactions: Transaction[]
   settings: Settings
+  /** Missing in backups made before brands. */
+  brands?: Brand[]
 }
 
 interface State {
@@ -82,11 +88,13 @@ interface State {
   documents: Document[]
   transactions: Transaction[]
   settings: Settings
+  brands: Brand[]
 
   saveCustomer: (c: Customer) => void
   deleteCustomer: (id: string) => void
 
-  newDocument: (type: DocType, customerId?: string) => Document
+  /** Blank document under the given brand (default brand when omitted), numbered for that brand. */
+  newDocument: (type: DocType, customerId?: string, brandId?: string) => Document
   saveDocument: (d: Document) => Document
   deleteDocument: (id: string) => void
   /** Copies a document into a new one of another type (e.g. quotation → invoice). */
@@ -100,12 +108,14 @@ interface State {
   deleteTransaction: (id: string) => void
 
   updateSettings: (s: Partial<Settings>) => void
+  saveBrand: (b: Brand) => void
+  deleteBrand: (id: string) => void
   exportData: () => BackupData
   importData: (data: BackupData) => void
   resetAll: () => void
 }
 
-function blankDocument(type: DocType, s: Settings, docs: Document[], customerId = ''): Document {
+function blankDocument(type: DocType, s: Settings, docs: Document[], brand: Brand, customerId = ''): Document {
   const date = today()
   const dueDays = type === 'quotation' ? s.quotationValidDays : s.defaultDueDays
   const hasDue = type === 'quotation' || type === 'invoice' || type === 'proforma' || type === 'purchase_order'
@@ -113,7 +123,8 @@ function blankDocument(type: DocType, s: Settings, docs: Document[], customerId 
   return {
     id: uid(),
     type,
-    number: nextDocNumber(type, s.prefixes[type], date, docs),
+    number: nextBrandNumber(type, brand, s, date, docs),
+    brandId: brand.id,
     customerId,
     date,
     dueDate: hasDue ? addDays(date, dueDays) : '',
@@ -159,6 +170,7 @@ export const useStore = create<State>()(
       documents: [],
       transactions: [],
       settings: defaultSettings,
+      brands: defaultBrands,
 
       saveCustomer: (c) =>
         set((st) => {
@@ -169,7 +181,11 @@ export const useStore = create<State>()(
         }),
       deleteCustomer: (id) => set((st) => ({ customers: st.customers.filter((c) => c.id !== id) })),
 
-      newDocument: (type, customerId) => blankDocument(type, get().settings, get().documents, customerId),
+      newDocument: (type, customerId, brandId) => {
+        const { brands } = get()
+        const brand = brands.find((b) => b.id === brandId) ?? defaultBrand(brands)
+        return blankDocument(type, get().settings, get().documents, brand, customerId)
+      },
 
       saveDocument: (d) => {
         const saved = { ...d, updatedAt: now() }
@@ -204,7 +220,7 @@ export const useStore = create<State>()(
       convertDocument: (id, to) => {
         const src = get().documents.find((d) => d.id === id)
         if (!src) throw new Error('Document not found')
-        const base = blankDocument(to, get().settings, get().documents, src.customerId)
+        const base = blankDocument(to, get().settings, get().documents, brandOf(src, get().brands), src.customerId)
         return {
           ...base,
           sourceId: src.id,
@@ -221,7 +237,7 @@ export const useStore = create<State>()(
         const docs = get().documents
         const inv = docs.find((d) => d.id === invoiceId)
         if (!inv) throw new Error('Invoice not found')
-        const base = blankDocument('receipt', get().settings, docs, inv.customerId)
+        const base = blankDocument('receipt', get().settings, docs, brandOf(inv, get().brands), inv.customerId)
         return {
           ...base,
           invoiceId: inv.id,
@@ -236,7 +252,7 @@ export const useStore = create<State>()(
         const docs = get().documents
         const inv = docs.find((d) => d.id === invoiceId)
         if (!inv) throw new Error('Invoice not found')
-        const base = blankDocument('credit_note', get().settings, docs, inv.customerId)
+        const base = blankDocument('credit_note', get().settings, docs, brandOf(inv, get().brands), inv.customerId)
         return {
           ...base,
           invoiceId: inv.id,
@@ -259,10 +275,24 @@ export const useStore = create<State>()(
       deleteTransaction: (id) => set((st) => ({ transactions: st.transactions.filter((t) => t.id !== id) })),
 
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
+      saveBrand: (b) =>
+        set((st) => {
+          const exists = st.brands.some((x) => x.id === b.id)
+          let brands = exists ? st.brands.map((x) => (x.id === b.id ? b : x)) : [...st.brands, b]
+          if (b.isDefault) brands = brands.map((x) => ({ ...x, isDefault: x.id === b.id }))
+          return { brands: normalizeBrands(brands) }
+        }),
+      // Only a trading brand with no documents can go; the legal entity always stays.
+      deleteBrand: (id) =>
+        set((st) => {
+          const b = st.brands.find((x) => x.id === id)
+          if (!b || b.isLegalEntity || st.documents.some((d) => d.brandId === id)) return {}
+          return { brands: normalizeBrands(st.brands.filter((x) => x.id !== id)) }
+        }),
 
       exportData: () => {
-        const { customers, documents, transactions, settings } = get()
-        return { version: 1, exportedAt: now(), customers, documents, transactions, settings }
+        const { customers, documents, transactions, settings, brands } = get()
+        return { version: 1, exportedAt: now(), customers, documents, transactions, settings, brands }
       },
       importData: (data) => {
         if (!data || !Array.isArray(data.customers) || !Array.isArray(data.documents)) {
@@ -270,12 +300,13 @@ export const useStore = create<State>()(
         }
         set({
           customers: data.customers,
-          documents: data.documents,
+          documents: withBrand(data.documents),
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
           settings: normalizeSettings(data.settings),
+          brands: normalizeBrands(data.brands),
         })
       },
-      resetAll: () => set({ customers: [], documents: [], transactions: [], settings: defaultSettings }),
+      resetAll: () => set({ customers: [], documents: [], transactions: [], settings: defaultSettings, brands: defaultBrands }),
     }),
     {
       name: 'ma-legacy-data',
@@ -286,6 +317,8 @@ export const useStore = create<State>()(
           ...current,
           ...p,
           settings: normalizeSettings(p.settings),
+          documents: withBrand(p.documents ?? current.documents),
+          brands: normalizeBrands(p.brands),
         }
       },
     },

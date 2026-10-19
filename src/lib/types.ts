@@ -164,8 +164,28 @@ export interface Document {
   paymentMethod?: PaymentMethod
   paymentRef?: string
   service?: ServiceReportFields
+  /** Brand the document is issued under. Missing on documents made before brands: the legal entity. */
+  brandId?: string
   createdAt: string
   updatedAt: string
+}
+
+/**
+ * A name the business trades under. One brand is the legal entity (the company in Settings);
+ * the others are trading brands of it, with their own look and numbering.
+ */
+export interface Brand {
+  id: string
+  name: string
+  /** Data URL or a path under public/. Blank on the legal entity: it uses the company logo. */
+  logo: string
+  primaryColor: string
+  accentColor: string
+  tagline: string
+  /** Trading brands number as PREFIX-QT-YEAR-001. The legal entity keeps the per-type prefixes in Settings. */
+  docPrefix: string
+  isLegalEntity: boolean
+  isDefault: boolean
 }
 
 export type TxnKind = 'income' | 'expense'

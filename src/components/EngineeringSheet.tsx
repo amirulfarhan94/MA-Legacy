@@ -1,7 +1,9 @@
 import { Fragment, type ReactNode } from 'react'
 import { amountInWords, docTotals, formatDate, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
+import { brandOfLine } from '../lib/brand'
 import { useStore } from '../lib/store'
-import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Customer, type Document, type DocType } from '../lib/types'
+import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Brand, type Customer, type Document, type DocType } from '../lib/types'
+import { BrandFooter, BrandLogo, BrandSignature, brandVars, usePrintBrand } from './BrandPrint'
 
 const money = (n: number) => formatMoney(n, '').trim()
 const pad2 = (n: number) => String(n).padStart(2, '0')
@@ -34,8 +36,9 @@ const cssString = (s: string) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"
  * Engineering-style A4 sheet. On paper every page gets the document number and "PAGE n / N"
  * at the foot, and pages after the first get a running head with the company and document.
  */
-export function EngSheet({ docNo, title, children }: { docNo: string; title: string; children: ReactNode }) {
-  const company = useStore((s) => s.settings.companyName)
+export function EngSheet({ docNo, title, brand, children }: { docNo: string; title: string; brand?: Brand; children: ReactNode }) {
+  const legalName = useStore((s) => s.settings.companyName)
+  const company = brand ? brand.name : legalName
   const box = "font-family: 'IBM Plex Mono', monospace; font-size: 7pt; letter-spacing: .12em; color: #4e5663;"
   const css =
     `@page eng { ` +
@@ -44,7 +47,7 @@ export function EngSheet({ docNo, title, children }: { docNo: string; title: str
     `@top-right { content: ${cssString(`${title} ${docNo} · CONTINUED`)}; ${box} } } ` +
     `@page eng:first { @top-left { content: none } @top-right { content: none } }`
   return (
-    <div className="sheet eng mx-auto flex flex-col shadow-lg">
+    <div className={`sheet eng mx-auto flex flex-col shadow-lg${brand ? ' brand' : ''}`} style={brand && brandVars(brand)}>
       <style>{css}</style>
       <i className="eng-ruler" aria-hidden="true" />
       {children}
@@ -52,10 +55,10 @@ export function EngSheet({ docNo, title, children }: { docNo: string; title: str
   )
 }
 
-export function EngHeader({ title, kicker, cells }: { title: string; kicker: string; cells: [string, string][] }) {
+export function EngHeader({ title, kicker, cells, brand }: { title: string; kicker: string; cells: [string, string][]; brand?: Brand }) {
   const settings = useStore((s) => s.settings)
   const info = [
-    settings.regNo && `SSM ${settings.regNo}`,
+    brand ? brandOfLine(settings) : settings.regNo && `SSM ${settings.regNo}`,
     settings.address,
     [settings.phone, settings.email].filter(Boolean).join(' · '),
     settings.website,
@@ -67,13 +70,21 @@ export function EngHeader({ title, kicker, cells }: { title: string; kicker: str
   return (
     <>
       <div className="eng-head">
-        <div className="eng-co">
-          <img src={settings.logoDataUrl || './logo-mark.png'} alt="" />
-          <div className="min-w-0">
-            <div className="eng-co-name">{settings.companyName}</div>
-            {info && <div className="eng-co-info">{info}</div>}
+        {brand ? (
+          // Trading brand: its logo, with the legal entity it belongs to underneath.
+          <div className="eng-brand">
+            <BrandLogo brand={brand} />
+            <div className="eng-co-info">{info}</div>
           </div>
-        </div>
+        ) : (
+          <div className="eng-co">
+            <img src={settings.logoDataUrl || './logo-mark.png'} alt="" />
+            <div className="min-w-0">
+              <div className="eng-co-name">{settings.companyName}</div>
+              {info && <div className="eng-co-info">{info}</div>}
+            </div>
+          </div>
+        )}
         <div className="eng-title">
           <b className={size}>{title}</b>
           <span>{kicker}</span>
@@ -120,7 +131,7 @@ export function EngAmountBox({ label, amount, currency, sub }: { label: string; 
 }
 
 /** Bank details and payment QR from Settings; nothing when neither is set. */
-export function EngPayment({ bank = true, qr = true, reference }: { bank?: boolean; qr?: boolean; reference?: string }) {
+export function EngPayment({ bank = true, qr = true, reference, legalName = false }: { bank?: boolean; qr?: boolean; reference?: string; legalName?: boolean }) {
   const settings = useStore((s) => s.settings)
   const showBank = bank && !!settings.bankAccountNo
   const showQr = qr && !!settings.paymentQrDataUrl
@@ -136,7 +147,7 @@ export function EngPayment({ bank = true, qr = true, reference }: { bank?: boole
             <dt>Account no.</dt>
             <dd className="m">{settings.bankAccountNo}</dd>
             <dt>Account name</dt>
-            <dd>{settings.bankAccountName || settings.companyName}</dd>
+            <dd>{legalName ? settings.companyName : settings.bankAccountName || settings.companyName}</dd>
             {reference && (
               <>
                 <dt>Reference</dt>
@@ -179,6 +190,7 @@ export function EngFooter({ docNo, signatureRequired = false }: { docNo: string;
 export default function EngineeringSheet({ doc, customer }: { doc: Document; customer?: Customer }) {
   const settings = useStore((s) => s.settings)
   const documents = useStore((s) => s.documents)
+  const brand = usePrintBrand(doc)
   const cur = settings.currency
   const meta = DOC_META[doc.type]
   const totals = docTotals(doc)
@@ -275,11 +287,13 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
   }
 
   const words = isPriced ? amountInWords(totals.total) : ''
-  const payment = <EngPayment bank={showBank} qr={showQr} reference={doc.type === 'invoice' || doc.type === 'proforma' ? doc.number : undefined} />
+  const payment = (
+    <EngPayment bank={showBank} qr={showQr} reference={doc.type === 'invoice' || doc.type === 'proforma' ? doc.number : undefined} legalName={!!brand} />
+  )
 
   return (
-    <EngSheet docNo={doc.number} title={meta.title}>
-      <EngHeader title={meta.title} kicker={KICKER[doc.type]} cells={cells} />
+    <EngSheet docNo={doc.number} title={meta.title} brand={brand}>
+      <EngHeader title={meta.title} kicker={KICKER[doc.type]} cells={cells} brand={brand} />
 
       <div className="eng-parties">
         <div className="eng-stack">
@@ -482,7 +496,14 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
           </div>
         </div>
       )}
-      <EngFooter docNo={doc.number} signatureRequired={doc.type === 'delivery_order'} />
+      {brand ? (
+        <>
+          <BrandSignature brand={brand} />
+          <BrandFooter brand={brand} docNo={doc.number} />
+        </>
+      ) : (
+        <EngFooter docNo={doc.number} signatureRequired={doc.type === 'delivery_order'} />
+      )}
     </EngSheet>
   )
 }

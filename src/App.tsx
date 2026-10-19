@@ -10,6 +10,7 @@ import Transactions from './pages/Transactions'
 import SettingsPage from './pages/Settings'
 import Statement from './pages/Statement'
 import Reports from './pages/Reports'
+import BrandsPage from './pages/Brands'
 
 // HashRouter so the app works from any static host without server rewrites.
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="transactions" element={<Transactions />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="brands" element={<BrandsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
