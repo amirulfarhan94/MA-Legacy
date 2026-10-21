@@ -31,7 +31,10 @@ Every document prints on A4 with the company logo, amount in words (Ringgit Mala
 blocks. Use **Print / PDF** and choose "Save as PDF" to get a PDF file. **Share PDF** (documents and statements)
 makes the PDF in the app and opens the phone's share sheet, so it goes to a customer on WhatsApp as an attachment with
 a ready-written message; on a computer it downloads instead. Customers with a phone number also get a **WhatsApp**
-button that opens their chat with that message.
+button that opens their chat with that message. Sharing a draft this way (Share PDF or WhatsApp) marks it **Sent**.
+Unpaid invoices get a **Remind** button: the invoice PDF with a polite reminder (how many days late, balance due, bank
+details) goes out through the share sheet — on a computer the PDF downloads and the customer's WhatsApp chat opens with
+the message — and the invoice keeps a count of reminders sent.
 
 Pick the look of printed documents under **Settings → Document style**: **Engineering** (the default — a title
 block, mono figures, and page numbers with a running header on long documents) or **Classic** (the original look).

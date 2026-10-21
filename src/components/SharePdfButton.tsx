@@ -1,6 +1,6 @@
-import { useEffect, useState, type RefObject } from 'react'
+import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { LoaderCircle, Share2 } from 'lucide-react'
-import { shareFile, sheetsToPdf, type PdfOptions } from '../lib/pdf'
+import { shareFile, sheetsToPdf, type PdfOptions, type ShareResult } from '../lib/pdf'
 import { Button } from './ui'
 
 /**
@@ -8,7 +8,22 @@ import { Button } from './ui'
  * share sheet with it, so it can go to a customer on WhatsApp as an attachment. On computers
  * the PDF is downloaded instead.
  */
-export default function SharePdfButton({ sheetBox, options, text }: { sheetBox: RefObject<HTMLElement | null>; options: PdfOptions; text: string }) {
+export default function SharePdfButton({
+  sheetBox,
+  options,
+  text,
+  label = 'Share PDF',
+  icon = <Share2 size={15} className="text-[var(--good)]" />,
+  onDone,
+}: {
+  sheetBox: RefObject<HTMLElement | null>
+  options: PdfOptions
+  text: string
+  label?: string
+  icon?: ReactNode
+  /** Called once the PDF went out (shared, or downloaded on a computer); not when cancelled. */
+  onDone?: (result: Exclude<ShareResult, 'cancelled' | 'needs-tap'>) => void
+}) {
   const [busy, setBusy] = useState(false)
   // A PDF made but not yet shared, because the phone asked for another tap.
   const [ready, setReady] = useState<File | null>(null)
@@ -18,8 +33,13 @@ export default function SharePdfButton({ sheetBox, options, text }: { sheetBox: 
   useEffect(() => setReady(null), [key])
 
   async function share() {
+    const finish = (r: ShareResult) => {
+      if (r === 'shared' || r === 'downloaded') onDone?.(r)
+    }
     if (ready) {
-      if ((await shareFile(ready, text)) !== 'needs-tap') setReady(null)
+      const r = await shareFile(ready, text)
+      if (r !== 'needs-tap') setReady(null)
+      finish(r)
       return
     }
     const box = sheetBox.current
@@ -27,7 +47,9 @@ export default function SharePdfButton({ sheetBox, options, text }: { sheetBox: 
     setBusy(true)
     try {
       const file = await sheetsToPdf(box, options)
-      if ((await shareFile(file, text)) === 'needs-tap') setReady(file)
+      const r = await shareFile(file, text)
+      if (r === 'needs-tap') setReady(file)
+      finish(r)
     } catch (e) {
       console.error(e)
       alert('Could not make the PDF. Use Print / PDF and choose "Save as PDF" instead.')
@@ -38,8 +60,8 @@ export default function SharePdfButton({ sheetBox, options, text }: { sheetBox: 
 
   return (
     <Button onClick={share} disabled={busy} aria-busy={busy} className={ready ? 'ring-2 ring-[var(--color-accent)]' : undefined}>
-      {busy ? <LoaderCircle size={15} className="animate-spin" /> : <Share2 size={15} className="text-[var(--good)]" />}
-      {busy ? 'Making PDF…' : ready ? 'Tap to share PDF' : 'Share PDF'}
+      {busy ? <LoaderCircle size={15} className="animate-spin" /> : icon}
+      {busy ? 'Making PDF…' : ready ? 'Tap to share PDF' : label}
     </Button>
   )
 }

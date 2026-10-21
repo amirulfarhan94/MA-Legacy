@@ -164,6 +164,8 @@ export interface Document {
   paymentMethod?: PaymentMethod
   paymentRef?: string
   service?: ServiceReportFields
+  /** Invoices: when payment reminders were sent (ISO timestamps). */
+  reminders?: string[]
   /** Work photos, printed as report pages after the document. The pictures stay on the device. */
   photos?: DocPhoto[]
   createdAt: string

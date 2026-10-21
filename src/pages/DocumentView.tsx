@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRightLeft, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
-import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid } from '../lib/calc'
+import { ArrowLeft, ArrowRightLeft, BellRing, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
+import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid, toISODate, today } from '../lib/calc'
+import { reminderMessage, shouldMarkSent } from '../lib/reminder'
 import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
 import { waNumber } from '../lib/contact'
 import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
@@ -97,6 +98,41 @@ export default function DocumentView() {
     `. — ${settings.companyName}`
   const waText = encodeURIComponent(message)
 
+  // Sharing or sending a draft means it has gone to the customer.
+  const markSent = () => {
+    const cur = useStore.getState().documents.find((d) => d.id === doc.id)
+    if (cur && shouldMarkSent(cur)) saveDocument({ ...cur, status: 'sent' })
+  }
+  const pdfOptions = {
+    fileName: `${doc.number}.pdf`,
+    docNo: doc.number,
+    heading: meta.title,
+    company: settings.companyName,
+    engineering: settings.documentStyle === 'engineering',
+  }
+
+  const canRemind = doc.type === 'invoice' && doc.status !== 'draft' && doc.status !== 'cancelled' && balance > 0
+  const reminder = canRemind
+    ? reminderMessage({
+        name: customer?.name || customerLabel(customer),
+        number: doc.number,
+        date: doc.date,
+        dueDate: doc.dueDate,
+        balance,
+        currency: settings.currency,
+        company: settings.companyName,
+        bank: { name: settings.bankName, accountNo: settings.bankAccountNo, accountName: settings.bankAccountName || settings.companyName },
+        today: today(),
+      })
+    : ''
+  const reminded = (result: 'shared' | 'downloaded') => {
+    const cur = useStore.getState().documents.find((d) => d.id === doc.id)
+    if (cur) saveDocument({ ...cur, reminders: [...(cur.reminders ?? []), new Date().toISOString()] })
+    // On a computer the PDF was downloaded: open the customer's chat with the reminder to attach it.
+    if (result === 'downloaded' && customer?.phone) window.open(`https://wa.me/${waNumber(customer.phone)}?text=${encodeURIComponent(reminder)}`, '_blank', 'noreferrer')
+  }
+  const lastReminder = doc.reminders?.at(-1)
+
   const canPay = doc.type === 'invoice' && doc.status !== 'cancelled' && balance > 0
   const canPayPo = doc.type === 'purchase_order' && doc.status !== 'cancelled' && poPaid + 0.005 < docTotals(doc).total
   const more: MenuItem[] = [
@@ -147,19 +183,19 @@ export default function DocumentView() {
             <Button variant="primary" onClick={() => window.print()}>
               <Printer size={15} /> Print / PDF
             </Button>
-            <SharePdfButton
-              sheetBox={sheetBox}
-              text={message}
-              options={{
-                fileName: `${doc.number}.pdf`,
-                docNo: doc.number,
-                heading: meta.title,
-                company: settings.companyName,
-                engineering: settings.documentStyle === 'engineering',
-              }}
-            />
+            <SharePdfButton sheetBox={sheetBox} text={message} options={pdfOptions} onDone={markSent} />
+            {canRemind && (
+              <SharePdfButton
+                sheetBox={sheetBox}
+                text={reminder}
+                options={pdfOptions}
+                label="Remind"
+                icon={<BellRing size={15} className="text-[var(--warn)]" />}
+                onDone={reminded}
+              />
+            )}
             {customer?.phone && (
-              <a href={`https://wa.me/${waNumber(customer.phone)}?text=${waText}`} target="_blank" rel="noreferrer" className={buttonClass()}>
+              <a href={`https://wa.me/${waNumber(customer.phone)}?text=${waText}`} target="_blank" rel="noreferrer" onClick={markSent} className={buttonClass()}>
                 <MessageCircle size={15} className="text-[var(--good)]" /> WhatsApp
               </a>
             )}
@@ -212,6 +248,14 @@ export default function DocumentView() {
                   <span className={`tabular ${cls || 'font-medium'}`}>{value}</span>
                 </div>
               ))}
+              {lastReminder && (
+                <div className="flex justify-between gap-2">
+                  <span className="text-stone-500">Reminders</span>
+                  <span className="text-right">
+                    {doc.reminders!.length} · last {formatDate(toISODate(new Date(lastReminder)))}
+                  </span>
+                </div>
+              )}
               <label className="block pt-1 @min-[520px]:col-span-2 @min-[520px]:max-w-xs">
                 <span className="mb-1 block text-xs text-stone-500">Status</span>
                 <Select
