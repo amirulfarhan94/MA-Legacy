@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
-import { GripVertical, ListPlus, Plus, StickyNote, Trash2, X } from 'lucide-react'
+import { BookMarked, BookmarkPlus, GripVertical, ListPlus, Plus, StickyNote, Trash2, X } from 'lucide-react'
 import { formatMoney, hasPricedSubs, lineTotal, subAmount } from '../lib/calc'
 import { uid } from '../lib/store'
+import type { ItemSuggestion } from '../lib/catalog'
 import type { LineItem, SubItem } from '../lib/types'
-import { Button, Input, NumberInput, Textarea } from './ui'
+import ItemDescriptionInput from './ItemDescriptionInput'
+import { Button, Input, NumberInput } from './ui'
 
 const GRID = {
   plain: 'sm:grid-cols-[20px_1fr_64px_64px_104px_104px_32px]',
@@ -42,6 +44,9 @@ export default function LineItemsEditor({
   itemAdjustments = false,
   defaultTaxRate = 0,
   taxLabel = 'SST',
+  suggest,
+  inCatalog,
+  onAddToCatalog,
 }: {
   items: LineItem[]
   onChange: (items: LineItem[]) => void
@@ -51,6 +56,11 @@ export default function LineItemsEditor({
   itemAdjustments?: boolean
   defaultTaxRate?: number
   taxLabel?: string
+  /** Suggestions while typing a description (catalog and earlier documents). */
+  suggest?: (query: string) => ItemSuggestion[]
+  inCatalog?: (description: string) => boolean
+  /** Shows "Save to catalog" under each line. */
+  onAddToCatalog?: (item: LineItem) => void
 }) {
   const update = (id: string, patch: Partial<LineItem>) => onChange(items.map((i) => (i.id === id ? { ...i, ...patch } : i)))
   const remove = (id: string) => onChange(items.filter((i) => i.id !== id))
@@ -105,12 +115,14 @@ export default function LineItemsEditor({
                   <GripVertical size={12} />
                   <button type="button" className="leading-none hover:text-stone-600" onClick={() => move(idx, idx + 1)} aria-label="Move down">▼</button>
                 </div>
-                <Textarea
-                  className="col-span-2 min-h-9 py-1.5 sm:col-span-1"
-                  rows={1}
-                  placeholder="Item / service description"
+                <ItemDescriptionInput
+                  className="col-span-2 sm:col-span-1"
                   value={item.description}
-                  onChange={(e) => update(item.id, { description: e.target.value })}
+                  onChange={(description) => update(item.id, { description })}
+                  onPick={(s) => update(item.id, { description: s.description, unit: s.unit || item.unit, ...(showPrices ? { unitPrice: s.unitPrice } : {}) })}
+                  suggest={suggest}
+                  currency={currency}
+                  showPrices={showPrices}
                 />
                 <Cell label="Qty" className={fromSubs ? 'max-sm:hidden' : ''}>
                   {fromSubs ? <FromSubs /> : <NumberInput value={item.qty} onValueChange={(qty) => update(item.id, { qty })} aria-label="Quantity" />}
@@ -226,6 +238,21 @@ export default function LineItemsEditor({
                 <button type="button" onClick={() => addSub(item, false)} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-800">
                   <StickyNote size={13} /> {showPrices ? 'Note' : 'Sub item'}
                 </button>
+                {onAddToCatalog && item.description.trim() && !fromSubs && (
+                  inCatalog?.(item.description) ? (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-stone-400">
+                      <BookMarked size={13} /> In catalog
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onAddToCatalog(item)}
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+                    >
+                      <BookmarkPlus size={13} /> Save to catalog
+                    </button>
+                  )
+                )}
               </div>
             </div>
           )

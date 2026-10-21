@@ -4,6 +4,7 @@ import { backupNow, BACKUP_EVERY_DAYS, daysSince, useLastBackup } from '../lib/b
 import { formatDate, toISODate } from '../lib/calc'
 import { shrinkImage } from '../lib/image'
 import { importPhotos } from '../lib/photos'
+import { useStorageInfo } from '../lib/storage'
 import { sampleData } from '../lib/sample'
 import { useStore, type BackupData } from '../lib/store'
 import { DOC_META, DOC_TYPES, type DocumentStyle, type Settings } from '../lib/types'
@@ -40,6 +41,7 @@ export default function SettingsPage() {
     }
   }
 
+  const storage = useStorageInfo()
   const lastBackup = useLastBackup()
   const lastDays = daysSince(lastBackup)
 
@@ -237,6 +239,19 @@ export default function SettingsPage() {
               <span className="font-medium text-amber-700">Never</span>
             )}
           </p>
+          {storage && (
+            <p className="px-5 pt-1.5 text-sm">
+              <span className="text-stone-500">Storage: </span>
+              {storage.usage !== undefined && <span className="font-medium text-stone-900">{formatBytes(storage.usage)} used · </span>}
+              {storage.persisted ? (
+                <span className="font-medium text-[var(--good)]">protected from automatic clean-up</span>
+              ) : (
+                <span className="font-medium text-amber-700">
+                  not protected — the browser may clear it when space runs low. Install the app to the home screen to protect it.
+                </span>
+              )}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2 p-5">
             <Button variant="primary" onClick={() => backupNow()}>
               <Download size={15} /> Back up now
@@ -337,3 +352,5 @@ function Section({ id, title, subtitle, children }: { id: string; title: string;
     </Card>
   )
 }
+
+const formatBytes = (n: number) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`)

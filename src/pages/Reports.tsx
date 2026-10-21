@@ -6,6 +6,7 @@ import { AGING_BUCKETS, agingByCustomer, expensesByCategory, monthlyPnL, openInv
 import { customerLabel, useStore } from '../lib/store'
 import { DOC_META } from '../lib/types'
 import { Button, Card, CardHeader, EmptyState, PageHeader, Select, tableCls } from '../components/ui'
+import AccountsExportButton from '../components/AccountsExportButton'
 
 const monthName = (ym: string) => monthLabel(ym, false)
 
@@ -89,9 +90,12 @@ export default function Reports() {
         title="Reports"
         subtitle="Who owes you, and how the business is doing month by month."
         actions={
-          <Button onClick={() => window.print()} className="no-print">
-            <Printer size={15} /> Print
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <AccountsExportButton />
+            <Button onClick={() => window.print()} className="no-print">
+              <Printer size={15} /> Print
+            </Button>
+          </div>
         }
       />
 

@@ -100,5 +100,12 @@ export function sampleData(): BackupData {
     { ...txn('expense', 6, 'Purchases', `Deposit for ${po.number}`, 1000), customerId: supplier.id, reference: po.number, docId: po.id },
   ]
 
-  return { version: 1, exportedAt: stamp, customers, documents: docs, transactions, settings: defaultSettings }
+  const catalog = [
+    ['CCTV maintenance visit', 'visit', 250],
+    ['Network cabling Cat6 (per point)', 'point', 120],
+    ['Supply & install CCTV camera 4MP', 'unit', 380],
+    ['Wi-Fi access point installation', 'unit', 180],
+  ].map(([description, unit, unitPrice]) => ({ id: uid(), description: String(description), unit: String(unit), unitPrice: Number(unitPrice), createdAt: stamp }))
+
+  return { version: 1, exportedAt: stamp, customers, documents: docs, transactions, settings: defaultSettings, catalog }
 }

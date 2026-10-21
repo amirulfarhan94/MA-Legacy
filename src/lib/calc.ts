@@ -1,6 +1,6 @@
 import type { Document, DocType, LineItem, SubItem } from './types'
 
-const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
+export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
 
 export const subAmount = (s: SubItem) => round2((Number(s.qty) || 0) * (Number(s.unitPrice) || 0))
 

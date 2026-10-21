@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { appStorage } from './storage'
 import { addDays, invoiceBalance, nextDocNumber, today } from './calc'
-import type { Customer, Document, DocType, LineItem, Settings, Transaction } from './types'
+import type { CatalogItem, Customer, Document, DocType, LineItem, Settings, Transaction } from './types'
 
 export const uid = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -75,6 +76,8 @@ export interface BackupData {
   documents: Document[]
   transactions: Transaction[]
   settings: Settings
+  /** Item catalog; missing in backups made before it existed. */
+  catalog?: CatalogItem[]
   /** Work photos as data URLs, keyed by photo id. */
   photos?: Record<string, string>
 }
@@ -82,6 +85,7 @@ export interface BackupData {
 interface State {
   customers: Customer[]
   documents: Document[]
+  catalog: CatalogItem[]
   transactions: Transaction[]
   settings: Settings
 
@@ -97,6 +101,9 @@ interface State {
   receiptForInvoice: (invoiceId: string) => Document
   /** Credit note pre-filled with the invoice's lines, to trim down to what is credited. */
   creditNoteForInvoice: (invoiceId: string) => Document
+
+  saveCatalogItem: (c: CatalogItem) => void
+  deleteCatalogItem: (id: string) => void
 
   saveTransaction: (t: Transaction) => void
   deleteTransaction: (id: string) => void
@@ -159,6 +166,7 @@ export const useStore = create<State>()(
     (set, get) => ({
       customers: [],
       documents: [],
+      catalog: [],
       transactions: [],
       settings: defaultSettings,
 
@@ -253,6 +261,14 @@ export const useStore = create<State>()(
         }
       },
 
+      saveCatalogItem: (c) =>
+        set((st) => {
+          const exists = st.catalog.some((x) => x.id === c.id)
+          const catalog = exists ? st.catalog.map((x) => (x.id === c.id ? c : x)) : [...st.catalog, c]
+          return { catalog: catalog.sort((a, b) => a.description.localeCompare(b.description)) }
+        }),
+      deleteCatalogItem: (id) => set((st) => ({ catalog: st.catalog.filter((c) => c.id !== id) })),
+
       saveTransaction: (t) =>
         set((st) => {
           const exists = st.transactions.some((x) => x.id === t.id)
@@ -265,8 +281,8 @@ export const useStore = create<State>()(
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
 
       exportData: () => {
-        const { customers, documents, transactions, settings } = get()
-        return { version: 1, exportedAt: now(), customers, documents, transactions, settings }
+        const { customers, documents, transactions, settings, catalog } = get()
+        return { version: 1, exportedAt: now(), customers, documents, transactions, settings, catalog }
       },
       importData: (data) => {
         if (!data || !Array.isArray(data.customers) || !Array.isArray(data.documents)) {
@@ -276,14 +292,16 @@ export const useStore = create<State>()(
           customers: data.customers,
           documents: data.documents,
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
+          catalog: Array.isArray(data.catalog) ? data.catalog : [],
           settings: normalizeSettings(data.settings),
         })
       },
-      resetAll: () => set({ customers: [], documents: [], transactions: [], settings: defaultSettings }),
+      resetAll: () => set({ customers: [], documents: [], catalog: [], transactions: [], settings: defaultSettings }),
     }),
     {
       name: 'ma-legacy-data',
       version: 1,
+      storage: appStorage,
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>
         return {

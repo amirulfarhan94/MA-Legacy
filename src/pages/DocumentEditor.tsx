@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, UserPlus } from 'lucide-react'
 import { docTotals, formatMoney, invoiceBalance } from '../lib/calc'
-import { contactKind, customerLabel, useStore } from '../lib/store'
+import { recentItems, sameItem, suggestItems } from '../lib/catalog'
+import { contactKind, customerLabel, uid, useStore } from '../lib/store'
 import {
   DOC_META,
   PAYMENT_METHODS,
@@ -12,6 +13,7 @@ import {
   isPurchaseDoc,
   PHOTO_TYPES,
   type Document,
+  type LineItem,
   type PaymentMethod,
   type ServiceReportFields,
 } from '../lib/types'
@@ -58,6 +60,11 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
   const isPurchase = isPurchaseDoc(type)
   const partyKind = isPurchase ? 'supplier' : 'customer'
   const partyLabel = isPurchase ? 'Supplier' : 'Customer'
+  const recent = useMemo(() => recentItems(documents, isPurchase, doc.id), [documents, isPurchase, doc.id])
+  const suggest = (q: string) => suggestItems(q, store.catalog, recent, { purchase: isPurchase })
+  const inCatalog = (description: string) => store.catalog.some((c) => sameItem(c.description, description))
+  const addToCatalog = (item: LineItem) =>
+    store.saveCatalogItem({ id: uid(), description: item.description.trim(), unit: item.unit, unitPrice: item.unitPrice, createdAt: new Date().toISOString() })
   const sortedParties = useMemo(
     () =>
       customers
@@ -387,6 +394,10 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                   itemAdjustments={!!doc.itemAdjustments}
                   defaultTaxRate={doc.taxRate}
                   taxLabel={settings.taxLabel}
+                  suggest={suggest}
+                  inCatalog={inCatalog}
+                  // The catalog keeps selling prices; a purchase order's price is a cost.
+                  onAddToCatalog={showPricing && !isPurchase ? addToCatalog : undefined}
                 />
               </div>
             </Card>

@@ -21,8 +21,11 @@ chart for 12 months, this year or 90 days), **search** (Ctrl K / ⌘K or the sea
 pages and "new …" shortcuts),
 **transactions** (receipts, refunds and manual income/expense entries, date filters, CSV export), **customer and
 supplier records** (every document per contact, billed / paid / outstanding), a printable **statement of account** per
-customer (running balance and aging), and **reports** (outstanding invoices by age, monthly profit & loss, expenses by
-category).
+customer (running balance and aging), **reports** (outstanding invoices by age, monthly profit & loss, expenses by
+category) with **Export for accountant** — one Excel file for a chosen period with tabs for the summary, sales
+invoices, credit notes, money in, expenses and SST by month — and an **items catalog**: products and services with their
+usual price, suggested (with items from earlier quotations and invoices) as you type a line; "Save to catalog" under a
+line adds it.
 
 Every document prints on A4 with the company logo, amount in words (Ringgit Malaysia), bank details and signature
 blocks. Use **Print / PDF** and choose "Save as PDF" to get a PDF file. **Share PDF** (documents and statements)
@@ -70,8 +73,10 @@ npm run build    # static site in dist/
 
 ## Where the data lives
 
-Everything is saved in the browser's local storage on the device you use — no server, no login.
-That means:
+Everything is saved in the browser's storage (IndexedDB) on the device you use — no server, no login. Data from
+earlier versions, kept in localStorage, moves over by itself. The app asks the browser to protect its storage from
+automatic clean-up (Settings → Backup shows whether it is protected and how much is used), warns at once if a save
+fails, and if a screen ever crashes it offers a backup and reload instead of a blank page. That means:
 
 - Use the same browser on the same device, or move data with **Settings → Back up now / Restore from backup**.
 - Clearing browser data, uninstalling the app or losing the phone deletes the records.
@@ -87,5 +92,5 @@ enable it once under **Settings → Pages → Source: GitHub Actions**.
 
 ## Tech
 
-React + TypeScript + Vite, Tailwind CSS, Zustand (persisted to localStorage), React Router (hash routes, so it works
+React + TypeScript + Vite, Tailwind CSS, Zustand (persisted to IndexedDB), React Router (hash routes, so it works
 on any static host).

@@ -179,6 +179,15 @@ export interface DocPhoto {
 /** Document types that can carry work photos. */
 export const PHOTO_TYPES: DocType[] = ['invoice', 'service_report', 'quotation']
 
+/** A product or service with its usual price, offered as a suggestion when typing a line item. */
+export interface CatalogItem {
+  id: string
+  description: string
+  unit: string
+  unitPrice: number
+  createdAt: string
+}
+
 export type TxnKind = 'income' | 'expense'
 
 /** Manual ledger entries. Receipts are also shown as income in Transactions. */

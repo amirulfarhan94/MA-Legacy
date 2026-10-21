@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { ShieldAlert, ShieldCheck } from 'lucide-react'
+import { ShieldAlert, ShieldCheck, TriangleAlert } from 'lucide-react'
 import { backupNow, BACKUP_EVERY_DAYS, daysSince, snoozeBackupReminder, useBackupDue, useLastBackup } from '../lib/backup'
+import { useSaveError } from '../lib/storage'
 import { Button } from './ui'
 
 function useBackupAction() {
@@ -80,5 +81,26 @@ export function BackupStatus() {
         <Icon size={18} strokeWidth={1.7} className={tone} />
       </button>
     </>
+  )
+}
+
+/** Red banner, over whatever is on screen, when the app could not save (e.g. the device is full). */
+export function SaveErrorBanner() {
+  const error = useSaveError()
+  const [busy, run] = useBackupAction()
+  if (!error) return null
+  return (
+    <div role="alert" className="no-print fixed left-1/2 top-3 z-[60] flex w-[min(640px,calc(100%-24px))] -translate-x-1/2 flex-col gap-3 rounded-[22px] border border-red-200 bg-red-50 px-4 py-3 shadow-lg sm:flex-row sm:items-center">
+      <div className="flex flex-1 items-start gap-3">
+        <TriangleAlert size={20} className="mt-0.5 shrink-0 text-red-700" />
+        <div className="text-sm">
+          <div className="font-semibold text-stone-900">Your latest changes could not be saved</div>
+          <div className="text-stone-600">{error} Back up now so nothing is lost, then free up space on this device and keep the app open.</div>
+        </div>
+      </div>
+      <Button variant="primary" size="sm" className="self-end sm:self-auto" onClick={run} disabled={busy}>
+        Back up now
+      </Button>
+    </div>
   )
 }
