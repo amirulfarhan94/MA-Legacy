@@ -25,12 +25,14 @@ customer (running balance and aging), and **reports** (outstanding invoices by a
 category).
 
 Every document prints on A4 with the company logo, amount in words (Ringgit Malaysia), bank details and signature
-blocks. Use **Print / PDF** and choose "Save as PDF" to get a PDF file. Customers with a phone number also get a
-**WhatsApp** button.
+blocks. Use **Print / PDF** and choose "Save as PDF" to get a PDF file. **Share PDF** (documents and statements)
+makes the PDF in the app and opens the phone's share sheet, so it goes to a customer on WhatsApp as an attachment with
+a ready-written message; on a computer it downloads instead. Customers with a phone number also get a **WhatsApp**
+button that opens their chat with that message.
 
 Pick the look of printed documents under **Settings → Document style**: **Engineering** (the default — a title
 block, mono figures, and page numbers with a running header on long documents) or **Classic** (the original look).
-Its fonts ship with the app, so it prints the same offline. Page numbers need a recent Chrome or Edge (131+).
+Both styles' fonts ship with the app, so they print the same offline. Page numbers need a recent Chrome or Edge (131+).
 
 ## Install as an app (PWA)
 

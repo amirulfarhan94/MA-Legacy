@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRightLeft, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
 import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid } from '../lib/calc'
@@ -8,6 +8,7 @@ import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document
 import DocumentSheet from '../components/DocumentSheet'
 import EngineeringSheet from '../components/EngineeringSheet'
 import SheetPreview from '../components/SheetPreview'
+import SharePdfButton from '../components/SharePdfButton'
 import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
 
 const CONVERSIONS: Partial<Record<DocType, DocType[]>> = {
@@ -30,6 +31,7 @@ export default function DocumentView() {
   const newDocument = useStore((s) => s.newDocument)
   const customer = useCustomer(doc?.customerId)
   const nav = useNavigate()
+  const sheetBox = useRef<HTMLDivElement>(null)
 
   // The browser uses the page title as the default PDF file name.
   useEffect(() => {
@@ -88,11 +90,11 @@ export default function DocumentView() {
     }
   }
 
-  const waText = encodeURIComponent(
+  const message =
     `Hi ${customer?.name || customerLabel(customer)}, here is ${meta.label} ${doc.number}` +
-      (doc.type === 'service_report' || doc.type === 'delivery_order' ? '' : ` for ${formatMoney(docAmount(doc), settings.currency)}`) +
-      `. — ${settings.companyName}`,
-  )
+    (doc.type === 'service_report' || doc.type === 'delivery_order' ? '' : ` for ${formatMoney(docAmount(doc), settings.currency)}`) +
+    `. — ${settings.companyName}`
+  const waText = encodeURIComponent(message)
 
   const canPay = doc.type === 'invoice' && doc.status !== 'cancelled' && balance > 0
   const canPayPo = doc.type === 'purchase_order' && doc.status !== 'cancelled' && poPaid + 0.005 < docTotals(doc).total
@@ -144,6 +146,17 @@ export default function DocumentView() {
             <Button variant="primary" onClick={() => window.print()}>
               <Printer size={15} /> Print / PDF
             </Button>
+            <SharePdfButton
+              sheetBox={sheetBox}
+              text={message}
+              options={{
+                fileName: `${doc.number}.pdf`,
+                docNo: doc.number,
+                heading: meta.title,
+                company: settings.companyName,
+                engineering: settings.documentStyle === 'engineering',
+              }}
+            />
             {customer?.phone && (
               <a href={`https://wa.me/${waNumber(customer.phone)}?text=${waText}`} target="_blank" rel="noreferrer" className={buttonClass()}>
                 <MessageCircle size={15} className="text-[var(--good)]" /> WhatsApp
@@ -170,9 +183,11 @@ export default function DocumentView() {
       {/* Narrow: overview, sheet, linked documents. Wide: sheet on the left, both cards on the right. */}
       <div className="grid gap-5 min-[1440px]:grid-cols-[auto_280px] min-[1440px]:grid-rows-[auto_1fr] print:block">
         <div className="order-2 min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-span-2 min-[1440px]:row-start-1">
-          <SheetPreview>
-            {settings.documentStyle === 'engineering' ? <EngineeringSheet doc={doc} customer={customer} /> : <DocumentSheet doc={doc} customer={customer} />}
-          </SheetPreview>
+          <div ref={sheetBox}>
+            <SheetPreview>
+              {settings.documentStyle === 'engineering' ? <EngineeringSheet doc={doc} customer={customer} /> : <DocumentSheet doc={doc} customer={customer} />}
+            </SheetPreview>
+          </div>
         </div>
 
         <Card className="no-print order-1 min-[1440px]:col-start-2 min-[1440px]:row-start-1">

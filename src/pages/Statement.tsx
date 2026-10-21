@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, MessageCircle, Printer } from 'lucide-react'
 import { addDays, formatDate, formatMoney, today } from '../lib/calc'
@@ -8,6 +8,7 @@ import { customerLabel, useCustomer, useStore } from '../lib/store'
 import { ComputerGeneratedNote, PartyBlock, PaymentBlock, SheetHeader } from '../components/DocumentSheet'
 import { EngAmountBox, EngFooter, EngHeader, EngParty, EngPayment, EngSheet, EngTerms, KICKER } from '../components/EngineeringSheet'
 import SheetPreview from '../components/SheetPreview'
+import SharePdfButton from '../components/SharePdfButton'
 import { Button, buttonClass, Card, ChipGroup, EmptyState, Field, Input } from '../components/ui'
 
 const firstOfMonth = (iso: string, monthsBack = 0) => {
@@ -23,6 +24,7 @@ export default function Statement() {
   const documents = useStore((s) => s.documents)
   const settings = useStore((s) => s.settings)
   const cur = settings.currency
+  const sheetBox = useRef<HTMLDivElement>(null)
 
   const t = today()
   const [from, setFrom] = useState(firstOfMonth(t, 2))
@@ -55,10 +57,10 @@ export default function Statement() {
 
   const agingTotal = st.aging.reduce((s, v) => s + v, 0)
   const periodLabel = from <= '1900-01-01' ? `Up to ${formatDate(to)}` : `${formatDate(from)} – ${formatDate(to)}`
-  const waText = encodeURIComponent(
+  const message =
     `Hi ${customer.name || customerLabel(customer)}, here is your statement of account as at ${formatDate(to)}. ` +
-      `Balance due: ${formatMoney(st.closing, cur)}. — ${settings.companyName}`,
-  )
+    `Balance due: ${formatMoney(st.closing, cur)}. — ${settings.companyName}`
+  const waText = encodeURIComponent(message)
 
   return (
     <>
@@ -77,6 +79,17 @@ export default function Statement() {
             <Button variant="primary" onClick={() => window.print()}>
               <Printer size={15} /> Print / PDF
             </Button>
+            <SharePdfButton
+              sheetBox={sheetBox}
+              text={message}
+              options={{
+                fileName: `Statement - ${customerLabel(customer).replace(/[\\/:*?"<>|]/g, '')} - ${to}.pdf`,
+                docNo: `SOA ${formatDate(to)}`,
+                heading: 'STATEMENT OF ACCOUNT',
+                company: settings.companyName,
+                engineering: settings.documentStyle === 'engineering',
+              }}
+            />
             {customer.phone && (
               <a
                 href={`https://wa.me/${waNumber(customer.phone)}?text=${waText}`}
@@ -114,130 +127,132 @@ export default function Statement() {
         </Card>
       </div>
 
-      <SheetPreview>
-        {settings.documentStyle === 'engineering' ? (
-          <EngineeringStatement
-            st={st}
-            customer={customer}
-            from={from}
-            to={to}
-            currency={cur}
-          />
-        ) : (
-          <div className="sheet mx-auto flex flex-col shadow-lg">
-            <SheetHeader
-              title="STATEMENT OF ACCOUNT"
-              rows={[
-                ['Date', formatDate(to), true],
-                ['Period', periodLabel],
-              ]}
+      <div ref={sheetBox}>
+        <SheetPreview>
+          {settings.documentStyle === 'engineering' ? (
+            <EngineeringStatement
+              st={st}
+              customer={customer}
+              from={from}
+              to={to}
+              currency={cur}
             />
+          ) : (
+            <div className="sheet mx-auto flex flex-col shadow-lg">
+              <SheetHeader
+                title="STATEMENT OF ACCOUNT"
+                rows={[
+                  ['Date', formatDate(to), true],
+                  ['Period', periodLabel],
+                ]}
+              />
 
-            <div className="mt-5 grid grid-cols-2 gap-6">
-              <PartyBlock label="Customer" party={customer} />
-              <div className="ml-auto w-60 rounded-md border border-stone-200 text-[11.5px]">
-                <SummaryRow label="Opening balance" value={formatMoney(st.opening, cur)} />
-                <SummaryRow label="Invoiced" value={formatMoney(st.totalDebit, cur)} />
-                <SummaryRow label="Payments & credits" value={`- ${formatMoney(st.totalCredit, cur)}`} />
-                <div className="flex justify-between rounded-b-md bg-ink-900 px-3 py-2 text-[13px] font-bold text-gold-200">
-                  <span>Balance due</span>
-                  <span className="tabular">{formatMoney(st.closing, cur)}</span>
+              <div className="mt-5 grid grid-cols-2 gap-6">
+                <PartyBlock label="Customer" party={customer} />
+                <div className="ml-auto w-60 rounded-md border border-stone-200 text-[11.5px]">
+                  <SummaryRow label="Opening balance" value={formatMoney(st.opening, cur)} />
+                  <SummaryRow label="Invoiced" value={formatMoney(st.totalDebit, cur)} />
+                  <SummaryRow label="Payments & credits" value={`- ${formatMoney(st.totalCredit, cur)}`} />
+                  <div className="flex justify-between rounded-b-md bg-ink-900 px-3 py-2 text-[13px] font-bold text-gold-200">
+                    <span>Balance due</span>
+                    <span className="tabular">{formatMoney(st.closing, cur)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <table className="mt-6 w-full border-collapse text-[11px]">
-              <thead>
-                <tr className="bg-ink-900 text-left text-[10px] uppercase tracking-wide text-gold-200">
-                  <th className="w-[72px] px-2 py-2 font-semibold">Date</th>
-                  <th className="w-28 px-2 py-2 font-semibold">Ref. no.</th>
-                  <th className="px-2 py-2 font-semibold">Description</th>
-                  <th className="w-24 px-2 py-2 text-right font-semibold">Debit</th>
-                  <th className="w-24 px-2 py-2 text-right font-semibold">Credit</th>
-                  <th className="w-24 px-2 py-2 text-right font-semibold">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-stone-200 bg-stone-50">
-                  <td className="px-2 py-1.5">{from <= '1900-01-01' ? '' : formatDate(addDays(from, -1))}</td>
-                  <td className="px-2 py-1.5" />
-                  <td className="px-2 py-1.5 font-medium">Balance brought forward</td>
-                  <td className="px-2 py-1.5" />
-                  <td className="px-2 py-1.5" />
-                  <td className="tabular px-2 py-1.5 text-right font-medium">{money(st.opening)}</td>
-                </tr>
-                {st.lines.map((l, i) => (
-                  <tr key={i} className="border-b border-stone-200">
-                    <td className="whitespace-nowrap px-2 py-1.5">{formatDate(l.date)}</td>
-                    <td className="whitespace-nowrap px-2 py-1.5">{l.number}</td>
-                    <td className="px-2 py-1.5">{l.description}</td>
-                    <td className="tabular px-2 py-1.5 text-right">{l.debit ? money(l.debit) : ''}</td>
-                    <td className="tabular px-2 py-1.5 text-right">{l.credit ? money(l.credit) : ''}</td>
-                    <td className="tabular px-2 py-1.5 text-right">{money(l.balance)}</td>
-                  </tr>
-                ))}
-                {st.lines.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-2 py-4 text-center text-stone-500">
-                      No transactions in this period.
-                    </td>
-                  </tr>
-                )}
-                <tr className="border-t-2 border-gold-600 font-bold">
-                  <td colSpan={3} className="px-2 py-2">
-                    Closing balance
-                  </td>
-                  <td className="tabular px-2 py-2 text-right">{money(st.totalDebit)}</td>
-                  <td className="tabular px-2 py-2 text-right">{money(st.totalCredit)}</td>
-                  <td className="tabular px-2 py-2 text-right">{money(st.closing)}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div className="mt-5">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Unpaid invoices by age</div>
-              <table className="w-full border-collapse text-center text-[11px]">
+              <table className="mt-6 w-full border-collapse text-[11px]">
                 <thead>
-                  <tr className="border-b border-stone-300 text-[10px] uppercase tracking-wide text-stone-500">
-                    {AGING_BUCKETS.map((b) => (
-                      <th key={b} className="px-2 py-1.5 font-semibold">
-                        {b}
-                      </th>
-                    ))}
-                    <th className="px-2 py-1.5 font-semibold">Total</th>
+                  <tr className="bg-ink-900 text-left text-[10px] uppercase tracking-wide text-gold-200">
+                    <th className="w-[72px] px-2 py-2 font-semibold">Date</th>
+                    <th className="w-28 px-2 py-2 font-semibold">Ref. no.</th>
+                    <th className="px-2 py-2 font-semibold">Description</th>
+                    <th className="w-24 px-2 py-2 text-right font-semibold">Debit</th>
+                    <th className="w-24 px-2 py-2 text-right font-semibold">Credit</th>
+                    <th className="w-24 px-2 py-2 text-right font-semibold">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    {st.aging.map((v, i) => (
-                      <td key={i} className={`tabular px-2 py-1.5 ${i >= 3 && v > 0 ? 'font-semibold text-red-700' : ''}`}>
-                        {money(v)}
+                  <tr className="border-b border-stone-200 bg-stone-50">
+                    <td className="px-2 py-1.5">{from <= '1900-01-01' ? '' : formatDate(addDays(from, -1))}</td>
+                    <td className="px-2 py-1.5" />
+                    <td className="px-2 py-1.5 font-medium">Balance brought forward</td>
+                    <td className="px-2 py-1.5" />
+                    <td className="px-2 py-1.5" />
+                    <td className="tabular px-2 py-1.5 text-right font-medium">{money(st.opening)}</td>
+                  </tr>
+                  {st.lines.map((l, i) => (
+                    <tr key={i} className="border-b border-stone-200">
+                      <td className="whitespace-nowrap px-2 py-1.5">{formatDate(l.date)}</td>
+                      <td className="whitespace-nowrap px-2 py-1.5">{l.number}</td>
+                      <td className="px-2 py-1.5">{l.description}</td>
+                      <td className="tabular px-2 py-1.5 text-right">{l.debit ? money(l.debit) : ''}</td>
+                      <td className="tabular px-2 py-1.5 text-right">{l.credit ? money(l.credit) : ''}</td>
+                      <td className="tabular px-2 py-1.5 text-right">{money(l.balance)}</td>
+                    </tr>
+                  ))}
+                  {st.lines.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-2 py-4 text-center text-stone-500">
+                        No transactions in this period.
                       </td>
-                    ))}
-                    <td className="tabular px-2 py-1.5 font-semibold">{money(agingTotal)}</td>
+                    </tr>
+                  )}
+                  <tr className="border-t-2 border-gold-600 font-bold">
+                    <td colSpan={3} className="px-2 py-2">
+                      Closing balance
+                    </td>
+                    <td className="tabular px-2 py-2 text-right">{money(st.totalDebit)}</td>
+                    <td className="tabular px-2 py-2 text-right">{money(st.totalCredit)}</td>
+                    <td className="tabular px-2 py-2 text-right">{money(st.closing)}</td>
                   </tr>
                 </tbody>
               </table>
-              {st.unapplied > 0 && (
-                <p className="mt-1.5 text-[10.5px] text-stone-500">
-                  Includes {formatMoney(st.unapplied, cur)} of payments or credits not yet matched to a specific invoice.
-                </p>
-              )}
-            </div>
 
-            <div className="flex-1" />
-
-            <div className="mt-8 grid grid-cols-2 gap-8 text-[11px]">
-              <PaymentBlock />
-              <div className="text-stone-600">
-                Please check this statement and let us know of any difference within 14 days. If payment has been made recently,
-                kindly ignore any amount already settled.
+              <div className="mt-5">
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Unpaid invoices by age</div>
+                <table className="w-full border-collapse text-center text-[11px]">
+                  <thead>
+                    <tr className="border-b border-stone-300 text-[10px] uppercase tracking-wide text-stone-500">
+                      {AGING_BUCKETS.map((b) => (
+                        <th key={b} className="px-2 py-1.5 font-semibold">
+                          {b}
+                        </th>
+                      ))}
+                      <th className="px-2 py-1.5 font-semibold">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {st.aging.map((v, i) => (
+                        <td key={i} className={`tabular px-2 py-1.5 ${i >= 3 && v > 0 ? 'font-semibold text-red-700' : ''}`}>
+                          {money(v)}
+                        </td>
+                      ))}
+                      <td className="tabular px-2 py-1.5 font-semibold">{money(agingTotal)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                {st.unapplied > 0 && (
+                  <p className="mt-1.5 text-[10.5px] text-stone-500">
+                    Includes {formatMoney(st.unapplied, cur)} of payments or credits not yet matched to a specific invoice.
+                  </p>
+                )}
               </div>
+
+              <div className="flex-1" />
+
+              <div className="mt-8 grid grid-cols-2 gap-8 text-[11px]">
+                <PaymentBlock />
+                <div className="text-stone-600">
+                  Please check this statement and let us know of any difference within 14 days. If payment has been made recently,
+                  kindly ignore any amount already settled.
+                </div>
+              </div>
+              <ComputerGeneratedNote />
             </div>
-            <ComputerGeneratedNote />
-          </div>
-        )}
-      </SheetPreview>
+          )}
+        </SheetPreview>
+      </div>
     </>
   )
 }

@@ -61,7 +61,7 @@ function markBackedUp() {
   notify()
 }
 
-function download(file: File) {
+export function downloadFile(file: File) {
   const a = document.createElement('a')
   a.href = URL.createObjectURL(file)
   a.download = file.name
@@ -97,7 +97,7 @@ export async function backupNow(): Promise<BackupResult> {
       // Share failed for another reason: fall through to a normal download.
     }
   }
-  download(candidates[0])
+  downloadFile(candidates[0])
   markBackedUp()
   return 'downloaded'
 }
