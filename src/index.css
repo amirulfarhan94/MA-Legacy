@@ -467,6 +467,19 @@ body {
 .eng-foot { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-top: 14px; padding-top: 8px; border-top: .8px solid var(--e-ink); font-size: 8.4px; color: var(--e-ink-3); }
 .eng-foot b { font: 500 7.5px/1 var(--e-mono); letter-spacing: .14em; color: var(--e-ink-2); white-space: nowrap; }
 
+/* Work photo report pages: four photos to an A4 page, whole photos (never cropped). */
+.sheet.photo-page { height: 297mm; }
+.photo-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px 16px; margin-top: 18px; }
+.photo-grid figure { display: flex; flex-direction: column; min-height: 0; margin: 0; }
+.photo-grid .ph { position: relative; flex: 1; min-height: 0; border: 1px solid #e7e5e4; background: #f5f5f4; }
+.photo-grid img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.photo-grid figcaption { display: flex; gap: 8px; height: 2.7em; margin-top: 6px; font-size: 10.5px; line-height: 1.35; color: #44403c; }
+.photo-grid figcaption b { color: var(--color-gold-700); font-weight: 700; }
+.photo-grid figcaption span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.eng .photo-grid .ph { border: .6px solid var(--e-hair); background: var(--e-tint); }
+.eng .photo-grid figcaption { font-size: 10px; color: var(--e-ink-2); }
+.eng .photo-grid figcaption b { font: 500 9px/1.5 var(--e-mono); color: var(--e-gold); }
+
 /* Paper: page numbers and the running head come from @page rules each sheet writes for itself. */
 @page eng { size: A4; margin: 10mm 14mm 14mm; }
 
@@ -483,6 +496,8 @@ body {
   .eng-items thead { display: table-header-group; }
   .eng-items tr, .eng-sum, .eng-box, .eng-sign, .eng-due, .eng-receipt { break-inside: avoid; }
   .eng-foot b { display: none; }
+  .sheet.photo-page { break-before: page; height: 296mm; }
+  .sheet.eng.photo-page { height: 268mm; }
   /* The phone preview scales the sheet down; paper always gets it at full size. */
   .sheet-fit { height: auto !important; overflow: visible !important; padding: 0 !important; }
   .sheet-fit > div { transform: none !important; margin: 0 !important; }

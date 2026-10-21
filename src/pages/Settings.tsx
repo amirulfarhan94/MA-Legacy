@@ -3,6 +3,7 @@ import { Download, ImagePlus, QrCode, RotateCcw, Upload } from 'lucide-react'
 import { backupNow, BACKUP_EVERY_DAYS, daysSince, useLastBackup } from '../lib/backup'
 import { formatDate, toISODate } from '../lib/calc'
 import { shrinkImage } from '../lib/image'
+import { importPhotos } from '../lib/photos'
 import { sampleData } from '../lib/sample'
 import { useStore, type BackupData } from '../lib/store'
 import { DOC_META, DOC_TYPES, type DocumentStyle, type Settings } from '../lib/types'
@@ -48,6 +49,7 @@ export default function SettingsPage() {
       const data = JSON.parse(await file.text()) as BackupData
       if (!confirm('Restoring replaces ALL current data with the backup. Continue?')) return
       store.importData(data)
+      await importPhotos(data.photos)
       setForm(useStore.getState().settings)
       alert('Backup restored.')
     } catch (e) {

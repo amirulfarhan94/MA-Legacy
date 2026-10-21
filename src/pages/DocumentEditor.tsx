@@ -10,12 +10,14 @@ import {
   docTypeFromPath,
   isPricedDoc,
   isPurchaseDoc,
+  PHOTO_TYPES,
   type Document,
   type PaymentMethod,
   type ServiceReportFields,
 } from '../lib/types'
 import CustomerForm from '../components/CustomerForm'
 import LineItemsEditor from '../components/LineItemsEditor'
+import PhotosEditor from '../components/PhotosEditor'
 import { Button, Card, CardHeader, Field, Input, NumberInput, PageHeader, Select, Textarea } from '../components/ui'
 
 export default function DocumentEditor() {
@@ -388,6 +390,10 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                 />
               </div>
             </Card>
+          )}
+
+          {PHOTO_TYPES.includes(type) && (
+            <PhotosEditor title={type === 'quotation' ? 'Site photos' : 'Work photos'} photos={doc.photos ?? []} onChange={(photos) => set('photos', photos)} />
           )}
 
           <Card>

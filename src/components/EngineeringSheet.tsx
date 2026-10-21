@@ -34,7 +34,7 @@ const cssString = (s: string) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"
  * Engineering-style A4 sheet. On paper every page gets the document number and "PAGE n / N"
  * at the foot, and pages after the first get a running head with the company and document.
  */
-export function EngSheet({ docNo, title, children }: { docNo: string; title: string; children: ReactNode }) {
+export function EngSheet({ docNo, title, className = '', children }: { docNo: string; title: string; className?: string; children: ReactNode }) {
   const company = useStore((s) => s.settings.companyName)
   const box = "font-family: 'IBM Plex Mono', monospace; font-size: 7pt; letter-spacing: .12em; color: #4e5663;"
   const css =
@@ -44,7 +44,7 @@ export function EngSheet({ docNo, title, children }: { docNo: string; title: str
     `@top-right { content: ${cssString(`${title} ${docNo} · CONTINUED`)}; ${box} } } ` +
     `@page eng:first { @top-left { content: none } @top-right { content: none } }`
   return (
-    <div className="sheet eng mx-auto flex flex-col shadow-lg">
+    <div className={`sheet eng mx-auto flex flex-col shadow-lg ${className}`}>
       <style>{css}</style>
       <i className="eng-ruler" aria-hidden="true" />
       {children}

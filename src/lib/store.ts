@@ -75,6 +75,8 @@ export interface BackupData {
   documents: Document[]
   transactions: Transaction[]
   settings: Settings
+  /** Work photos as data URLs, keyed by photo id. */
+  photos?: Record<string, string>
 }
 
 interface State {
@@ -214,6 +216,8 @@ export const useStore = create<State>()(
           taxRate: src.taxRate,
           itemAdjustments: src.itemAdjustments,
           notes: src.notes,
+          // An invoice for a service visit carries the report's work photos along.
+          photos: src.type === 'service_report' && to === 'invoice' && src.photos?.length ? src.photos.map((p) => ({ ...p })) : undefined,
         }
       },
 

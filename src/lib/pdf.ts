@@ -105,34 +105,51 @@ function paginate(sheet: HTMLElement): Page[] {
   return pages
 }
 
-export async function sheetToPdf(sheet: HTMLElement, o: PdfOptions): Promise<File> {
+/** Waits for work photos that are still loading, so none comes out blank. */
+async function photosLoaded(box: HTMLElement) {
+  for (let t = 0; t < 50 && box.querySelector('[data-photo-loading]'); t++) await new Promise((r) => setTimeout(r, 100))
+  const imgs = Array.from(box.querySelectorAll('img'))
+  await Promise.all(imgs.map((img) => img.decode().catch(() => {})))
+}
+
+/**
+ * PDF of every sheet in `box`: the document (cut into pages when long) followed by any
+ * one-page sheets after it, such as work photo pages.
+ */
+export async function sheetsToPdf(box: HTMLElement, o: PdfOptions): Promise<File> {
   const [{ toCanvas }, { jsPDF }] = await Promise.all([import('html-to-image'), import('jspdf')])
+  const [sheet, ...extras] = Array.from(box.querySelectorAll<HTMLElement>('.sheet'))
+  if (!sheet) throw new Error('Nothing to make a PDF of.')
   await document.fonts.ready
+  await photosLoaded(box)
   const pages = paginate(sheet)
-  const long = pages.length > 1
+  const total = pages.length + extras.length
+  const long = total > 1
   const width = sheet.offsetWidth
-  const canvas = await toCanvas(sheet, {
-    pixelRatio: 2,
-    backgroundColor: '#ffffff',
-    width,
-    height: sheet.offsetHeight,
-    style: { margin: '0', boxShadow: 'none' },
-    // On long documents the page number takes over from the document number in the footer.
-    filter: (node) => !(long && node instanceof HTMLElement && node.matches('.eng-foot b')),
-  })
+  const draw = (el: HTMLElement) =>
+    toCanvas(el, {
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
+      width: el.offsetWidth,
+      height: el.offsetHeight,
+      style: { margin: '0', boxShadow: 'none' },
+      // On long documents the page number takes over from the document number in the footer.
+      filter: (node) => !(long && node instanceof HTMLElement && node.matches('.eng-foot b')),
+    })
+  const canvas = await draw(sheet)
   const ratio = canvas.width / width
   const mm = 210 / width
   const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 
-  const place = (from: number, to: number, y: number) => {
+  const place = (src: HTMLCanvasElement, from: number, to: number, y: number, quality = 0.92) => {
     const sy = Math.round(from * ratio)
-    const h = Math.round(to * ratio) - sy
+    const h = Math.min(Math.round(to * ratio), src.height) - sy
     if (h <= 0) return
     const slice = document.createElement('canvas')
-    slice.width = canvas.width
+    slice.width = src.width
     slice.height = h
-    slice.getContext('2d')!.drawImage(canvas, 0, sy, canvas.width, h, 0, 0, canvas.width, h)
-    pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, y * mm, 210, (h / ratio) * mm)
+    slice.getContext('2d')!.drawImage(src, 0, sy, src.width, h, 0, 0, src.width, h)
+    pdf.addImage(slice.toDataURL('image/jpeg', quality), 'JPEG', 0, y * mm, 210, (h / ratio) * mm)
   }
 
   const pad = parseFloat(getComputedStyle(sheet).paddingLeft) || 53
@@ -154,19 +171,26 @@ export async function sheetToPdf(sheet: HTMLElement, o: PdfOptions): Promise<Fil
       pdf.text(text, x, y * mm, { align })
     }
   }
+  const pageNumber = (i: number) => {
+    if (long) note(o.engineering ? `${o.docNo} · Page ${i + 1} / ${total}` : `Page ${i + 1} of ${total}`, right, PAGE_H - 22, 'right')
+  }
 
   pages.forEach((p, i) => {
     if (i) pdf.addPage()
-    place(p.from, p.to, p.top)
-    if (p.head) place(p.head.top, p.head.bottom, CONTINUED_TOP)
-    if (!long) return
-    const n = `${i + 1} / ${pages.length}`
-    note(o.engineering ? `${o.docNo} · Page ${n}` : `Page ${i + 1} of ${pages.length}`, right, PAGE_H - 22, 'right')
+    place(canvas, p.from, p.to, p.top)
+    if (p.head) place(canvas, p.head.top, p.head.bottom, CONTINUED_TOP)
+    pageNumber(i)
     if (i) {
       note(o.company, left, CONTINUED_TOP - 16, 'left')
       note(o.engineering ? `${o.heading} ${o.docNo} · Continued` : `${o.heading} ${o.docNo} (continued)`, right, CONTINUED_TOP - 16, 'right')
     }
   })
+  for (const [i, el] of extras.entries()) {
+    pdf.addPage()
+    // Photo pages: slightly stronger JPEG compression keeps a long report light for WhatsApp.
+    place(await draw(el), 0, el.offsetHeight, 0, 0.85)
+    pageNumber(pages.length + i)
+  }
   pdf.setProperties({ title: `${o.heading} ${o.docNo}`, author: o.company })
   return new File([pdf.output('blob')], o.fileName, { type: 'application/pdf' })
 }

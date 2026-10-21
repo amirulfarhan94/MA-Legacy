@@ -9,6 +9,7 @@ import DocumentSheet from '../components/DocumentSheet'
 import EngineeringSheet from '../components/EngineeringSheet'
 import SheetPreview from '../components/SheetPreview'
 import SharePdfButton from '../components/SharePdfButton'
+import PhotoPages from '../components/PhotoPages'
 import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
 
 const CONVERSIONS: Partial<Record<DocType, DocType[]>> = {
@@ -186,6 +187,7 @@ export default function DocumentView() {
           <div ref={sheetBox}>
             <SheetPreview>
               {settings.documentStyle === 'engineering' ? <EngineeringSheet doc={doc} customer={customer} /> : <DocumentSheet doc={doc} customer={customer} />}
+              <PhotoPages doc={doc} customer={customer} />
             </SheetPreview>
           </div>
         </div>

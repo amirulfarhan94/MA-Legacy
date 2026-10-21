@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
@@ -10,9 +11,16 @@ import Transactions from './pages/Transactions'
 import SettingsPage from './pages/Settings'
 import Statement from './pages/Statement'
 import Reports from './pages/Reports'
+import { cleanUpPhotos } from './lib/photos'
+import { useStore } from './lib/store'
 
 // HashRouter so the app works from any static host without server rewrites.
 export default function App() {
+  // Free the space of photos removed from documents (or from deleted ones) last time.
+  useEffect(() => {
+    cleanUpPhotos(useStore.getState().documents).catch(() => {})
+  }, [])
+
   return (
     <HashRouter>
       <Routes>

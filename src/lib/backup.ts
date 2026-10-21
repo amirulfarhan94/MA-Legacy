@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { today } from './calc'
+import { exportPhotos } from './photos'
 import { useStore } from './store'
 
 const LAST_KEY = 'ma-legacy-last-backup'
@@ -76,7 +77,9 @@ export type BackupResult = 'shared' | 'downloaded' | 'cancelled'
  * or downloads it where sharing files isn't supported (most desktops).
  */
 export async function backupNow(): Promise<BackupResult> {
-  const json = JSON.stringify(useStore.getState().exportData(), null, 2)
+  const data = useStore.getState().exportData()
+  const photos = await exportPhotos(data.documents)
+  const json = JSON.stringify(Object.keys(photos).length ? { ...data, photos } : data, null, 2)
   const base = `ma-legacy-backup-${today()}`
   // Chrome on Android only shares an allow-list of file types that excludes .json,
   // so fall back to .txt there; Restore accepts both.

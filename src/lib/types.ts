@@ -164,9 +164,20 @@ export interface Document {
   paymentMethod?: PaymentMethod
   paymentRef?: string
   service?: ServiceReportFields
+  /** Work photos, printed as report pages after the document. The pictures stay on the device. */
+  photos?: DocPhoto[]
   createdAt: string
   updatedAt: string
 }
+
+export interface DocPhoto {
+  /** Key of the picture in this device's photo storage (see lib/photos.ts). */
+  id: string
+  caption: string
+}
+
+/** Document types that can carry work photos. */
+export const PHOTO_TYPES: DocType[] = ['invoice', 'service_report', 'quotation']
 
 export type TxnKind = 'income' | 'expense'
 

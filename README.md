@@ -34,6 +34,12 @@ Pick the look of printed documents under **Settings → Document style**: **Engi
 block, mono figures, and page numbers with a running header on long documents) or **Classic** (the original look).
 Both styles' fonts ship with the app, so they print the same offline. Page numbers need a recent Chrome or Edge (131+).
 
+Invoices, service reports and quotations can carry **work photos** (site photos on a quotation): add them from the
+camera or gallery in the editor, with a caption each. They print, and go into **Share PDF**, as report pages after the
+document, four photos to a page. Photos are scaled down and kept on this device only (in the browser's storage, not
+synced); backups include them, so restoring a backup on another device brings them along. Converting a service report
+to an invoice carries its photos over.
+
 ## Install as an app (PWA)
 
 The app is a Progressive Web App: it installs to the home screen / desktop, opens full-screen without the

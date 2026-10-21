@@ -1,11 +1,12 @@
 import { useEffect, useState, type RefObject } from 'react'
 import { LoaderCircle, Share2 } from 'lucide-react'
-import { shareFile, sheetToPdf, type PdfOptions } from '../lib/pdf'
+import { shareFile, sheetsToPdf, type PdfOptions } from '../lib/pdf'
 import { Button } from './ui'
 
 /**
- * Makes a PDF of the sheet inside `sheetBox` and opens the share sheet with it, so it can go
- * to a customer on WhatsApp as an attachment. On computers the PDF is downloaded instead.
+ * Makes a PDF of the sheets inside `sheetBox` (the document and any photo pages) and opens the
+ * share sheet with it, so it can go to a customer on WhatsApp as an attachment. On computers
+ * the PDF is downloaded instead.
  */
 export default function SharePdfButton({ sheetBox, options, text }: { sheetBox: RefObject<HTMLElement | null>; options: PdfOptions; text: string }) {
   const [busy, setBusy] = useState(false)
@@ -21,11 +22,11 @@ export default function SharePdfButton({ sheetBox, options, text }: { sheetBox: 
       if ((await shareFile(ready, text)) !== 'needs-tap') setReady(null)
       return
     }
-    const sheet = sheetBox.current?.querySelector<HTMLElement>('.sheet')
-    if (!sheet || busy) return
+    const box = sheetBox.current
+    if (!box || busy) return
     setBusy(true)
     try {
-      const file = await sheetToPdf(sheet, options)
+      const file = await sheetsToPdf(box, options)
       if ((await shareFile(file, text)) === 'needs-tap') setReady(file)
     } catch (e) {
       console.error(e)
