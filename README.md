@@ -49,7 +49,8 @@ page, **Record** each payment (a receipt is made and the balance goes down; if P
 offers to move Payments 2 and 3 to follow it), or **Settle remaining balance** at once. Payment and plan statuses
 (Pending / Paid / Overdue; Active / Completed / Overdue / Cancelled) are worked out from the receipts and today's date.
 The printed invoice gets a SPLIT PAYMENT · 3× badge, the agreement no. and a payment schedule; **Agreement** prints the
-Split Payment Agreement. The dashboard and **Split plans** list payments due in the next 7 days and overdue ones, with
+Split Payment Agreement, with the company's signer name, position, date, signature and stamp filled in from
+**Settings → Agreement signing** (leave them blank to sign and stamp by hand). The dashboard and **Split plans** list payments due in the next 7 days and overdue ones, with
 **Copy WhatsApp reminder** (Bahasa Malaysia). While a plan is active and the last backup is over 7 days old, a banner
 asks for a backup, since plans hold IC numbers and money owed.
 

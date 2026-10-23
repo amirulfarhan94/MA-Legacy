@@ -32,7 +32,7 @@ export default function SettingsPage() {
     setSaved(true)
   }
 
-  const onImage = async (key: 'logoDataUrl' | 'paymentQrDataUrl', file?: File) => {
+  const onImage = async (key: 'logoDataUrl' | 'paymentQrDataUrl' | 'signatureDataUrl' | 'stampDataUrl', file?: File) => {
     if (!file) return
     try {
       set(key, await shrinkImage(file, 600))
@@ -206,6 +206,21 @@ export default function SettingsPage() {
               <NumberInput value={form.maxActiveSplitPlans} onValueChange={(v) => set('maxActiveSplitPlans', Math.max(0, Math.round(v)))} />
             </Field>
           </Section>
+
+          <Section
+            id="set-signing"
+            title="Agreement signing"
+            subtitle="Filled in for the company on every split payment agreement. Leave blank to sign and stamp by hand. A PNG with a transparent background looks best."
+          >
+            <Field label="Signed by (name)">
+              <Input {...text('signerName')} placeholder="e.g. Amirul Farhan" />
+            </Field>
+            <Field label="Position">
+              <Input {...text('signerPosition')} placeholder="e.g. Owner" />
+            </Field>
+            <ImagePick label="Signature" value={form.signatureDataUrl} onPick={(f) => onImage('signatureDataUrl', f)} onRemove={() => set('signatureDataUrl', '')} />
+            <ImagePick label="Company stamp" value={form.stampDataUrl} onPick={(f) => onImage('stampDataUrl', f)} onRemove={() => set('stampDataUrl', '')} />
+          </Section>
         </div>
 
         <Section id="set-numbering" title="Document numbering" subtitle="Numbers look like PREFIX-YEAR-0001 and restart each year.">
@@ -342,10 +357,37 @@ const SECTIONS: [string, string][] = [
   ['set-style', 'Style'],
   ['set-payment', 'Payment'],
   ['set-tax', 'Tax'],
+  ['set-signing', 'Signing'],
   ['set-numbering', 'Numbering'],
   ['set-terms', 'Terms'],
   ['set-backup', 'Backup'],
 ]
+
+/** Upload / change / remove one image, with a preview. */
+function ImagePick({ label, value, onPick, onRemove }: { label: string; value: string; onPick: (f?: File) => void; onRemove: () => void }) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <div>
+      <div className="mb-1 text-xs font-semibold text-stone-600">{label}</div>
+      <div className="flex flex-col items-start gap-2">
+        <div className="grid h-20 w-32 shrink-0 place-items-center rounded-lg border border-dashed border-stone-300 bg-white p-1">
+          {value ? <img src={value} alt={label} className="max-h-[72px] max-w-[120px] object-contain" /> : <ImagePlus size={22} className="text-stone-400" />}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <Button size="sm" onClick={() => ref.current?.click()}>
+            <ImagePlus size={14} /> {value ? 'Change' : 'Upload'}
+          </Button>
+          {value && (
+            <Button size="sm" variant="ghost" onClick={onRemove}>
+              Remove
+            </Button>
+          )}
+        </div>
+        <input ref={ref} type="file" accept="image/*" hidden onChange={(e) => { onPick(e.target.files?.[0]); e.target.value = '' }} />
+      </div>
+    </div>
+  )
+}
 
 function Section({ id, title, subtitle, children }: { id: string; title: string; subtitle?: string; children: ReactNode }) {
   return (

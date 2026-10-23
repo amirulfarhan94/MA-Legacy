@@ -58,6 +58,10 @@ export const defaultSettings: Settings = {
   greetingName: 'Bos Farhan',
   documentStyle: 'engineering',
   maxActiveSplitPlans: 5,
+  signerName: '',
+  signerPosition: '',
+  signatureDataUrl: '',
+  stampDataUrl: '',
 }
 
 /** Fills settings keys added in later versions (new document types, QR…) from the defaults. */

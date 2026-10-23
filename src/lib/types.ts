@@ -273,6 +273,12 @@ export interface Settings {
   documentStyle: DocumentStyle
   /** Most split payment plans that may be active at once. */
   maxActiveSplitPlans: number
+  /** Printed for the company on split payment agreements. */
+  signerName: string
+  signerPosition: string
+  /** Signature and company stamp images (PNG data URLs) for agreements; blank leaves space to sign and stamp by hand. */
+  signatureDataUrl: string
+  stampDataUrl: string
 }
 
 export type DocumentStyle = 'classic' | 'engineering'

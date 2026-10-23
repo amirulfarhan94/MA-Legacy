@@ -179,7 +179,12 @@ export default function Agreement() {
             </p>
             <div className="mt-5 grid grid-cols-2 gap-8 text-[11px]">
               <SignBlock title="Customer" lines={[['Name', plan.customerName], ['IC No.', plan.icNo], ['Date', '']]} />
-              <SignBlock title={settings.companyName} lines={[['Name', ''], ['Position', ''], ['Date', '']]} stamp />
+              <SignBlock
+                title={settings.companyName}
+                lines={[['Name', settings.signerName], ['Position', settings.signerPosition], ['Date', dmy(date)]]}
+                signature={settings.signatureDataUrl}
+                stamp={settings.stampDataUrl || true}
+              />
             </div>
             <p className="mt-5 text-[10.5px] italic text-stone-600">A copy of the Customer&apos;s IC is attached to this agreement.</p>
             <div className="flex-1" />
@@ -228,11 +233,14 @@ function Fact({ label, value, bold }: { label: string; value: string; bold?: boo
   )
 }
 
-function SignBlock({ title, lines, stamp }: { title: string; lines: [string, string][]; stamp?: boolean }) {
+function SignBlock({ title, lines, signature, stamp }: { title: string; lines: [string, string][]; signature?: string; stamp?: string | boolean }) {
   return (
     <div>
       <Label>{title}</Label>
-      <div className="mt-8 border-b border-stone-500" />
+      {/* Signature image sits on the line; without one, the space is left to sign by hand. */}
+      <div className="relative mt-14 border-b border-stone-500">
+        {signature && <img src={signature} alt="Signature" className="absolute bottom-0 left-2 h-12 max-w-[70%] object-contain" />}
+      </div>
       <div className="mt-1 text-[10px] text-stone-500">Signature</div>
       {lines.map(([k, v]) => (
         <div key={k} className="mt-3 flex items-end gap-2">
@@ -240,7 +248,13 @@ function SignBlock({ title, lines, stamp }: { title: string; lines: [string, str
           <span className="flex-1 border-b border-stone-300 pb-0.5 font-medium">{v || ' '}</span>
         </div>
       ))}
-      {stamp && <div className="mt-4 grid h-20 place-items-center rounded border border-dashed border-stone-300 text-[10px] text-stone-400">Company stamp</div>}
+      {typeof stamp === 'string' ? (
+        <div className="mt-4 flex h-24 items-center">
+          <img src={stamp} alt="Company stamp" className="h-full max-w-[60%] object-contain" />
+        </div>
+      ) : (
+        stamp && <div className="mt-4 grid h-20 place-items-center rounded border border-dashed border-stone-300 text-[10px] text-stone-400">Company stamp</div>
+      )}
     </div>
   )
 }
