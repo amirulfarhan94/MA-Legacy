@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,6 +31,16 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+      # Customer application links (ma-legacy.web.app/a/…) are served by Firebase Hosting from
+      # a root-based build. Skipped until the FIREBASE_SERVICE_ACCOUNT secret is added.
+      - run: npx vite build --base=/ --outDir dist-hosting
+      - if: ${{ env.FIREBASE_SERVICE_ACCOUNT != '' }}
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ma-legacy
+          channelId: live
   deploy:
     needs: build
     runs-on: ubuntu-latest

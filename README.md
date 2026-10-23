@@ -61,7 +61,9 @@ finger and agree to the terms and to how their data is used. The app shows a ban
 **Review & approve** copies the details, signature and IC photos into the plan (the agreement then prints the customer's
 signature and a page with the IC copy) and deletes the online copy. This uses Firebase (project `ma-legacy`): sign in
 under **Settings → Online account**; access rules are in `firestore.rules`. A link works once and expires after 14
-days. Everything else still stays on the device.
+days. Links look like `https://ma-legacy.web.app/a/…`: the same deploy also publishes the app to Firebase Hosting
+(free), which only serves these customer links — keep using the GitHub Pages address yourself. That step runs once the
+repository has a `FIREBASE_SERVICE_ACCOUNT` secret. Everything else still stays on the device.
 
 Invoices, service reports and quotations can carry **work photos** (site photos on a quotation): add them from the
 camera or gallery in the editor, with a caption each. They print, and go into **Share PDF**, as report pages after the

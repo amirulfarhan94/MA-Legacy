@@ -13,6 +13,11 @@
     <meta name="apple-mobile-web-app-title" content="MA Legacy" />
     <title>MA Legacy Solutions</title>
     <script>
+      // Customer application links (https://ma-legacy.web.app/a/<token>) open the apply page.
+      var applyLink = location.pathname.match(/^\/a\/([\w-]+)\/?$/)
+      if (applyLink) history.replaceState(null, '', '/#/apply/' + applyLink[1])
+    </script>
+    <script>
       // Apply the saved theme before first paint so dark mode never flashes white.
       try {
         var t = localStorage.getItem('ma-legacy-theme')

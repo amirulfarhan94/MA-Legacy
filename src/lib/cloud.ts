@@ -172,14 +172,18 @@ export interface Applicant {
 
 export type Application = ApplicationOffer & { token: string }
 
-/** A link token nobody can guess: 128 random bits. */
+/** A link token nobody can guess: 128 random bits, as 22 URL-safe characters. */
 export function newToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16))
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
+/** Customer links go to Firebase Hosting (short, no GitHub name); index.html turns /a/<token> into #/apply/<token>. */
+const APPLY_ORIGIN = 'https://ma-legacy.web.app'
+
 export function applicationUrl(token: string): string {
-  return `${location.origin}${location.pathname}#/apply/${token}`
+  if (import.meta.env.VITE_FIREBASE_EMULATOR) return `${location.origin}${location.pathname}#/apply/${token}`
+  return `${APPLY_ORIGIN}/a/${token}`
 }
 
 export async function createApplication(offer: Omit<ApplicationOffer, 'ownerUid' | 'status'>): Promise<string> {

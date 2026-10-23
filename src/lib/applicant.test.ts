@@ -41,7 +41,7 @@ describe('online split payment application', () => {
 
   it('makes link tokens nobody can guess', () => {
     const a = newToken()
-    expect(a).toMatch(/^[0-9a-f]{32}$/)
+    expect(a).toMatch(/^[A-Za-z0-9_-]{22}$/)
     expect(new Set(Array.from({ length: 200 }, newToken)).size).toBe(200)
   })
 })
