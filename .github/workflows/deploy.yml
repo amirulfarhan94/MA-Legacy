@@ -32,9 +32,11 @@ jobs:
         with:
           path: dist
       # Customer application links (ma-legacy.web.app/a/…) are served by Firebase Hosting from
-      # a root-based build. Skipped until the FIREBASE_SERVICE_ACCOUNT secret is added.
+      # a root-based build. Skipped until the FIREBASE_SERVICE_ACCOUNT secret is added; if it
+      # fails, GitHub Pages still deploys.
       - run: npx vite build --base=/ --outDir dist-hosting
       - if: ${{ env.FIREBASE_SERVICE_ACCOUNT != '' }}
+        continue-on-error: true
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
