@@ -5,12 +5,40 @@ import { formatMoney } from '../lib/calc'
 import { applicantProblems, formatIcNo, type ApplicantDraft } from '../lib/applicant'
 import { openApplication, submitApplication, type Application } from '../lib/cloud'
 import { photoDataUrl } from '../lib/image'
-import { dmy } from '../lib/split'
+import { addDays, today } from '../lib/calc'
+import { dmy, splitSchedule } from '../lib/split'
 import { SPLIT_TERMS } from '../lib/splitTerms'
 import SignaturePad from '../components/SignaturePad'
 import { Button, Field, Input, Textarea } from '../components/ui'
 
 type Stage = 'loading' | 'gone' | 'form' | 'sending' | 'done' | 'error'
+
+/** ma-legacy.web.app/a/demo: a sample application to try or film. Nothing is sent. */
+export const DEMO_TOKEN = 'demo'
+
+function demoApplication(): Application {
+  const first = addDays(today(), 3)
+  return {
+    token: DEMO_TOKEN,
+    ownerUid: '',
+    status: 'open',
+    createdAt: new Date().toISOString(),
+    expiresAt: addDays(today(), 14),
+    invoiceId: '',
+    invoiceNo: 'INV-CONTOH',
+    agreementNo: 'MAL-SP-CONTOH',
+    quotationNo: 'QT-CONTOH',
+    company: { name: 'MA Legacy Solutions', regNo: '', phone: '', email: '', address: '' },
+    workDescription: 'Tukar papan suis (DB) 6 hala dan pasang 4 soket 13A baharu',
+    premisesAddress: 'No. 12, Jalan Contoh 3, Taman Contoh, 43000 Kajang, Selangor',
+    plannedWorkDate: addDays(today(), 5),
+    currency: 'RM',
+    total: 1000,
+    payments: splitSchedule(1000, first),
+    bank: { name: '', accountNo: '' },
+    prefill: { name: '', phone: '', email: '' },
+  }
+}
 
 /**
  * The page a customer opens from a split payment application link: the job, the schedule and
@@ -41,7 +69,7 @@ export default function Apply() {
   useEffect(() => {
     const prev = document.title
     document.title = 'Split Payment Application · MA Legacy Solutions'
-    openApplication(token)
+    ;(token === DEMO_TOKEN ? Promise.resolve(demoApplication()) : openApplication(token))
       .then((a) => {
         if (!a || new Date(a.expiresAt).getTime() < Date.now()) return setStage('gone')
         setApp(a)
@@ -61,6 +89,13 @@ export default function Apply() {
     setSendError('')
     if (applicantProblems(form).length) return
     setStage('sending')
+    if (token === DEMO_TOKEN) {
+      // The demo only pretends to send.
+      await new Promise((r) => setTimeout(r, 900))
+      setStage('done')
+      window.scrollTo(0, 0)
+      return
+    }
     try {
       const { agree: _agree, consent: _consent, ...answers } = form
       await submitApplication(token, {
@@ -88,6 +123,11 @@ export default function Apply() {
         </div>
       </header>
 
+      {token === DEMO_TOKEN && (
+        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-stone-700">
+          <b>CONTOH / DEMO</b> — Ini contoh permohonan. Tiada maklumat dihantar atau disimpan. · This is a sample; nothing is sent or saved.
+        </div>
+      )}
       {stage === 'loading' && (
         <Panel>
           <p className="flex items-center gap-2 text-sm text-stone-600">
