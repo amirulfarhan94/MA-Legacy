@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Data app kamu: hanya akaun kamu boleh baca dan tulis.
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // Link permohonan split payment.
+    match /applications/{token} {
+      // Kamu: cipta, baca, approve dan padam link sendiri.
+      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
+      allow read, update, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+      // Pelanggan yang ada link: buka link itu sahaja (tak boleh senaraikan yang lain)
+      // dan hantar borang sekali sahaja.
+      allow get: if resource.data.status == 'open';
+      allow update: if resource.data.status == 'open'
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'applicant', 'submittedAt']);
+    }
+  }
+}

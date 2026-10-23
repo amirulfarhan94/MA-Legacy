@@ -207,6 +207,14 @@ export interface SplitPlan {
   createdAt: string
   /** Set when the plan is cancelled while the invoice itself stays. */
   cancelled?: boolean
+  /** Online application link sent to the customer (its token), until it is approved or cancelled. */
+  applicationToken?: string
+  applicationSentAt?: string
+  /** Customer's signature from the online application (PNG data URL), and when they signed. */
+  customerSignature?: string
+  signedAt?: string
+  /** Photos of the customer's IC, front and back (ids in this device's photo storage). */
+  icPhotoIds?: string[]
 }
 
 export interface DocPhoto {

@@ -15,6 +15,7 @@ import Reports from './pages/Reports'
 import Items from './pages/Items'
 import Agreement from './pages/Agreement'
 import SplitPlans from './pages/SplitPlans'
+import Apply from './pages/Apply'
 import { cleanUpPhotos } from './lib/photos'
 import { useStore } from './lib/store'
 import { requestPersistentStorage } from './lib/storage'
@@ -37,6 +38,8 @@ export default function App() {
     <ErrorScreen>
       <HashRouter>
         <Routes>
+          {/* The page customers open from a split payment application link: no app shell. */}
+          <Route path="apply/:token" element={<Apply />} />
           <Route element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="customers" element={<Customers kind="customer" />} />

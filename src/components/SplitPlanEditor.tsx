@@ -96,7 +96,7 @@ export default function SplitPlanEditor({
             <Field label="Customer full name (as per IC)">
               <Input value={plan.customerName} onChange={(e) => set('customerName', e.target.value)} />
             </Field>
-            <Field label="IC no.">
+            <Field label="IC no." hint={plan.icNo ? undefined : 'Or send the customer the application link from the invoice page — they fill it in with their IC photo and signature.'}>
               <Input value={plan.icNo} onChange={(e) => set('icNo', e.target.value)} placeholder="e.g. 900101-10-1234" inputMode="numeric" />
             </Field>
             <Field label="Phone">

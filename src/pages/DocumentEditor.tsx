@@ -152,7 +152,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
           return setError(`A split payment is already recorded, so the total must stay ${formatMoney(scheduled, settings.currency)}. Use a credit note to reduce it.`)
       } else {
         if (!splitCheck.ok) return setError(splitCheck.reason ?? 'Split payment is not available for this invoice.')
-        if (!split.customerName.trim() || !split.icNo.trim()) return setError("Split payment: enter the customer's full name as per IC and the IC no.")
+        if (!split.customerName.trim()) return setError("Split payment: enter the customer's full name as per IC.")
         const taken = others.some((d) => d.split?.agreementNo === split!.agreementNo)
         split = {
           ...split,

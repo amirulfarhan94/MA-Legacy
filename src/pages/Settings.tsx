@@ -9,6 +9,7 @@ import { sampleData } from '../lib/sample'
 import { useStore, type BackupData } from '../lib/store'
 import { DOC_META, DOC_TYPES, type DocumentStyle, type Settings } from '../lib/types'
 import { Button, Card, CardHeader, Field, Input, NumberInput, PageHeader, Textarea } from '../components/ui'
+import OnlineAccount from '../components/OnlineAccount'
 
 export default function SettingsPage() {
   const store = useStore()
@@ -242,6 +243,10 @@ export default function SettingsPage() {
           ))}
         </Section>
 
+        <div className="lg:col-span-2">
+          <OnlineAccount />
+        </div>
+
         <Card id="set-backup" className="scroll-mt-36 lg:col-span-2">
           <CardHeader
             title="Backup & data"
@@ -360,6 +365,7 @@ const SECTIONS: [string, string][] = [
   ['set-signing', 'Signing'],
   ['set-numbering', 'Numbering'],
   ['set-terms', 'Terms'],
+  ['set-online', 'Online'],
   ['set-backup', 'Backup'],
 ]
 

@@ -2,7 +2,9 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Printer } from 'lucide-react'
 import { formatMoney, toISODate } from '../lib/calc'
-import { dmy, SPLIT_MAX, SPLIT_MIN } from '../lib/split'
+import { dmy, SPLIT_MAX } from '../lib/split'
+import { SPLIT_TERMS as TERMS } from '../lib/splitTerms'
+import { usePhotoUrls } from '../lib/photos'
 import { useStore } from '../lib/store'
 import { DOC_META } from '../lib/types'
 import SharePdfButton from '../components/SharePdfButton'
@@ -11,18 +13,6 @@ import { Button, PageHeader } from '../components/ui'
 
 const DUE_NOTE = ['before work starts', '1 month after Payment 1', '2 months after Payment 1']
 
-const TERMS: [string, string][] = [
-  ['Eligibility', `Electrical work with a total value between RM${SPLIT_MIN} and RM${SPLIT_MAX.toLocaleString('en-MY')}. One active plan per customer.`],
-  ['No interest or fees', 'The Customer pays only the total job value. No interest, late fee or administration charge applies.'],
-  ['Due dates', 'Payments 2 and 3 fall on the same day of the month as Payment 1. If that day does not exist in a month, the due date is the last day of that month.'],
-  ['Reminders', 'A WhatsApp reminder is sent about 3 days before each due date.'],
-  ['Late payment', 'If a payment is more than 7 days late, MA Legacy Solutions may ask for the full remaining balance to be paid at once.'],
-  ['Warranty', 'The workmanship warranty starts from the work completion date and is valid only after all three payments are received in full.'],
-  ['Materials', 'Materials supplied remain the property of MA Legacy Solutions until full payment is received.'],
-  ['Early settlement', 'The Customer may pay the remaining balance at any time without any charge.'],
-  ['Cancellation', 'If the Customer cancels before work starts, Payment 1 is refunded less the cost of any materials already purchased for the job.'],
-  ['Records', 'A receipt will be issued for every payment received.'],
-]
 
 /** Split Payment Agreement for a split invoice (spec section 5), printable and shareable as PDF. */
 export default function Agreement() {
@@ -40,8 +30,14 @@ export default function Agreement() {
     }
   }, [invoice])
 
+  const icUrls = usePhotoUrls(invoice?.split?.icPhotoIds ?? [])
+
   if (!invoice?.split) return <Navigate to={invoice ? `/d/invoices/${invoice.id}` : '/d/invoices'} replace />
   const plan = invoice.split
+  // IC photos from an online application get a page of their own; ones not on this device are left out.
+  const icPhotos = (plan.icPhotoIds ?? []).map((id) => icUrls[id]).filter((u): u is string => !!u)
+  const pages = icPhotos.length ? 3 : 2
+  const signedOn = plan.signedAt ? dmy(toISODate(new Date(plan.signedAt))) : ''
   const total = plan.payments.reduce((t, p) => t + p.amount, 0)
   const rm = (n: number) => formatMoney(n, 'RM').replace(' ', '')
   const date = toISODate(new Date(plan.createdAt || invoice.createdAt || Date.now()))
@@ -153,7 +149,7 @@ export default function Agreement() {
               <div className="mt-1.5 text-stone-600">Please send the payment slip via WhatsApp. A receipt will be issued for each payment.</div>
             </div>
             <div className="flex-1" />
-            <PageFoot no={plan.agreementNo} page="1 of 2" />
+            <PageFoot no={plan.agreementNo} page={`1 of ${pages}`} />
           </div>
 
           {/* Page 2: terms, declaration and signatures */}
@@ -178,7 +174,7 @@ export default function Agreement() {
               schedule.
             </p>
             <div className="mt-5 grid grid-cols-2 gap-8 text-[11px]">
-              <SignBlock title="Customer" lines={[['Name', plan.customerName], ['IC No.', plan.icNo], ['Date', '']]} />
+              <SignBlock title="Customer" lines={[['Name', plan.customerName], ['IC No.', plan.icNo], ['Date', signedOn]]} signature={plan.customerSignature} />
               <SignBlock
                 title={settings.companyName}
                 lines={[['Name', settings.signerName], ['Position', settings.signerPosition], ['Date', dmy(date)]]}
@@ -186,10 +182,33 @@ export default function Agreement() {
                 stamp={settings.stampDataUrl || true}
               />
             </div>
-            <p className="mt-5 text-[10.5px] italic text-stone-600">A copy of the Customer&apos;s IC is attached to this agreement.</p>
+            <p className="mt-5 text-[10.5px] italic text-stone-600">
+              A copy of the Customer&apos;s IC is attached to this agreement.
+              {plan.customerSignature && ` Signed electronically by the Customer through ${settings.companyName}'s online application form on ${signedOn}.`}
+            </p>
             <div className="flex-1" />
-            <PageFoot no={plan.agreementNo} page="2 of 2" />
+            <PageFoot no={plan.agreementNo} page={`2 of ${pages}`} />
           </div>
+
+          {icPhotos.length > 0 && (
+            <div className="sheet agreement next-page mx-auto mt-6 flex flex-col shadow-lg print:mt-0">
+              <Head title="Split Payment Agreement" rows={[['Agreement No.', plan.agreementNo]]} logo={settings.logoDataUrl || './logo.png'} small />
+              <Heading n={6}>Copy of the Customer&apos;s IC</Heading>
+              <p className="text-[11px] text-stone-600">
+                {plan.customerName} · IC No. {plan.icNo}
+              </p>
+              <div className="mt-4 grid gap-5">
+                {icPhotos.map((src, i) => (
+                  <figure key={src} className="m-0">
+                    <img src={src} alt={i ? 'IC back' : 'IC front'} className="mx-auto max-h-[330px] max-w-full rounded border border-stone-200 object-contain" />
+                    <figcaption className="mt-1 text-center text-[10px] text-stone-500">{i ? 'Back' : 'Front'}</figcaption>
+                  </figure>
+                ))}
+              </div>
+              <div className="flex-1" />
+              <PageFoot no={plan.agreementNo} page={`3 of ${pages}`} />
+            </div>
+          )}
         </SheetPreview>
       </div>
     </>

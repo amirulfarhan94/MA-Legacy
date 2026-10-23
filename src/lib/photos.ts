@@ -50,6 +50,14 @@ export async function addPhoto(file: File): Promise<string> {
   return id
 }
 
+/** Saves a picture that is already small (e.g. an IC photo from an online application). */
+export async function addPhotoFromDataUrl(dataUrl: string): Promise<string> {
+  const blob = await (await fetch(dataUrl)).blob()
+  const id = crypto.randomUUID()
+  await run('readwrite', (s) => s.put({ id, blob, createdAt: Date.now() } satisfies PhotoRecord))
+  return id
+}
+
 function shrinkPhoto(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file)
@@ -112,7 +120,8 @@ export function usePhotoUrls(ids: string[]): Record<string, string | null> {
 /** Waits until the photos are ready to show, e.g. before printing or making a PDF. */
 export const photosReady = (ids: string[]) => Promise.all(ids.map(load))
 
-const referencedIds = (docs: Document[]) => new Set(docs.flatMap((d) => d.photos?.map((p) => p.id) ?? []))
+/** Photos still in use: work photos on documents and IC copies on split payment plans. */
+const referencedIds = (docs: Document[]) => new Set(docs.flatMap((d) => [...(d.photos?.map((p) => p.id) ?? []), ...(d.split?.icPhotoIds ?? [])]))
 
 /**
  * Deletes pictures no document uses any more. Photos from the last day are kept, since a

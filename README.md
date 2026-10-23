@@ -54,6 +54,15 @@ Split Payment Agreement, with the company's signer name, position, date, signatu
 **Copy WhatsApp reminder** (Bahasa Malaysia). While a plan is active and the last backup is over 7 days old, a banner
 asks for a backup, since plans hold IC numbers and money owed.
 
+**Online split payment application.** Instead of filling in the customer's details yourself, send them a link from the
+invoice page (**Customer application → Send application link**, shared on WhatsApp). On their phone they see the job, the
+schedule and the terms, fill in their name, IC no., phone and address, photograph their IC front and back, sign with a
+finger and agree to the terms and to how their data is used. The app shows a banner when an application arrives;
+**Review & approve** copies the details, signature and IC photos into the plan (the agreement then prints the customer's
+signature and a page with the IC copy) and deletes the online copy. This uses Firebase (project `ma-legacy`): sign in
+under **Settings → Online account**; access rules are in `firestore.rules`. A link works once and expires after 14
+days. Everything else still stays on the device.
+
 Invoices, service reports and quotations can carry **work photos** (site photos on a quotation): add them from the
 camera or gallery in the editor, with a caption each. They print, and go into **Share PDF**, as report pages after the
 document, four photos to a page. Photos are scaled down and kept on this device only (in the browser's storage, not
