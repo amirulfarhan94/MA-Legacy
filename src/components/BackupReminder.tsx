@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { ShieldAlert, ShieldCheck, TriangleAlert } from 'lucide-react'
 import { backupNow, BACKUP_EVERY_DAYS, daysSince, snoozeBackupReminder, useBackupDue, useLastBackup } from '../lib/backup'
 import { useSaveError } from '../lib/storage'
+import { activeSplitPlans } from '../lib/split'
+import { today } from '../lib/calc'
+import { useStore } from '../lib/store'
 import { Button } from './ui'
 
 function useBackupAction() {
@@ -17,12 +20,52 @@ function useBackupAction() {
   return [busy, run] as const
 }
 
+/**
+ * Split plans hold customers' IC numbers and money owed, and live only in this browser: while
+ * any plan is active and the last backup is 7+ days old (or never), this banner asks for one.
+ * It cannot be snoozed.
+ */
+function useSplitBackupDue(): number {
+  const last = useLastBackup()
+  const active = useStore((s) => activeSplitPlans(s.documents, today()).length)
+  const days = daysSince(last)
+  return active > 0 && (days === null || days >= BACKUP_EVERY_DAYS) ? active : 0
+}
+
+export function SplitBackupBanner() {
+  const active = useSplitBackupDue()
+  const last = useLastBackup()
+  const [busy, run] = useBackupAction()
+  if (!active) return null
+  const days = daysSince(last)
+  return (
+    <div role="alert" className="no-print mb-5 flex flex-col gap-3 rounded-[22px] border border-red-200 bg-red-50 px-4 py-3 sm:flex-row sm:items-center">
+      <div className="flex flex-1 items-start gap-3">
+        <ShieldAlert size={20} className="mt-0.5 shrink-0 text-red-700" />
+        <div className="text-sm">
+          <div className="font-semibold text-stone-900">
+            Back up your {active} active split plan{active === 1 ? '' : 's'} — {days === null ? 'never backed up' : `last backup ${days} days ago`}
+          </div>
+          <div className="text-stone-600">
+            They hold customers&apos; IC numbers and money still owed, and are saved only in this browser. Keep a copy on Google Drive or WhatsApp.
+          </div>
+        </div>
+      </div>
+      <Button variant="primary" size="sm" className="self-end sm:self-auto" onClick={run} disabled={busy}>
+        {busy ? 'Saving…' : 'Back up now'}
+      </Button>
+    </div>
+  )
+}
+
 /** Banner shown at the top of every page when a backup is 7+ days overdue. */
 export default function BackupReminder() {
   const due = useBackupDue()
   const last = useLastBackup()
+  const splitDue = useSplitBackupDue()
   const [busy, run] = useBackupAction()
-  if (!due) return null
+  // The split plans banner says the same, more firmly.
+  if (!due || splitDue) return null
 
   const days = daysSince(last)
   return (

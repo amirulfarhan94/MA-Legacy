@@ -7,7 +7,7 @@ import { isOpenInvoice } from '../lib/finance'
 import { useStore } from '../lib/store'
 import { InstallButton, PwaStatus } from './Pwa'
 import ThemeSwitch from './ThemeSwitch'
-import BackupReminder, { BackupStatus, SaveErrorBanner } from './BackupReminder'
+import BackupReminder, { BackupStatus, SaveErrorBanner, SplitBackupBanner } from './BackupReminder'
 import CommandPalette from './CommandPalette'
 import CreateSheet from './CreateSheet'
 import { NAV, isMac, type NavCount } from './nav'
@@ -270,6 +270,7 @@ export default function Layout() {
             <TopBar onSearch={() => setSearchOpen(true)} onCreate={() => setCreateOpen(true)} />
             <main key={pathname} className="print-area px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 sm:px-0 sm:pt-6">
               <SaveErrorBanner />
+              <SplitBackupBanner />
               <BackupReminder />
               <Outlet />
             </main>

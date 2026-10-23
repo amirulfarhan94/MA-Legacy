@@ -467,6 +467,12 @@ body {
 .eng-foot { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-top: 14px; padding-top: 8px; border-top: .8px solid var(--e-ink); font-size: 8.4px; color: var(--e-ink-3); }
 .eng-foot b { font: 500 7.5px/1 var(--e-mono); letter-spacing: .14em; color: var(--e-ink-2); white-space: nowrap; }
 
+/* Split payment (3×) invoices */
+.eng-badge { display: inline-block; margin-top: 7px; padding: 3px 7px; background: var(--e-ink); color: #f1d9a0; font: 600 7px/1 var(--e-mono); font-style: normal; letter-spacing: .16em; }
+.eng-items.eng-split { margin-top: 8px; }
+.eng-items.eng-split td { font-size: 10px; }
+.eng-section .eng-note { margin-top: 6px; }
+
 /* Work photo report pages: four photos to an A4 page, whole photos (never cropped). */
 .sheet.photo-page { height: 297mm; }
 .photo-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px 16px; margin-top: 18px; }
@@ -497,6 +503,7 @@ body {
   .eng-items tr, .eng-sum, .eng-box, .eng-sign, .eng-due, .eng-receipt { break-inside: avoid; }
   .eng-foot b { display: none; }
   .sheet.photo-page { break-before: page; height: 296mm; }
+  .sheet.next-page { break-before: page; }
   .sheet.eng.photo-page { height: 268mm; }
   /* The phone preview scales the sheet down; paper always gets it at full size. */
   .sheet-fit { height: auto !important; overflow: visible !important; padding: 0 !important; }

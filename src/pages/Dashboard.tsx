@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Moon, Plus, Sparkles, Sun, Sunrise } from 'lucide-react'
 import { displayStatus, docTotals, invoiceBalance, monthLabel, MONTHS_SHORT, nextDocNumber, toISODate } from '../lib/calc'
 import { daypartOf, useNow } from '../lib/daypart'
@@ -9,6 +9,8 @@ import { DOC_META, type DocType } from '../lib/types'
 import AreaChart, { type ChartPoint } from '../components/AreaChart'
 import { DOC_ICON } from '../components/nav'
 import { Button, Card } from '../components/ui'
+import SplitDueList from '../components/SplitDueList'
+import { activeSplitPlans } from '../lib/split'
 
 const QUICK: DocType[] = ['quotation', 'invoice', 'receipt', 'service_report']
 const PART_ICON = { morning: Sunrise, afternoon: Sun, evening: Moon }
@@ -37,6 +39,8 @@ export default function Dashboard() {
   const nav = useNavigate()
   const now = useNow(30_000)
   const asOf = toISODate(now)
+  // The split payments card only shows once a plan is running.
+  const hasSplitPlans = activeSplitPlans(documents, asOf).length > 0
   const [range, setRange] = useState<Range>('12m')
 
   const data = useMemo(() => {
@@ -194,6 +198,21 @@ export default function Dashboard() {
           foot={<InOut moneyIn={data.collectedYear} moneyOut={data.expenseYear} />}
         />
       </div>
+
+      {hasSplitPlans && (
+        <Card className="mt-3.5">
+          <div className="flex items-center justify-between gap-3 border-b border-stone-200 px-5 py-4">
+            <div>
+              <h2 className="font-display text-[17px] font-medium tracking-[-0.01em] text-stone-900">Split payments due</h2>
+              <p className="mt-1 text-[13px] text-stone-500">Next 7 days and overdue</p>
+            </div>
+            <Link to="/split-plans" className="text-sm font-semibold text-gold-700 hover:underline">
+              All split plans
+            </Link>
+          </div>
+          <SplitDueList />
+        </Card>
+      )}
 
       <Card className="mt-3.5 p-4 sm:p-5">
         <div className="mb-2 flex flex-wrap items-start justify-between gap-3">

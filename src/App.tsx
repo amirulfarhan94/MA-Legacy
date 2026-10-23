@@ -13,6 +13,8 @@ import SettingsPage from './pages/Settings'
 import Statement from './pages/Statement'
 import Reports from './pages/Reports'
 import Items from './pages/Items'
+import Agreement from './pages/Agreement'
+import SplitPlans from './pages/SplitPlans'
 import { cleanUpPhotos } from './lib/photos'
 import { useStore } from './lib/store'
 import { requestPersistentStorage } from './lib/storage'
@@ -46,7 +48,9 @@ export default function App() {
             <Route path="d/:typePath/new" element={<DocumentEditor />} />
             <Route path="d/:typePath/:id" element={<DocumentView />} />
             <Route path="d/:typePath/:id/edit" element={<DocumentEditor />} />
+            <Route path="d/invoices/:id/agreement" element={<Agreement />} />
             <Route path="items" element={<Items />} />
+            <Route path="split-plans" element={<SplitPlans />} />
             <Route path="transactions" element={<Transactions />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<SettingsPage />} />

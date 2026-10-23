@@ -164,12 +164,49 @@ export interface Document {
   paymentMethod?: PaymentMethod
   paymentRef?: string
   service?: ServiceReportFields
+  /** Invoices: split payment (3×) plan; absent on normal invoices. */
+  split?: SplitPlan
+  /** Receipts for a split invoice: which scheduled payments (1–3) this receipt pays. */
+  splitSeqs?: number[]
   /** Invoices: when payment reminders were sent (ISO timestamps). */
   reminders?: string[]
   /** Work photos, printed as report pages after the document. The pictures stay on the device. */
   photos?: DocPhoto[]
   createdAt: string
   updatedAt: string
+}
+
+/** One of the three scheduled payments of a split plan. Paid date, method and receipt come from its receipt. */
+export interface SplitPayment {
+  seq: 1 | 2 | 3
+  /** Share of the total, in percent (40, 30, 30). */
+  pct: number
+  amount: number
+  dueDate: string
+}
+
+/**
+ * Split payment (3×) plan, stored on its invoice. Payment and plan statuses are worked out
+ * from the invoice's receipts and today's date (see lib/split.ts), never stored.
+ */
+export interface SplitPlan {
+  /** MAL-SP-YYYY-NNN, running per year. */
+  agreementNo: string
+  quotationNo: string
+  /** Customer's full name as per IC. */
+  customerName: string
+  icNo: string
+  phone: string
+  email: string
+  premisesAddress: string
+  workDescription: string
+  plannedWorkDate: string
+  /** Planned (or, once paid, actual) Payment 1 date; Payments 2 and 3 fall due 1 and 2 months after it. */
+  payment1Date: string
+  payments: SplitPayment[]
+  createdAt: string
+  /** Set when the plan is cancelled while the invoice itself stays. */
+  cancelled?: boolean
 }
 
 export interface DocPhoto {
@@ -234,6 +271,8 @@ export interface Settings {
   greetingName: string
   /** Look of printed documents and statements. */
   documentStyle: DocumentStyle
+  /** Most split payment plans that may be active at once. */
+  maxActiveSplitPlans: number
 }
 
 export type DocumentStyle = 'classic' | 'engineering'

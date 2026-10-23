@@ -40,6 +40,19 @@ Pick the look of printed documents under **Settings → Document style**: **Engi
 block, mono figures, and page numbers with a running header on long documents) or **Classic** (the original look).
 Both styles' fonts ship with the app, so they print the same offline. Page numbers need a recent Chrome or Edge (131+).
 
+**Split payment (3×)** — see `docs/split-payment-spec.md`. An invoice of RM300–RM1,500 can be paid in three
+interest-free payments (40% deposit, then 30% and 30% one and two months later; same day of the month, or the month's
+last day). Turn it on in the invoice editor: it is refused below or above the range, when the customer already has an
+active plan, or when the "Max active split payment plans" limit in Settings is reached. The plan (agreement no.
+MAL-SP-YYYY-NNN, customer's name as per IC, IC no., site, work, dates) is saved on the invoice itself. On the invoice
+page, **Record** each payment (a receipt is made and the balance goes down; if Payment 1 is paid on another day the app
+offers to move Payments 2 and 3 to follow it), or **Settle remaining balance** at once. Payment and plan statuses
+(Pending / Paid / Overdue; Active / Completed / Overdue / Cancelled) are worked out from the receipts and today's date.
+The printed invoice gets a SPLIT PAYMENT · 3× badge, the agreement no. and a payment schedule; **Agreement** prints the
+Split Payment Agreement. The dashboard and **Split plans** list payments due in the next 7 days and overdue ones, with
+**Copy WhatsApp reminder** (Bahasa Malaysia). While a plan is active and the last backup is over 7 days old, a banner
+asks for a backup, since plans hold IC numbers and money owed.
+
 Invoices, service reports and quotations can carry **work photos** (site photos on a quotation): add them from the
 camera or gallery in the editor, with a caption each. They print, and go into **Share PDF**, as report pages after the
 document, four photos to a page. Photos are scaled down and kept on this device only (in the browser's storage, not

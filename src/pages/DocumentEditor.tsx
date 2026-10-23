@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, UserPlus } from 'lucide-react'
-import { docTotals, formatMoney, invoiceBalance } from '../lib/calc'
+import { docTotals, formatMoney, invoiceBalance, today } from '../lib/calc'
 import { recentItems, sameItem, suggestItems } from '../lib/catalog'
+import { nextAgreementNo, splitEligibility, splitLocked, splitSchedule } from '../lib/split'
 import { contactKind, customerLabel, uid, useStore } from '../lib/store'
 import {
   DOC_META,
@@ -16,10 +17,12 @@ import {
   type LineItem,
   type PaymentMethod,
   type ServiceReportFields,
+  type SplitPlan,
 } from '../lib/types'
 import CustomerForm from '../components/CustomerForm'
 import LineItemsEditor from '../components/LineItemsEditor'
 import PhotosEditor from '../components/PhotosEditor'
+import SplitPlanEditor from '../components/SplitPlanEditor'
 import { Button, Card, CardHeader, Field, Input, NumberInput, PageHeader, Select, Textarea } from '../components/ui'
 
 export default function DocumentEditor() {
@@ -92,6 +95,37 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
   const linkedInvoice = documents.find((d) => d.id === doc.invoiceId)
   const linkedBalance = linkedInvoice ? invoiceBalance(linkedInvoice, others) : 0
 
+  // Split payment (3×), invoices only.
+  const customer = customers.find((c) => c.id === doc.customerId)
+  const splitIsLocked = !!existing && splitLocked(doc, documents)
+  const splitCheck = splitEligibility({
+    total: totals.total,
+    customerId: doc.customerId,
+    invoiceId: doc.id,
+    docs: documents,
+    maxActive: settings.maxActiveSplitPlans,
+    today: today(),
+    customerLabel: customer ? customerLabel(customer) : undefined,
+  })
+  const makeSplitPlan = (): SplitPlan => {
+    const source = documents.find((d) => d.id === doc.sourceId && d.type === 'quotation')
+    const work = doc.items.map((i) => i.description.trim()).filter(Boolean)
+    return {
+      agreementNo: nextAgreementNo(doc.date, others),
+      quotationNo: source?.number ?? '',
+      customerName: customer?.name || customer?.company || '',
+      icNo: '',
+      phone: customer?.phone ?? '',
+      email: customer?.email ?? '',
+      premisesAddress: customer?.address ?? '',
+      workDescription: work.join('; '),
+      plannedWorkDate: '',
+      payment1Date: doc.date,
+      payments: splitSchedule(totals.total, doc.date),
+      createdAt: new Date().toISOString(),
+    }
+  }
+
   const toggleItemAdjustments = (on: boolean) =>
     setDoc((d) => ({
       ...d,
@@ -110,8 +144,28 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
       if ((Number(doc.refundAmount) || 0) > totals.total + 0.005)
         return setError(`The refund cannot be more than the credit note total (${formatMoney(totals.total, settings.currency)}).`)
     }
+    let split = type === 'invoice' ? doc.split : undefined
+    if (split) {
+      if (splitIsLocked) {
+        const scheduled = split.payments.reduce((t, p) => t + p.amount, 0)
+        if (Math.abs(scheduled - totals.total) > 0.005)
+          return setError(`A split payment is already recorded, so the total must stay ${formatMoney(scheduled, settings.currency)}. Use a credit note to reduce it.`)
+      } else {
+        if (!splitCheck.ok) return setError(splitCheck.reason ?? 'Split payment is not available for this invoice.')
+        if (!split.customerName.trim() || !split.icNo.trim()) return setError("Split payment: enter the customer's full name as per IC and the IC no.")
+        const taken = others.some((d) => d.split?.agreementNo === split!.agreementNo)
+        split = {
+          ...split,
+          agreementNo: taken ? nextAgreementNo(doc.date, others) : split.agreementNo,
+          payments: splitSchedule(totals.total, split.payment1Date),
+        }
+      }
+    }
     const saved = store.saveDocument({
       ...doc,
+      split,
+      // A split invoice is due when its last payment is.
+      dueDate: split ? split.payments[2].dueDate : doc.dueDate,
       number: doc.number.trim(),
       // Drop blank lines and blank sub items.
       items: doc.items
@@ -192,8 +246,13 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                 <Input type="date" value={doc.date} onChange={(e) => set('date', e.target.value)} />
               </Field>
               {hasDue && (
-                <Field label={dueLabel}>
-                  <Input type="date" value={doc.dueDate} onChange={(e) => set('dueDate', e.target.value)} />
+                <Field label={dueLabel} hint={doc.split ? 'Set by the split payment schedule (Payment 3).' : undefined}>
+                  <Input
+                    type="date"
+                    value={doc.split ? (splitIsLocked ? doc.split.payments[2].dueDate : splitSchedule(totals.total, doc.split.payment1Date)[2].dueDate) : doc.dueDate}
+                    disabled={!!doc.split}
+                    onChange={(e) => set('dueDate', e.target.value)}
+                  />
                 </Field>
               )}
               <Field label="Reference" hint={refHint}>
@@ -401,6 +460,19 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                 />
               </div>
             </Card>
+          )}
+
+          {type === 'invoice' && (
+            <SplitPlanEditor
+              plan={doc.split}
+              onChange={(split) => set('split', split)}
+              total={totals.total}
+              currency={settings.currency}
+              eligibility={splitCheck}
+              locked={splitIsLocked}
+              customer={customer}
+              makePlan={makeSplitPlan}
+            />
           )}
 
           {PHOTO_TYPES.includes(type) && (

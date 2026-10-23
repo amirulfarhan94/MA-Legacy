@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 import { amountInWords, docTotals, formatDate, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
 import { useStore } from '../lib/store'
+import { printedSplit, SPLIT_BADGE, SplitScheduleEng } from './SplitPrint'
 import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Customer, type Document, type DocType } from '../lib/types'
 
 const money = (n: number) => formatMoney(n, '').trim()
@@ -52,7 +53,7 @@ export function EngSheet({ docNo, title, className = '', children }: { docNo: st
   )
 }
 
-export function EngHeader({ title, kicker, cells }: { title: string; kicker: string; cells: [string, string][] }) {
+export function EngHeader({ title, kicker, cells, badge }: { title: string; kicker: string; cells: [string, string][]; badge?: string }) {
   const settings = useStore((s) => s.settings)
   const info = [
     settings.regNo && `SSM ${settings.regNo}`,
@@ -77,6 +78,7 @@ export function EngHeader({ title, kicker, cells }: { title: string; kicker: str
         <div className="eng-title">
           <b className={size}>{title}</b>
           <span>{kicker}</span>
+          {badge && <em className="eng-badge">{badge}</em>}
         </div>
       </div>
       <div className="eng-block">
@@ -120,9 +122,23 @@ export function EngAmountBox({ label, amount, currency, sub }: { label: string; 
 }
 
 /** Bank details and payment QR from Settings; nothing when neither is set. */
-export function EngPayment({ bank = true, qr = true, reference }: { bank?: boolean; qr?: boolean; reference?: string }) {
+export function EngPayment({
+  bank = true,
+  qr = true,
+  reference,
+  accountName,
+  always = false,
+}: {
+  bank?: boolean
+  qr?: boolean
+  reference?: string
+  /** Overrides the account name from Settings. */
+  accountName?: string
+  /** Show the bank lines even when no account no. is set (split payment invoices). */
+  always?: boolean
+}) {
   const settings = useStore((s) => s.settings)
-  const showBank = bank && !!settings.bankAccountNo
+  const showBank = (bank && !!settings.bankAccountNo) || always
   const showQr = qr && !!settings.paymentQrDataUrl
   if (!showBank && !showQr) return null
   return (
@@ -134,9 +150,9 @@ export function EngPayment({ bank = true, qr = true, reference }: { bank?: boole
             <dt>Bank</dt>
             <dd>{settings.bankName || '—'}</dd>
             <dt>Account no.</dt>
-            <dd className="m">{settings.bankAccountNo}</dd>
+            <dd className="m">{settings.bankAccountNo || '—'}</dd>
             <dt>Account name</dt>
-            <dd>{settings.bankAccountName || settings.companyName}</dd>
+            <dd>{accountName || settings.bankAccountName || settings.companyName}</dd>
             {reference && (
               <>
                 <dt>Reference</dt>
@@ -199,12 +215,14 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
   const balance = Math.max(0, totals.total - paid - credited)
   const refund = doc.type === 'credit_note' ? Number(doc.refundAmount) || 0 : 0
   const dueLabel = doc.type === 'quotation' ? 'Valid until' : doc.type === 'purchase_order' ? 'Delivery date' : 'Due date'
+  const split = printedSplit(doc)
 
   const cells: [string, string][] = [
     ['Document no.', doc.number],
     ['Date', formatDate(doc.date)],
     ...(doc.dueDate ? [[dueLabel, formatDate(doc.dueDate)] as [string, string]] : []),
     ['Reference', doc.reference || '—'],
+    ...(split ? [['Agreement no.', split.agreementNo] as [string, string]] : []),
   ]
 
   // The box beside the customer: what this paper asks for or confirms.
@@ -275,11 +293,15 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
   }
 
   const words = isPriced ? amountInWords(totals.total) : ''
-  const payment = <EngPayment bank={showBank} qr={showQr} reference={doc.type === 'invoice' || doc.type === 'proforma' ? doc.number : undefined} />
+  const payment = split ? (
+    <EngPayment qr={showQr} reference={doc.number} accountName={settings.companyName} always />
+  ) : (
+    <EngPayment bank={showBank} qr={showQr} reference={doc.type === 'invoice' || doc.type === 'proforma' ? doc.number : undefined} />
+  )
 
   return (
     <EngSheet docNo={doc.number} title={meta.title}>
-      <EngHeader title={meta.title} kicker={KICKER[doc.type]} cells={cells} />
+      <EngHeader title={meta.title} kicker={KICKER[doc.type]} cells={cells} badge={split ? SPLIT_BADGE : undefined} />
 
       <div className="eng-parties">
         <div className="eng-stack">
@@ -447,6 +469,8 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
               </div>
             </div>
           )}
+
+          {split && <SplitScheduleEng doc={doc} />}
 
           {refund > 0 && (
             <p className="eng-note">

@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  CalendarClock,
   BarChart3,
   ClipboardCheck,
   FileCheck2,
@@ -63,6 +64,7 @@ export const NAV: NavItem[] = [
   doc('quotation', 'quotations'),
   doc('proforma'),
   doc('invoice', 'invoices'),
+  { to: '/split-plans', label: 'Split plans', icon: CalendarClock },
   doc('delivery_order'),
   doc('receipt'),
   doc('credit_note'),

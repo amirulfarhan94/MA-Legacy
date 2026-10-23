@@ -217,6 +217,8 @@ export const STATUS_DOT: Record<string, string> = {
   received: 'var(--good)',
   income: 'var(--good)',
   unpaid: 'var(--warn)',
+  pending: 'var(--warn)',
+  active: 'var(--color-accent)',
   partial: 'var(--serious)',
   overdue: 'var(--critical)',
   rejected: 'var(--critical)',

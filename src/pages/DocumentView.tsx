@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRightLeft, BellRing, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
 import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid, toISODate, today } from '../lib/calc'
 import { reminderMessage, shouldMarkSent } from '../lib/reminder'
+import { splitPaymentStates, splitPlanStatus } from '../lib/split'
 import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
 import { waNumber } from '../lib/contact'
 import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
@@ -11,6 +12,7 @@ import EngineeringSheet from '../components/EngineeringSheet'
 import SheetPreview from '../components/SheetPreview'
 import SharePdfButton from '../components/SharePdfButton'
 import PhotoPages from '../components/PhotoPages'
+import SplitPaymentsCard from '../components/SplitPaymentsCard'
 import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
 
 const CONVERSIONS: Partial<Record<DocType, DocType[]>> = {
@@ -34,6 +36,8 @@ export default function DocumentView() {
   const customer = useCustomer(doc?.customerId)
   const nav = useNavigate()
   const sheetBox = useRef<HTMLDivElement>(null)
+  // Split payment (3×): the payments being recorded, while the dialog is open.
+  const [splitRecording, setSplitRecording] = useState<number[] | null>(null)
 
   // The browser uses the page title as the default PDF file name.
   useEffect(() => {
@@ -74,6 +78,9 @@ export default function DocumentView() {
       status: fresh.status,
       sourceId: undefined,
       invoiceId: undefined,
+      // A copy starts without the original's split plan or reminder history.
+      split: undefined,
+      reminders: undefined,
       items: cloneItems(doc.items),
       createdAt: fresh.createdAt,
     }
@@ -134,6 +141,7 @@ export default function DocumentView() {
   const lastReminder = doc.reminders?.at(-1)
 
   const canPay = doc.type === 'invoice' && doc.status !== 'cancelled' && balance > 0
+  const splitOpen = doc.type === 'invoice' && !!doc.split && ['Active', 'Overdue'].includes(splitPlanStatus(doc, documents, today()))
   const canPayPo = doc.type === 'purchase_order' && doc.status !== 'cancelled' && poPaid + 0.005 < docTotals(doc).total
   const more: MenuItem[] = [
     ...(doc.type === 'invoice' && doc.status !== 'cancelled' && doc.status !== 'draft'
@@ -203,7 +211,14 @@ export default function DocumentView() {
               <Pencil size={15} /> Edit
             </Button>
             {canPay && (
-              <Button onClick={() => nav(`/d/${DOC_META.receipt.path}/new?invoice=${doc.id}`)}>
+              <Button
+                onClick={() => {
+                  // A split invoice is paid by its schedule: record the next payment.
+                  const next = splitOpen ? splitPaymentStates(doc, documents, today()).find((p) => p.status !== 'Paid') : undefined
+                  if (next) setSplitRecording([next.seq])
+                  else nav(`/d/${DOC_META.receipt.path}/new?invoice=${doc.id}`)
+                }}
+              >
                 <ReceiptText size={15} /> Record payment
               </Button>
             )}
@@ -228,51 +243,56 @@ export default function DocumentView() {
           </div>
         </div>
 
-        <Card className="no-print order-1 min-[1440px]:col-start-2 min-[1440px]:row-start-1">
-          <CardHeader title="Overview" />
-          <div className="@container">
-            <div className="grid gap-3 p-5 text-sm @min-[520px]:grid-cols-2 @min-[520px]:gap-x-10">
-              <div className="flex justify-between gap-2">
-                <span className="text-stone-500">{party}</span>
-                {customer ? (
-                  <Link to={`/${contactKind(customer) === 'supplier' ? 'suppliers' : 'customers'}/${customer.id}`} className="text-right font-semibold text-gold-700 hover:underline">
-                    {customerLabel(customer)}
-                  </Link>
-                ) : (
-                  <span>—</span>
-                )}
-              </div>
-              {facts.map(([label, value, cls]) => (
-                <div key={label} className="flex justify-between gap-2">
-                  <span className="text-stone-500">{label}</span>
-                  <span className={`tabular ${cls || 'font-medium'}`}>{value}</span>
-                </div>
-              ))}
-              {lastReminder && (
+        <div className="no-print order-1 space-y-5 min-[1440px]:col-start-2 min-[1440px]:row-start-1">
+          <Card>
+            <CardHeader title="Overview" />
+            <div className="@container">
+              <div className="grid gap-3 p-5 text-sm @min-[520px]:grid-cols-2 @min-[520px]:gap-x-10">
                 <div className="flex justify-between gap-2">
-                  <span className="text-stone-500">Reminders</span>
-                  <span className="text-right">
-                    {doc.reminders!.length} · last {formatDate(toISODate(new Date(lastReminder)))}
-                  </span>
+                  <span className="text-stone-500">{party}</span>
+                  {customer ? (
+                    <Link to={`/${contactKind(customer) === 'supplier' ? 'suppliers' : 'customers'}/${customer.id}`} className="text-right font-semibold text-gold-700 hover:underline">
+                      {customerLabel(customer)}
+                    </Link>
+                  ) : (
+                    <span>—</span>
+                  )}
                 </div>
-              )}
-              <label className="block pt-1 @min-[520px]:col-span-2 @min-[520px]:max-w-xs">
-                <span className="mb-1 block text-xs text-stone-500">Status</span>
-                <Select
-                  value={doc.status}
-                  onChange={(e) => saveDocument({ ...doc, status: e.target.value as Document['status'] })}
-                  className="capitalize"
-                >
-                  {STATUS_OPTIONS[doc.type].map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </Select>
-              </label>
+                {facts.map(([label, value, cls]) => (
+                  <div key={label} className="flex justify-between gap-2">
+                    <span className="text-stone-500">{label}</span>
+                    <span className={`tabular ${cls || 'font-medium'}`}>{value}</span>
+                  </div>
+                ))}
+                {lastReminder && (
+                  <div className="flex justify-between gap-2">
+                    <span className="text-stone-500">Reminders</span>
+                    <span className="text-right">
+                      {doc.reminders!.length} · last {formatDate(toISODate(new Date(lastReminder)))}
+                    </span>
+                  </div>
+                )}
+                <label className="block pt-1 @min-[520px]:col-span-2 @min-[520px]:max-w-xs">
+                  <span className="mb-1 block text-xs text-stone-500">Status</span>
+                  <Select
+                    value={doc.status}
+                    onChange={(e) => saveDocument({ ...doc, status: e.target.value as Document['status'] })}
+                    className="capitalize"
+                  >
+                    {STATUS_OPTIONS[doc.type].map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+          {doc.type === 'invoice' && doc.split && (
+            <SplitPaymentsCard invoice={doc} recording={splitRecording} onRecord={setSplitRecording} />
+          )}
+        </div>
 
         {related.length > 0 && (
           <Card className="no-print order-3 self-start min-[1440px]:col-start-2 min-[1440px]:row-start-2">

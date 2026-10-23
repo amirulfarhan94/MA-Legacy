@@ -202,6 +202,9 @@ export default function SettingsPage() {
             <Field label="Quotation valid (days)">
               <NumberInput value={form.quotationValidDays} onValueChange={(v) => set('quotationValidDays', v)} />
             </Field>
+            <Field label="Max active split payment plans" hint="Split payment (3×): how many plans may run at the same time.">
+              <NumberInput value={form.maxActiveSplitPlans} onValueChange={(v) => set('maxActiveSplitPlans', Math.max(0, Math.round(v)))} />
+            </Field>
           </Section>
         </div>
 

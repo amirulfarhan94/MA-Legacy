@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { amountInWords, docTotals, formatDate, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
 import { useStore } from '../lib/store'
+import { printedSplit, SPLIT_BADGE, SplitPaymentDetailsClassic, SplitScheduleClassic } from './SplitPrint'
 import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Customer, type Document } from '../lib/types'
 
 const money = (n: number) => formatMoney(n, '').trim()
@@ -35,11 +36,14 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
   const paidSoFar = doc.type === 'invoice' ? invoicePaid(doc.id, documents) : 0
   const creditedSoFar = doc.type === 'invoice' ? invoiceCredited(doc.id, documents) : 0
   const refund = doc.type === 'credit_note' ? Number(doc.refundAmount) || 0 : 0
+  const split = printedSplit(doc)
+  const showPayment = !!split || showBank || showQr
 
   return (
     <div className="sheet mx-auto flex flex-col shadow-lg">
       <SheetHeader
         title={meta.title}
+        badge={split ? SPLIT_BADGE : undefined}
         rows={[
           ['No.', doc.number, true],
           ['Date', formatDate(doc.date)],
@@ -47,6 +51,7 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
             ? [[doc.type === 'quotation' ? 'Valid until' : doc.type === 'purchase_order' ? 'Delivery date' : 'Due date', formatDate(doc.dueDate)] as MetaEntry]
             : []),
           ...(doc.reference ? [['Ref.', doc.reference] as MetaEntry] : []),
+          ...(split ? [['Agreement no.', split.agreementNo] as MetaEntry] : []),
         ]}
       />
 
@@ -217,6 +222,8 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
             </div>
           )}
 
+          {split && <SplitScheduleClassic doc={doc} />}
+
           {refund > 0 && (
             <div className="mt-3 text-[11px] text-stone-600">
               Refund of {formatMoney(refund, cur)} paid by {PAYMENT_METHODS[doc.paymentMethod ?? 'other']}
@@ -240,9 +247,9 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
 
       {/* Footer */}
       <div className="mt-8 grid grid-cols-2 gap-8 text-[11px]">
-        {(showBank || showQr) && <PaymentBlock bank={showBank} qr={showQr} />}
+        {split ? <SplitPaymentDetailsClassic doc={doc} /> : (showBank || showQr) && <PaymentBlock bank={showBank} qr={showQr} />}
         {doc.terms && (
-          <div className={showBank || showQr ? '' : 'col-span-2'}>
+          <div className={showPayment ? '' : 'col-span-2'}>
             <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Terms & conditions</div>
             <div className="whitespace-pre-line text-stone-600">{doc.terms}</div>
           </div>
@@ -318,7 +325,7 @@ function Section({ title, text }: { title: string; text: string }) {
 export type MetaEntry = [label: string, value: string, bold?: boolean]
 
 /** Company letterhead with the document title and its meta rows (no., date…). */
-export function SheetHeader({ title, rows }: { title: string; rows: MetaEntry[] }) {
+export function SheetHeader({ title, rows, badge }: { title: string; rows: MetaEntry[]; badge?: string }) {
   const settings = useStore((s) => s.settings)
   const logo = settings.logoDataUrl || './logo.png'
   return (
@@ -336,6 +343,7 @@ export function SheetHeader({ title, rows }: { title: string; rows: MetaEntry[] 
       </div>
       <div className="text-right">
         <div className={`whitespace-nowrap font-bold tracking-wider text-gold-700 ${title.length > 16 ? 'text-[18px]' : 'text-[22px]'}`}>{title}</div>
+        {badge && <div className="mt-1 inline-block rounded-full bg-ink-900 px-2.5 py-0.5 text-[9.5px] font-bold tracking-[0.14em] text-gold-200">{badge}</div>}
         <table className="ml-auto mt-2 text-[11px]">
           <tbody>
             {rows.map(([label, value, bold]) => (
