@@ -1,9 +1,10 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import type { DocumentReference, DocumentSnapshot, QuerySnapshot } from 'firebase/firestore'
 import { cloud, useCloudUser } from './cloud'
+import { startPhotoSync, stopPhotoSync } from './photoSync'
 import { useStore } from './store'
 import { applyRemote, diffRecords, localOnly, type RemoteChange, type SyncRecord } from './syncMerge'
-import type { CatalogItem, Settings } from './types'
+import type { CatalogItem, Document, Settings } from './types'
 
 /**
  * Keeps the owner's records the same on every signed-in device through Firestore.
@@ -13,7 +14,7 @@ import type { CatalogItem, Settings } from './types'
  * so only what changed is sent. Changes from other devices replace the local record; when two
  * devices edit the same record, the one saved last wins. A delete leaves the record in the
  * cloud marked as deleted for 30 days, so it can be put back (Settings → Recently deleted).
- * Work photos and IC photos stay on the device that took them.
+ * Work photos and IC photos are synced separately, by photoSync.ts.
  */
 
 export const SYNCED_LISTS = ['customers', 'documents', 'catalog', 'transactions'] as const
@@ -284,7 +285,14 @@ export async function startSync(uid: string) {
       }
       send(writes.filter((w): w is Write => !!w))
     }
+    whenLoaded()
     refresh()
+  }
+
+  // Photos start once every list is up to date, so they are checked against current documents.
+  const whenLoaded = () => {
+    if (loaded.size < SYNCED_LISTS.length + 1) return
+    startPhotoSync(uid, () => [...deleted.values()].filter((d) => d.list === 'documents').map((d) => d.record as Document))
   }
 
   const onSettings = (snap: DocumentSnapshot) => {
@@ -300,6 +308,7 @@ export async function startSync(uid: string) {
       loaded.add('settings')
       if (!snap.exists()) send([{ ref: settingsRef, data: record(JSON.stringify(useStore.getState().settings)) }])
     }
+    whenLoaded()
     refresh()
   }
 
@@ -319,6 +328,7 @@ export async function startSync(uid: string) {
 }
 
 export function stopSync() {
+  stopPhotoSync()
   stops.forEach((s) => s())
   stops = []
   running = undefined

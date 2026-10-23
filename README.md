@@ -67,8 +67,8 @@ repository has a `FIREBASE_SERVICE_ACCOUNT` secret. Everything else still stays 
 
 Invoices, service reports and quotations can carry **work photos** (site photos on a quotation): add them from the
 camera or gallery in the editor, with a caption each. They print, and go into **Share PDF**, as report pages after the
-document, four photos to a page. Photos are scaled down and kept on this device only (in the browser's storage, not
-synced); backups include them, so restoring a backup on another device brings them along. Converting a service report
+document, four photos to a page. Photos are scaled down and kept in the browser's storage (and in the cloud when sync is
+on); backups include them, so restoring a backup on another device brings them along. Converting a service report
 to an invoice carries its photos over.
 
 **Sync across devices.** Sign in under **Settings → Online account** and tap **Turn on sync** to keep customers,
@@ -77,9 +77,10 @@ device keeps its own copy, so the app still works offline; changes go up when th
 shows Synced / Syncing / Offline. Turning sync on makes a backup file first; on a device that already has other records
 you choose **Combine** or **Use the cloud's**. When two devices change the same record, the last save wins. Deleted
 records stay under **Recently deleted** for 30 days and can be restored. Two devices that are both offline can give
-new documents the same number — a banner then lists them so one can be renumbered. Work photos and IC photos are not
-synced; they stay on the device that took them and go into backup files, which with sync on are asked for every 30
-days. Signing out stops syncing and keeps the records on the device.
+new documents the same number — a banner then lists them so one can be renumbered. Work photos and IC photos sync
+too (one cloud document per photo, still on the free plan): they go up from the device that took them and other devices
+fetch them when a document is opened, printed or backed up; Settings shows how much of the free 1 GB they use. With sync
+on, a backup file is asked for every 30 days. Signing out stops syncing and keeps the records on the device.
 
 ## Install as an app (PWA)
 

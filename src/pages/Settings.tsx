@@ -256,7 +256,7 @@ export default function SettingsPage() {
             title="Backup & data"
             subtitle={
               synced
-                ? `Records sync to the cloud; work photos and IC photos stay on this device. Back up at least every ${backupEvery} days to Google Drive or WhatsApp to keep the photos safe.`
+                ? `Records and photos sync to the cloud. A backup file every ${backupEvery} days on Google Drive is extra protection, and moves data without sync.`
                 : `All data is stored on this device only. Back up at least every ${backupEvery} days to Google Drive or WhatsApp, and use the file to restore or move to another device.`
             }
           />

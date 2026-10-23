@@ -81,7 +81,7 @@ export default function BackupReminder() {
           </div>
           <div className="text-stone-600">
             {synced
-              ? 'Your records sync to the cloud, but work photos are only on this device. Save a copy to Google Drive or WhatsApp.'
+              ? 'Your records and photos sync to the cloud. A monthly copy on Google Drive is extra protection.'
               : 'Save a copy to Google Drive or WhatsApp in case this phone is lost or reset.'}
           </div>
         </div>

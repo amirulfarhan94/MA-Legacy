@@ -4,12 +4,15 @@ import type { Document } from './types'
 /**
  * Work photos. The pictures are too big for localStorage, so they live in this browser's
  * IndexedDB; documents keep only each photo's id and caption. Backups carry the pictures.
+ * With sync on, photoSync.ts also keeps them in the cloud and fetches ones taken elsewhere.
  */
 
-interface PhotoRecord {
+export interface PhotoRecord {
   id: string
   blob: Blob
   createdAt: number
+  /** Already in the cloud (sent from here, or fetched from there). */
+  synced?: boolean
 }
 
 const DB_NAME = 'ma-legacy-photos'
@@ -40,7 +43,36 @@ async function run<T>(mode: IDBTransactionMode, work: (store: IDBObjectStore) =>
   })
 }
 
-const getRecord = (id: string) => run<PhotoRecord | undefined>('readonly', (s) => s.get(id))
+export const getRecord = (id: string) => run<PhotoRecord | undefined>('readonly', (s) => s.get(id))
+export const putRecord = (r: PhotoRecord) => run('readwrite', (s) => void s.put(r))
+
+/** Fetches a photo that is not on this device from the cloud (set while syncing). */
+let remote: ((id: string) => Promise<Blob | null>) | undefined
+export function setRemotePhotos(fetcher: typeof remote) {
+  remote = fetcher
+  // Photos looked for before sync started may be in the cloud: look again.
+  for (const [id, url] of urls) if (url === null) urls.delete(id)
+}
+
+/** Photos no document uses any more and deleted here, still to be deleted from the cloud. */
+const CLOUD_DELETE_KEY = 'ma-legacy-photo-cloud-delete'
+export const cloudDeleteQueue = {
+  get(): string[] {
+    try {
+      return JSON.parse(localStorage.getItem(CLOUD_DELETE_KEY) ?? '[]') as string[]
+    } catch {
+      return []
+    }
+  },
+  set(ids: string[]) {
+    try {
+      if (ids.length) localStorage.setItem(CLOUD_DELETE_KEY, JSON.stringify([...new Set(ids)]))
+      else localStorage.removeItem(CLOUD_DELETE_KEY)
+    } catch {
+      /* storage blocked */
+    }
+  },
+}
 
 /** Scales a camera photo down and saves it. Returns the new photo's id. */
 export async function addPhoto(file: File): Promise<string> {
@@ -91,7 +123,14 @@ function load(id: string): Promise<void> {
   let p = pending.get(id)
   if (!p) {
     p = getRecord(id)
-      .then((r) => void urls.set(id, r ? URL.createObjectURL(r.blob) : null))
+      .then(async (r) => {
+        let blob = r?.blob ?? null
+        if (!blob && remote) {
+          blob = await remote(id).catch(() => null)
+          if (blob) await putRecord({ id, blob, createdAt: Date.now(), synced: true }).catch(() => {})
+        }
+        urls.set(id, blob ? URL.createObjectURL(blob) : null)
+      })
       .catch(() => void urls.set(id, null))
       .finally(() => pending.delete(id))
     pending.set(id, p)
@@ -121,7 +160,7 @@ export function usePhotoUrls(ids: string[]): Record<string, string | null> {
 export const photosReady = (ids: string[]) => Promise.all(ids.map(load))
 
 /** Photos still in use: work photos on documents and IC copies on split payment plans. */
-const referencedIds = (docs: Document[]) => new Set(docs.flatMap((d) => [...(d.photos?.map((p) => p.id) ?? []), ...(d.split?.icPhotoIds ?? [])]))
+export const referencedIds = (docs: Document[]) => new Set(docs.flatMap((d) => [...(d.photos?.map((p) => p.id) ?? []), ...(d.split?.icPhotoIds ?? [])]))
 
 /**
  * Deletes pictures no document uses any more. Photos from the last day are kept, since a
@@ -130,8 +169,13 @@ const referencedIds = (docs: Document[]) => new Set(docs.flatMap((d) => [...(d.p
 export async function cleanUpPhotos(docs: Document[]) {
   const used = referencedIds(docs)
   const all = await run<PhotoRecord[]>('readonly', (s) => s.getAll())
-  const stale = all.filter((r) => !used.has(r.id) && Date.now() - r.createdAt > DAY).map((r) => r.id)
-  if (stale.length) await run('readwrite', (s) => void stale.forEach((id) => s.delete(id)))
+  const staleRecords = all.filter((r) => !used.has(r.id) && Date.now() - r.createdAt > DAY)
+  const stale = staleRecords.map((r) => r.id)
+  if (!stale.length) return
+  // Ones in the cloud are deleted there too, once sync has checked no deleted document still needs them.
+  const inCloud = staleRecords.filter((r) => r.synced).map((r) => r.id)
+  if (inCloud.length) cloudDeleteQueue.set([...cloudDeleteQueue.get(), ...inCloud])
+  await run('readwrite', (s) => void stale.forEach((id) => s.delete(id)))
 }
 
 const toDataUrl = (blob: Blob) =>
@@ -147,7 +191,9 @@ export async function exportPhotos(docs: Document[]): Promise<Record<string, str
   const out: Record<string, string> = {}
   for (const id of referencedIds(docs)) {
     const r = await getRecord(id)
-    if (r) out[id] = await toDataUrl(r.blob)
+    // With sync on, photos taken on another device come from the cloud.
+    const blob = r?.blob ?? (remote ? await remote(id).catch(() => null) : null)
+    if (blob) out[id] = await toDataUrl(blob)
   }
   return out
 }

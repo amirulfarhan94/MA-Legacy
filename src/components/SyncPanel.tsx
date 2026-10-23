@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CloudCheck, CloudOff, LoaderCircle, RefreshCw, RotateCcw, TriangleAlert } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { backupNow } from '../lib/backup'
 import type { CloudUser } from '../lib/cloud'
+import { cloudPhotoUsage, usePhotosToUpload } from '../lib/photoSync'
 import { useStore } from '../lib/store'
 import {
   cloudHasData,
@@ -82,6 +83,37 @@ function deletedLabel(d: DeletedRecord): string {
   }
 }
 
+const FREE_BYTES = 1024 ** 3
+
+/** Photos waiting to go up, and the cloud space photos use (the free plan holds 1 GB). */
+function PhotoUsage({ uid }: { uid: string }) {
+  const toUpload = usePhotosToUpload()
+  const [usage, setUsage] = useState<{ count: number; bytes: number } | null>(null)
+  useEffect(() => {
+    if (toUpload) return
+    let live = true
+    cloudPhotoUsage(uid)
+      .then((u) => live && setUsage(u))
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [uid, toUpload])
+  const mb = (b: number) => (b < 10 * 1024 ** 2 ? (b / 1024 ** 2).toFixed(1) : Math.round(b / 1024 ** 2).toString())
+  return (
+    <p className="mt-2 text-xs text-stone-500">
+      {toUpload > 0 ? (
+        <>Uploading photos · {toUpload} left. Keep the app open. </>
+      ) : usage ? (
+        <>
+          Photos in the cloud: {usage.count} · {mb(usage.bytes)} MB of {FREE_BYTES / 1024 ** 3} GB free.{' '}
+        </>
+      ) : null}
+      Photos taken on another device load when you open the document.
+    </p>
+  )
+}
+
 const when = (ms: number) => new Date(ms).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })
 
 /** Inside the Online account card: turn sync on or off, see its state, and put back deleted records. */
@@ -126,7 +158,7 @@ export default function SyncPanel({ user }: { user: CloudUser }) {
         <div className="text-sm font-semibold text-stone-900">Sync this device</div>
         <p className="mt-1 text-sm text-stone-600">
           Keeps customers, documents, transactions, items and settings the same on your phone, tablet and computer, and keeps a copy in the cloud.
-          The app still works offline and syncs when the internet is back. Work photos and IC photos stay on the device that took them.
+          Work photos and IC photos sync too. The app still works offline and syncs when the internet is back.
         </p>
         {choose ? (
           <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm">
@@ -171,7 +203,7 @@ export default function SyncPanel({ user }: { user: CloudUser }) {
           Turn off
         </Button>
       </div>
-      <p className="mt-2 text-xs text-stone-500">Work photos and IC photos are not synced — they stay on the device that took them and go into backup files.</p>
+      <PhotoUsage uid={user.uid} />
 
       <button type="button" className="mt-4 text-sm font-semibold text-stone-700 underline-offset-2 hover:underline" onClick={() => setShowDeleted((v) => !v)}>
         Recently deleted ({deleted.length}) {showDeleted ? '▴' : '▾'}
