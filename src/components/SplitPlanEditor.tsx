@@ -1,8 +1,8 @@
 import { CalendarClock, Lock } from 'lucide-react'
-import { formatDate, formatMoney } from '../lib/calc'
+import { docTotals, formatDate, formatMoney } from '../lib/calc'
 import { SPLIT_MAX, SPLIT_MIN, splitSchedule, type SplitEligibility } from '../lib/split'
-import type { Customer, SplitPlan } from '../lib/types'
-import { Card, CardHeader, Field, Input, Textarea } from './ui'
+import type { Customer, Document, SplitPlan } from '../lib/types'
+import { Card, CardHeader, Field, Input, Select, Textarea } from './ui'
 
 const DUE_NOTE = ['before work starts', '+1 month', '+2 months']
 
@@ -19,6 +19,7 @@ export default function SplitPlanEditor({
   locked,
   customer,
   makePlan,
+  quotations,
 }: {
   plan?: SplitPlan
   onChange: (plan: SplitPlan | undefined) => void
@@ -29,6 +30,8 @@ export default function SplitPlanEditor({
   locked: boolean
   customer?: Customer
   makePlan: () => SplitPlan
+  /** The customer's quotations, newest first, to link the plan to. */
+  quotations: Document[]
 }) {
   const on = !!plan
   const canTurnOn = eligibility.ok
@@ -78,8 +81,17 @@ export default function SplitPlanEditor({
             <Field label="Agreement no.">
               <Input value={plan.agreementNo} readOnly className="font-medium" />
             </Field>
-            <Field label="Quotation no.">
-              <Input value={plan.quotationNo} onChange={(e) => set('quotationNo', e.target.value)} placeholder="e.g. QT-2026-0012" />
+            <Field label="Quotation no." hint={quotations.length ? undefined : "This customer has no quotations yet."}>
+              <Select value={plan.quotationNo} onChange={(e) => set('quotationNo', e.target.value)}>
+                <option value="">— No quotation —</option>
+                {/* Keep a number picked before, even if that quotation is gone or belongs to someone else. */}
+                {plan.quotationNo && !quotations.some((q) => q.number === plan.quotationNo) && <option value={plan.quotationNo}>{plan.quotationNo}</option>}
+                {quotations.map((q) => (
+                  <option key={q.id} value={q.number}>
+                    {q.number} · {formatDate(q.date)} · {formatMoney(docTotals(q).total, currency)}
+                  </option>
+                ))}
+              </Select>
             </Field>
             <Field label="Customer full name (as per IC)">
               <Input value={plan.customerName} onChange={(e) => set('customerName', e.target.value)} />

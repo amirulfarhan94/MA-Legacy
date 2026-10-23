@@ -472,6 +472,9 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
               locked={splitIsLocked}
               customer={customer}
               makePlan={makeSplitPlan}
+              quotations={documents
+                .filter((d) => d.type === 'quotation' && d.customerId === doc.customerId && d.status !== 'cancelled')
+                .sort((a, b) => b.date.localeCompare(a.date))}
             />
           )}
 
