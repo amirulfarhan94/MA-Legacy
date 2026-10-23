@@ -71,6 +71,16 @@ document, four photos to a page. Photos are scaled down and kept on this device 
 synced); backups include them, so restoring a backup on another device brings them along. Converting a service report
 to an invoice carries its photos over.
 
+**Sync across devices.** Sign in under **Settings → Online account** and tap **Turn on sync** to keep customers,
+documents, transactions, items and settings the same on your phone, tablet and computer (Firebase, free plan). The
+device keeps its own copy, so the app still works offline; changes go up when the internet is back, and the top bar
+shows Synced / Syncing / Offline. Turning sync on makes a backup file first; on a device that already has other records
+you choose **Combine** or **Use the cloud's**. When two devices change the same record, the last save wins. Deleted
+records stay under **Recently deleted** for 30 days and can be restored. Two devices that are both offline can give
+new documents the same number — a banner then lists them so one can be renumbered. Work photos and IC photos are not
+synced; they stay on the device that took them and go into backup files, which with sync on are asked for every 30
+days. Signing out stops syncing and keeps the records on the device.
+
 ## Install as an app (PWA)
 
 The app is a Progressive Web App: it installs to the home screen / desktop, opens full-screen without the
@@ -101,7 +111,8 @@ npm run build    # static site in dist/
 
 ## Where the data lives
 
-Everything is saved in the browser's storage (IndexedDB) on the device you use — no server, no login. Data from
+Everything is saved in the browser's storage (IndexedDB) on the device you use; with sync on (above), records are
+also kept in the cloud. Data from
 earlier versions, kept in localStorage, moves over by itself. The app asks the browser to protect its storage from
 automatic clean-up (Settings → Backup shows whether it is protected and how much is used), warns at once if a save
 fails, and if a screen ever crashes it offers a backup and reload instead of a blank page. That means:

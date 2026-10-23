@@ -216,9 +216,9 @@ export default function Apply() {
                 </span>
               </Check>
               <Check checked={form.consent} onChange={(v) => set('consent', v)}>
-                Saya bersetuju {app.company.name} menyimpan maklumat, salinan IC dan tandatangan saya untuk perjanjian ini dan rekod bayarannya sahaja.
+                Saya bersetuju {app.company.name} menyimpan maklumat, salinan IC dan tandatangan saya dengan selamat (termasuk dalam storan awan yang dilindungi) untuk perjanjian ini dan rekod bayarannya sahaja.
                 <span className="block text-stone-500">
-                  I agree to {app.company.name} keeping my details, IC copy and signature for this agreement and its payment records only.
+                  I agree to {app.company.name} keeping my details, IC copy and signature securely (including in protected cloud storage) for this agreement and its payment records only.
                 </span>
               </Check>
             </div>

@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Download, ImagePlus, QrCode, RotateCcw, Upload } from 'lucide-react'
-import { backupNow, BACKUP_EVERY_DAYS, daysSince, useLastBackup } from '../lib/backup'
+import { backupNow, daysSince, useBackupEveryDays, useLastBackup } from '../lib/backup'
+import { useSyncWanted } from '../lib/sync'
 import { formatDate, toISODate } from '../lib/calc'
 import { shrinkImage } from '../lib/image'
 import { importPhotos } from '../lib/photos'
@@ -44,13 +45,16 @@ export default function SettingsPage() {
 
   const storage = useStorageInfo()
   const lastBackup = useLastBackup()
+  const backupEvery = useBackupEveryDays()
+  const synced = useSyncWanted()
   const lastDays = daysSince(lastBackup)
 
   const importBackup = async (file?: File) => {
     if (!file) return
     try {
       const data = JSON.parse(await file.text()) as BackupData
-      if (!confirm('Restoring replaces ALL current data with the backup. Continue?')) return
+      const also = synced ? ' Sync is on, so your other devices change too.' : ''
+      if (!confirm(`Restoring replaces ALL current data with the backup.${also} Continue?`)) return
       store.importData(data)
       await importPhotos(data.photos)
       setForm(useStore.getState().settings)
@@ -250,12 +254,16 @@ export default function SettingsPage() {
         <Card id="set-backup" className="scroll-mt-36 lg:col-span-2">
           <CardHeader
             title="Backup & data"
-            subtitle={`All data is stored on this device only. Back up at least every ${BACKUP_EVERY_DAYS} days to Google Drive or WhatsApp, and use the file to restore or move to another device.`}
+            subtitle={
+              synced
+                ? `Records sync to the cloud; work photos and IC photos stay on this device. Back up at least every ${backupEvery} days to Google Drive or WhatsApp to keep the photos safe.`
+                : `All data is stored on this device only. Back up at least every ${backupEvery} days to Google Drive or WhatsApp, and use the file to restore or move to another device.`
+            }
           />
           <p className="px-5 pt-4 text-sm">
             <span className="text-stone-500">Last backup: </span>
             {lastBackup ? (
-              <span className={`font-medium ${lastDays !== null && lastDays >= BACKUP_EVERY_DAYS ? 'text-amber-700' : 'text-stone-900'}`}>
+              <span className={`font-medium ${lastDays !== null && lastDays >= backupEvery ? 'text-amber-700' : 'text-stone-900'}`}>
                 {formatDate(toISODate(new Date(lastBackup)))} ({lastDays === 0 ? 'today' : lastDays === 1 ? 'yesterday' : `${lastDays} days ago`})
               </span>
             ) : (
@@ -283,7 +291,7 @@ export default function SettingsPage() {
               <Upload size={15} /> Restore from backup
             </Button>
             <input ref={fileRef} type="file" accept="application/json,.json,text/plain,.txt" hidden onChange={(e) => { importBackup(e.target.files?.[0]); e.target.value = '' }} />
-            {!hasData && (
+            {!hasData && !synced && (
               <Button
                 onClick={() => {
                   store.importData({ ...sampleData(), settings: store.settings })
@@ -297,7 +305,8 @@ export default function SettingsPage() {
               variant="danger"
               className="ml-auto"
               onClick={() => {
-                if (confirm('Delete ALL customers, documents, transactions and settings? Download a backup first!') && confirm('Are you absolutely sure?')) {
+                const also = synced ? ' Sync is on, so they are deleted on your other devices too (records can be restored from Recently deleted for 30 days).' : ''
+                if (confirm(`Delete ALL customers, documents, transactions and settings?${also} Download a backup first!`) && confirm('Are you absolutely sure?')) {
                   store.resetAll()
                   setForm(useStore.getState().settings)
                 }

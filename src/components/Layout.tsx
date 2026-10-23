@@ -9,6 +9,9 @@ import { InstallButton, PwaStatus } from './Pwa'
 import ThemeSwitch from './ThemeSwitch'
 import BackupReminder, { BackupStatus, SaveErrorBanner, SplitBackupBanner } from './BackupReminder'
 import ApplicationsBanner from './ApplicationsBanner'
+import DuplicateNumbersBanner from './DuplicateNumbersBanner'
+import { SyncBadge } from './SyncPanel'
+import { useAutoSync } from '../lib/sync'
 import CommandPalette from './CommandPalette'
 import CreateSheet from './CreateSheet'
 import { NAV, isMac, type NavCount } from './nav'
@@ -145,6 +148,7 @@ function PhoneBar({ menuOpen, onMenu, onSearch, onCreate }: { menuOpen: boolean;
         <img src="./logo-mark.png" alt="" className="h-7 w-auto" />
         <span className="truncate font-display text-[14px] font-medium tracking-[-0.01em]">MA Legacy</span>
       </Link>
+      <SyncBadge compact />
       <IconButton label="Search" onClick={onSearch}>
         <Search size={19} />
       </IconButton>
@@ -171,6 +175,7 @@ function TopBar({ onSearch, onCreate }: { onSearch: () => void; onCreate: () => 
         <kbd className="hidden rounded-lg border border-[var(--btn-line)] px-1.5 py-1 font-sans text-[11px] font-bold text-stone-400 md:block">{isMac() ? '⌘K' : 'Ctrl K'}</kbd>
       </button>
       <div className="ml-auto flex items-center gap-2.5">
+        <SyncBadge />
         <button type="button" onClick={onCreate} className="btn-gold inline-flex h-12 items-center gap-2 rounded-full px-5 text-sm font-bold">
           <Plus size={18} strokeWidth={2.2} /> Create
         </button>
@@ -231,6 +236,7 @@ export default function Layout() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [compact, toggleCompact] = useCompactSidebar()
+  useAutoSync()
   const { pathname } = useLocation()
   // The background light follows the time of day.
   const daypart = daypartOf(useNow(60_000))
@@ -272,6 +278,7 @@ export default function Layout() {
             <main key={pathname} className="print-area px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 sm:px-0 sm:pt-6">
               <SaveErrorBanner />
               <ApplicationsBanner />
+              <DuplicateNumbersBanner />
               <SplitBackupBanner />
               <BackupReminder />
               <Outlet />

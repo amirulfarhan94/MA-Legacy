@@ -2,10 +2,13 @@ import { useSyncExternalStore } from 'react'
 import { today } from './calc'
 import { exportPhotos } from './photos'
 import { useStore } from './store'
+import { useSyncWanted } from './sync'
 
 const LAST_KEY = 'ma-legacy-last-backup'
 const SNOOZE_KEY = 'ma-legacy-backup-snooze'
 export const BACKUP_EVERY_DAYS = 7
+/** With sync on, records are also in the cloud; backups then mainly keep the work photos. */
+export const SYNCED_BACKUP_EVERY_DAYS = 30
 const DAY = 24 * 60 * 60 * 1000
 
 const read = (k: string) => {
@@ -46,15 +49,29 @@ export function snoozeBackupReminder() {
   notify()
 }
 
-/** True when there is data and the last backup is missing or 7+ days old (and not snoozed). */
+/** How often to ask for a backup on this device. */
+export function useBackupEveryDays(): number {
+  return useSyncWanted() ? SYNCED_BACKUP_EVERY_DAYS : BACKUP_EVERY_DAYS
+}
+
+/**
+ * True when there is data and the last backup is missing or overdue (and not snoozed). With
+ * sync on, the records are in the cloud, so only photos (kept on the device) need a backup.
+ */
 export function useBackupDue(): boolean {
+  const every = useBackupEveryDays()
+  const synced = useSyncWanted()
   const last = useLastBackup()
   const snooze = useSyncExternalStore(subscribe, () => read(SNOOZE_KEY))
-  const hasData = useStore((s) => s.customers.length + s.documents.length + s.transactions.length > 0)
+  const hasData = useStore((s) =>
+    synced
+      ? s.documents.some((d) => d.photos?.length || d.split?.icPhotoIds?.length)
+      : s.customers.length + s.documents.length + s.transactions.length > 0,
+  )
   if (!hasData) return false
   if (snooze && new Date(snooze).getTime() > Date.now()) return false
   const days = daysSince(last)
-  return days === null || days >= BACKUP_EVERY_DAYS
+  return days === null || days >= every
 }
 
 function markBackedUp() {

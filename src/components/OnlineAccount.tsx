@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Cloud, LoaderCircle, LogOut } from 'lucide-react'
 import { signIn, signOut, useCloudUser } from '../lib/cloud'
+import { stopSync } from '../lib/sync'
+import SyncPanel from './SyncPanel'
 import { Button, Card, CardHeader, Field, Input } from './ui'
 
-/** Settings card: sign in to the Firebase account used for split payment application links. */
+/** Settings card: sign in to Firebase, for split payment application links and syncing devices. */
 export default function OnlineAccount() {
   const user = useCloudUser(true)
   const [email, setEmail] = useState('')
@@ -28,7 +30,7 @@ export default function OnlineAccount() {
     <Card id="set-online" className="scroll-mt-36">
       <CardHeader
         title="Online account"
-        subtitle="Needed to send customers a split payment application link (they fill in their details, IC and signature online). Your other data stays on this device."
+        subtitle="Sign in to sync your records across your devices and to send customers a split payment application link (they fill in their details, IC and signature online)."
       />
       <div className="p-5">
         {user === undefined ? (
@@ -41,7 +43,14 @@ export default function OnlineAccount() {
             <span className="min-w-0 flex-1 text-sm">
               Signed in as <b className="break-all">{user.email}</b>
             </span>
-            <Button size="sm" onClick={() => signOut()}>
+            <Button
+              size="sm"
+              onClick={() => {
+                // Stop listening first, so signing out does not show as a sync error.
+                stopSync()
+                signOut()
+              }}
+            >
               <LogOut size={14} /> Sign out
             </Button>
           </div>
@@ -68,6 +77,7 @@ export default function OnlineAccount() {
           </form>
         )}
       </div>
+      {user && <SyncPanel user={user} />}
     </Card>
   )
 }

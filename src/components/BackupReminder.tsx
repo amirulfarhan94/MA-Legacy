@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ShieldAlert, ShieldCheck, TriangleAlert } from 'lucide-react'
-import { backupNow, BACKUP_EVERY_DAYS, daysSince, snoozeBackupReminder, useBackupDue, useLastBackup } from '../lib/backup'
+import { backupNow, BACKUP_EVERY_DAYS, daysSince, snoozeBackupReminder, useBackupDue, useBackupEveryDays, useLastBackup } from '../lib/backup'
+import { useSyncWanted } from '../lib/sync'
 import { useSaveError } from '../lib/storage'
 import { activeSplitPlans } from '../lib/split'
 import { today } from '../lib/calc'
@@ -23,13 +24,14 @@ function useBackupAction() {
 /**
  * Split plans hold customers' IC numbers and money owed, and live only in this browser: while
  * any plan is active and the last backup is 7+ days old (or never), this banner asks for one.
- * It cannot be snoozed.
+ * It cannot be snoozed. With sync on the plans are in the cloud too, so it is not shown.
  */
 function useSplitBackupDue(): number {
+  const synced = useSyncWanted()
   const last = useLastBackup()
   const active = useStore((s) => activeSplitPlans(s.documents, today()).length)
   const days = daysSince(last)
-  return active > 0 && (days === null || days >= BACKUP_EVERY_DAYS) ? active : 0
+  return !synced && active > 0 && (days === null || days >= BACKUP_EVERY_DAYS) ? active : 0
 }
 
 export function SplitBackupBanner() {
@@ -61,6 +63,7 @@ export function SplitBackupBanner() {
 /** Banner shown at the top of every page when a backup is 7+ days overdue. */
 export default function BackupReminder() {
   const due = useBackupDue()
+  const synced = useSyncWanted()
   const last = useLastBackup()
   const splitDue = useSplitBackupDue()
   const [busy, run] = useBackupAction()
@@ -76,7 +79,11 @@ export default function BackupReminder() {
           <div className="font-semibold text-stone-900">
             {days === null ? "You haven't backed up your data yet" : `Last backup was ${days} days ago`}
           </div>
-          <div className="text-stone-600">Save a copy to Google Drive or WhatsApp in case this phone is lost or reset.</div>
+          <div className="text-stone-600">
+            {synced
+              ? 'Your records sync to the cloud, but work photos are only on this device. Save a copy to Google Drive or WhatsApp.'
+              : 'Save a copy to Google Drive or WhatsApp in case this phone is lost or reset.'}
+          </div>
         </div>
       </div>
       <div className="flex gap-2 self-end sm:self-auto">
@@ -94,9 +101,10 @@ export default function BackupReminder() {
 /** Backup state at the foot of the sidebar, with a one-tap backup. */
 export function BackupStatus() {
   const last = useLastBackup()
+  const every = useBackupEveryDays()
   const [busy, run] = useBackupAction()
   const days = daysSince(last)
-  const due = days === null || days >= BACKUP_EVERY_DAYS
+  const due = days === null || days >= every
   const when = days === null ? 'Never backed up' : days === 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days} days ago`
   const title = due ? 'Backup due' : 'Backed up'
   const Icon = due ? ShieldAlert : ShieldCheck

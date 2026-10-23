@@ -41,7 +41,11 @@ export function cloud(): Promise<Cloud> {
     const [{ initializeApp }, au, fs] = await Promise.all([import('firebase/app'), import('firebase/auth'), import('firebase/firestore')])
     const app = initializeApp(firebaseConfig)
     const auth = au.initializeAuth(app, { persistence: [au.indexedDBLocalPersistence, au.browserLocalPersistence] })
-    const db = fs.getFirestore(app)
+    // On the owner's devices Firestore keeps its own copy in IndexedDB, so synced changes made
+    // offline survive a reload and go up once the device is back online.
+    const db = fs.initializeFirestore(app, {
+      localCache: flag.get() ? fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) : fs.memoryLocalCache(),
+    })
     const emulator = import.meta.env.VITE_FIREBASE_EMULATOR as string | undefined
     if (emulator) {
       au.connectAuthEmulator(auth, `http://${emulator}:9099`, { disableWarnings: true })
