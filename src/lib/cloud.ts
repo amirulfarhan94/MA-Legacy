@@ -182,8 +182,8 @@ export function newToken(): string {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-/** Customer links go to Firebase Hosting (short, no GitHub name); index.html turns /a/<token> into #/apply/<token>. */
-const APPLY_ORIGIN = 'https://ma-legacy.web.app'
+/** Customer links go to Firebase Hosting on the HandalServ domain (ma-legacy.web.app also works); index.html turns /a/<token> into #/apply/<token>. */
+const APPLY_ORIGIN = 'https://handalserv.my'
 
 export function applicationUrl(token: string): string {
   if (import.meta.env.VITE_FIREBASE_EMULATOR) return `${location.origin}${location.pathname}#/apply/${token}`

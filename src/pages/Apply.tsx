@@ -14,7 +14,7 @@ import { Button, Field, Input, Textarea } from '../components/ui'
 
 type Stage = 'loading' | 'gone' | 'form' | 'sending' | 'done' | 'error'
 
-/** ma-legacy.web.app/a/demo: a sample application to try or film. Nothing is sent. */
+/** handalserv.my/a/demo: a sample application to try or film. Nothing is sent. */
 export const DEMO_TOKEN = 'demo'
 
 function demoApplication(): Application {

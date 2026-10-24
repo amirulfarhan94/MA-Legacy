@@ -63,8 +63,8 @@ finger and agree to the terms and to how their data is used. The app shows a ban
 signature and a page with the IC copy) and deletes the online copy. This uses Firebase (project `ma-legacy`): sign in
 under **Settings → Online account**; access rules are in `firestore.rules`. A link works once and expires after 14
 days. Customers see the **HandalServ** brand (a brand of MA Legacy Solutions, `src/lib/brand.ts`) on the
-application page and in the link message; the agreement, invoices and receipts stay in the company's name. `https://ma-legacy.web.app/a/demo` shows a sample application (electrical job, RM1,000) that can be filled in
-but sends nothing — for videos or for customers who want to see it first. Links look like `https://ma-legacy.web.app/a/…`: the same deploy also publishes the app to Firebase Hosting
+application page and in the link message; the agreement, invoices and receipts stay in the company's name. `https://handalserv.my/a/demo` shows a sample application (electrical job, RM1,000) that can be filled in
+but sends nothing — for videos or for customers who want to see it first. Links look like `https://handalserv.my/a/…` (older `ma-legacy.web.app` links still work): the same deploy also publishes the app to Firebase Hosting
 (free), which only serves these customer links — keep using the GitHub Pages address yourself. That step runs once the
 repository has a `FIREBASE_SERVICE_ACCOUNT` secret. Everything else still stays on the device.
 
@@ -87,8 +87,8 @@ on, a backup file is asked for every 30 days. Signing out stops syncing and keep
 
 **HandalServ landing page.** `landing/index.html` is the public page for the HandalServ brand (services, how it
 works, Split Payment 3× for electrical works only, WhatsApp 017-373 4274). The deploy puts it at the root of the
-Firebase Hosting site, next to the customer application links (`/a/…`, served by the app as `app.html`); once
-handalserv.com.my is connected there, both use that address.
+Firebase Hosting site, next to the customer application links (`/a/…`, served by the app as `app.html`); it is live at
+https://handalserv.my (custom domain on Firebase Hosting, DNS at Exabytes).
 
 ## Install as an app (PWA)
 
