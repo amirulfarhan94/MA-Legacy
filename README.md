@@ -85,6 +85,11 @@ too (one cloud document per photo, still on the free plan): they go up from the 
 fetch them when a document is opened, printed or backed up; Settings shows how much of the free 1 GB they use. With sync
 on, a backup file is asked for every 30 days. Signing out stops syncing and keeps the records on the device.
 
+**HandalServ landing page.** `landing/index.html` is the public page for the HandalServ brand (services, how it
+works, Split Payment 3× for electrical works only, WhatsApp 017-373 4274). The deploy puts it at the root of the
+Firebase Hosting site, next to the customer application links (`/a/…`, served by the app as `app.html`); once
+handalserv.com.my is connected there, both use that address.
+
 ## Install as an app (PWA)
 
 The app is a Progressive Web App: it installs to the home screen / desktop, opens full-screen without the

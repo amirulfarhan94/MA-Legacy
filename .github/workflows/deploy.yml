@@ -31,10 +31,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
-      # Customer application links (ma-legacy.web.app/a/…) are served by Firebase Hosting from
-      # a root-based build. Skipped until the FIREBASE_SERVICE_ACCOUNT secret is added; if it
-      # fails, GitHub Pages still deploys.
-      - run: npx vite build --base=/ --outDir dist-hosting
+      # Firebase Hosting serves the HandalServ landing page (landing/) at the root and customer
+      # application links (/a/…) from a root-based build of the app, renamed app.html. Skipped
+      # until the FIREBASE_SERVICE_ACCOUNT secret is added; if it fails, GitHub Pages still deploys.
+      - run: |
+          npx vite build --base=/ --outDir dist-hosting
+          mv dist-hosting/index.html dist-hosting/app.html
+          sed -i 's#href="\./#href="/#g' dist-hosting/app.html
+          cp -r landing/. dist-hosting/
       - if: ${{ env.FIREBASE_SERVICE_ACCOUNT != '' }}
         continue-on-error: true
         uses: FirebaseExtended/action-hosting-deploy@v0

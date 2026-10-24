@@ -13,9 +13,10 @@
     <meta name="apple-mobile-web-app-title" content="MA Legacy" />
     <title>MA Legacy Solutions</title>
     <script>
-      // Customer application links (https://ma-legacy.web.app/a/<token>) open the apply page.
+      // Customer application links (https://ma-legacy.web.app/a/<token>) open the apply page. The
+      // path stays, so a reload still reaches the app rather than the HandalServ landing page.
       var applyLink = location.pathname.match(/^\/a\/([\w-]+)\/?$/)
-      if (applyLink) history.replaceState(null, '', '/#/apply/' + applyLink[1])
+      if (applyLink && location.hash.indexOf('#/apply/') !== 0) history.replaceState(null, '', location.pathname + '#/apply/' + applyLink[1])
     </script>
     <script>
       // Apply the saved theme before first paint so dark mode never flashes white.

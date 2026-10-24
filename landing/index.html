@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HandalServ · Home &amp; Building Maintenance, Klang Valley</title>
+<meta name="description" content="Repairs, electrical, leaks, painting, plumbing, renovation and scheduled maintenance across the Klang Valley, 24/7. Split Payment 3× at 0% interest for electrical works. A brand of MA Legacy Solutions.">
+<meta name="theme-color" content="#050A14">
+<link rel="icon" type="image/png" href="/hs-favicon.png">
+<link rel="apple-touch-icon" href="/hs-og-image.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="HandalServ · Servis Pro, Kerja Handal">
+<meta property="og:description" content="Home & building maintenance across the Klang Valley, 24/7. Split Payment 3× at 0% interest for electrical works.">
+<meta property="og:image" content="/hs-og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one fixed WebGL stage behind the page; the hero hosts a holographic HandalServ house that tracks its slot, glass bands carry the content below. */
+:root {
+  color-scheme: dark;
+  --void: #050A14;
+  --deep: #0A1628;
+  --panel: rgba(13, 28, 50, 0.74);
+  --panel-solid: #0D1C32;
+  --line: rgba(169, 200, 238, 0.16);
+  --line-strong: rgba(169, 200, 238, 0.32);
+  --ice: #A9C8EE;
+  --signal: #E8A33D;
+  --signal-soft: rgba(232, 163, 61, 0.14);
+  --navy: #12355B;
+  --text: #E7EEF7;
+  --muted: #93A3B8;
+  --on-signal: #0B1424;
+  --display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
+  --body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 30;
+  background: rgba(5, 10, 20, 0.86);
+}
+a { color: var(--ice); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; border-radius: 8px; }
+
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; pointer-events: none; }
+.vignette { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(120% 80% at 70% 20%, rgba(18, 53, 91, 0.35), transparent 60%),
+              radial-gradient(90% 70% at 10% 100%, rgba(232, 163, 61, 0.06), transparent 60%); }
+.page { position: relative; z-index: 1; }
+
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Header */
+.site-header {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  background: rgba(5, 10, 20, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.header-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 68px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+.wordmark { font-family: var(--display); font-size: 22px; letter-spacing: -0.02em; line-height: 1; }
+.wordmark b { font-weight: 800; }
+.wordmark span { font-weight: 400; color: var(--signal); }
+.nav { display: flex; gap: 28px; font-size: 15px; font-weight: 500; }
+.nav a { color: var(--muted); text-decoration: none; }
+.nav a:hover { color: var(--text); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px;
+  border-radius: 12px; font-family: var(--body); font-weight: 600; font-size: 16px; text-decoration: none; cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease; border: 0; }
+.btn-primary { background: var(--signal); color: var(--on-signal); box-shadow: 0 0 0 1px rgba(232,163,61,.5), 0 8px 30px rgba(232,163,61,.25); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(232,163,61,.7), 0 10px 40px rgba(232,163,61,.38); }
+.btn-ghost { background: rgba(169,200,238,.06); color: var(--text); border: 1px solid var(--line-strong); }
+.btn-ghost:hover { border-color: var(--ice); background: rgba(169,200,238,.1); }
+.btn-sm { min-height: 42px; padding: 0 16px; font-size: 14px; border-radius: 10px; }
+
+/* Hero */
+.hero { padding-block: 64px 72px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 40px; align-items: center; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--signal); display: inline-flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 12px var(--signal); }
+.hero h1 {
+  font-family: var(--display); font-stretch: 125%; font-weight: 800;
+  font-size: clamp(2.1rem, 4.6vw, 3.9rem); line-height: 1.02; letter-spacing: -0.015em;
+  margin: 18px 0 20px; text-wrap: balance;
+}
+.hero h1 em { font-style: normal; color: var(--signal); text-shadow: 0 0 28px rgba(232, 163, 61, 0.45); }
+.lede { font-size: 19px; color: #C5D2E3; max-width: 34em; margin: 0; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; padding: 0; list-style: none; }
+.chips li { font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.04em; color: var(--ice);
+  border: 1px solid var(--line-strong); background: rgba(10, 22, 40, 0.6); border-radius: 8px; padding: 7px 12px; display: inline-flex; gap: 8px; align-items: center; }
+.chips li::before { content: ""; width: 6px; height: 6px; background: var(--signal); transform: rotate(45deg); }
+
+.stage { position: relative; aspect-ratio: 1 / 1; width: 100%; max-width: 100%; }
+.stage .fallback { position: absolute; inset: 18%; width: 64%; height: 64%; opacity: .9; }
+html.webgl .stage .fallback { display: none; }
+.hud { position: absolute; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); line-height: 1.5; }
+.hud strong { color: var(--ice); font-weight: 500; }
+.hud-tl { top: 4%; left: 4%; }
+.hud-br { bottom: 4%; right: 4%; text-align: right; }
+.hud-br .pct { color: var(--signal); font-size: 22px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.bracket { position: absolute; width: 22px; height: 22px; border-color: var(--line-strong); border-style: solid; }
+.b-tl { top: 0; left: 0; border-width: 1px 0 0 1px; }
+.b-tr { top: 0; right: 0; border-width: 1px 1px 0 0; }
+.b-bl { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
+.b-br { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
+
+.tags { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.tag { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text);
+  will-change: transform; transition: opacity .25s ease; opacity: 0; }
+.tag i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--signal); box-shadow: 0 0 10px var(--signal); flex: none; }
+.tag span { background: rgba(5, 10, 20, 0.78); border: 1px solid var(--line-strong); padding: 4px 8px; border-radius: 6px; }
+
+/* Bands */
+.band { padding-block: 88px; background: linear-gradient(180deg, rgba(5,10,20,0.55), rgba(5,10,20,0.82)); border-top: 1px solid var(--line);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.band.alt { background: linear-gradient(180deg, rgba(10,22,40,0.86), rgba(10,22,40,0.92)); }
+.sec-head { display: flex; flex-direction: column; gap: 12px; max-width: 46rem; margin-bottom: 44px; }
+.sec-head h2 { font-family: var(--display); font-stretch: 115%; font-weight: 800; font-size: clamp(1.8rem, 3.4vw, 2.7rem); line-height: 1.08; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.sec-head p { margin: 0; color: var(--muted); font-size: 18px; max-width: 40em; }
+
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.card { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 26px;
+  display: flex; flex-direction: column; gap: 12px; min-width: 0; transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
+.card:hover { border-color: rgba(232, 163, 61, 0.55); box-shadow: 0 0 0 1px rgba(232,163,61,.18), 0 0 40px rgba(232,163,61,.10); transform: translateY(-2px); }
+.card .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.icon { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; background: rgba(18, 53, 91, 0.7); border: 1px solid var(--line-strong); color: var(--ice); }
+.trade { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.card h3 { font-family: var(--display); font-stretch: 105%; font-weight: 700; font-size: 21px; line-height: 1.2; margin: 6px 0 0; }
+.card p { margin: 0; color: #B6C3D4; font-size: 15.5px; }
+.card.wide { grid-column: 1 / -1; }
+.card.wide p { max-width: 42em; }
+.card .flag { align-self: flex-start; margin-top: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--signal); border: 1px solid rgba(232,163,61,.5); background: var(--signal-soft); border-radius: 999px; padding: 4px 10px; text-decoration: none; }
+
+/* Process */
+.process { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 40px; align-items: start; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; counter-reset: step; }
+.step { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 16px; align-items: start; padding: 18px; border-radius: 14px;
+  border: 1px solid var(--line); background: rgba(13, 28, 50, 0.5); transition: border-color .3s ease, background .3s ease; }
+.step .num { font-family: var(--mono); font-size: 13px; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 10px;
+  height: 44px; display: grid; place-items: center; transition: color .3s ease, border-color .3s ease, box-shadow .3s ease; }
+.step h3 { margin: 0 0 4px; font-family: var(--display); font-stretch: 105%; font-weight: 700; font-size: 19px; }
+.step p { margin: 0; color: #B6C3D4; font-size: 15.5px; }
+.step.on { border-color: rgba(232, 163, 61, 0.55); background: rgba(232, 163, 61, 0.07); }
+.step.on .num { color: var(--signal); border-color: var(--signal); box-shadow: 0 0 18px rgba(232,163,61,.35); }
+
+.ticket { position: relative; background: var(--panel-solid); border: 1px solid var(--line-strong); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.ticket .meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+.ticket .wo { color: var(--ice); }
+.ticket h3 { margin: 0; font-family: var(--display); font-stretch: 110%; font-weight: 700; font-size: 22px; }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 16px; font-size: 14.5px; margin: 0; }
+.kv dt { color: var(--muted); font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; padding-top: 2px; }
+.kv dd { margin: 0; }
+.bar { height: 6px; border-radius: 999px; background: rgba(169, 200, 238, 0.12); overflow: hidden; }
+.bar span { display: block; height: 100%; width: 50%; background: linear-gradient(90deg, var(--navy), var(--signal)); box-shadow: 0 0 14px rgba(232,163,61,.5); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.status { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; color: var(--signal); text-transform: uppercase; }
+.status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 10px var(--signal); animation: pulse 1.6s ease-in-out infinite; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+@keyframes pulse { 50% { opacity: .35; } }
+
+/* Split payment: electrical works only */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.split .sec-head { margin-bottom: 0; }
+.only { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--on-signal); background: var(--signal); border-radius: 8px; padding: 6px 12px; font-weight: 500; }
+.pays { display: flex; flex-direction: column; gap: 12px; }
+.pay { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 18px 20px; border-radius: 14px;
+  border: 1px solid var(--line); background: var(--panel); }
+.pay .n { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 22px;
+  background: rgba(18, 53, 91, 0.8); border: 1px solid var(--line-strong); }
+.pay b { display: block; font-family: var(--display); font-stretch: 110%; font-weight: 800; font-size: 26px; line-height: 1.1; }
+.pay small { display: block; color: var(--muted); font-size: 14.5px; }
+.pay .pct { font-family: var(--mono); font-size: 18px; color: var(--signal); }
+.pay.first { border-color: rgba(232, 163, 61, 0.6); background: linear-gradient(135deg, rgba(232,163,61,.14), rgba(13,28,50,.8)); }
+.pay.first .n { background: var(--signal); color: var(--on-signal); border-color: var(--signal); }
+.pay.first small { color: var(--signal); }
+.perks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; }
+.perks li { display: flex; gap: 10px; align-items: center; font-weight: 500; }
+.perks li::before { content: ""; width: 18px; height: 18px; flex: none; border-radius: 50%;
+  background: var(--signal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230B1424' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / 12px no-repeat; }
+.split-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.fine { font-size: 13.5px; color: var(--muted); margin: 6px 0 0; }
+
+/* Why */
+.why { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 48px; align-items: start; }
+.why .sec-head { margin-bottom: 0; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.spec { font-family: var(--mono); font-size: 12.5px; color: var(--ice); letter-spacing: 0.06em; display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 8px; }
+.spec span { border-bottom: 1px dashed var(--line-strong); padding-bottom: 2px; }
+
+/* CTA */
+.cta { padding-block: 80px; }
+.cta-box { position: relative; border-radius: 22px; padding: 48px 40px; border: 1px solid rgba(232, 163, 61, 0.45);
+  background: radial-gradient(120% 140% at 100% 0%, rgba(232,163,61,.16), transparent 55%), linear-gradient(135deg, #0F2746, #0A1628);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 28px; overflow: hidden; }
+.cta-box h2 { font-family: var(--display); font-stretch: 115%; font-weight: 800; font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
+.cta-box p { margin: 0; color: #C5D2E3; }
+.cta-copy { flex: 1 1 420px; min-width: 0; }
+.contact-line { font-family: var(--mono); font-size: 14px; color: var(--ice); margin-top: 14px; }
+
+/* Footer */
+.site-footer { border-top: 1px solid var(--line); background: rgba(5, 10, 20, 0.94); padding-block: 48px 36px; color: var(--muted); font-size: 14.5px; }
+.foot-grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 32px; }
+.foot-grid > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.foot-grid h4 { margin: 0 0 4px; color: var(--text); font-size: 15px; }
+.foot-grid a { color: var(--muted); text-decoration: none; }
+.foot-grid a:hover { color: var(--text); }
+.legal { margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13.5px; }
+
+/* Floating WhatsApp button on phones */
+.wa-float { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 25;
+  width: 58px; height: 58px; border-radius: 50%; background: #25D366; color: #06301a; display: none; place-items: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+
+@media (max-width: 940px) {
+  .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .process, .why, .split { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 820px) {
+  .nav { display: none; }
+  .hero { padding-block: 40px 56px; }
+  .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .stage { aspect-ratio: auto; height: 360px; }
+  .tags { display: none; }
+  .wa-float { display: grid; }
+}
+@media (max-width: 600px) {
+  .grid-3, .grid-2, .perks { grid-template-columns: minmax(0, 1fr); }
+  .band { padding-block: 64px; }
+  .cta-box { padding: 32px 22px; }
+  .lede { font-size: 17px; }
+  .pay b { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+<div class="tags" id="tags" aria-hidden="true">
+  <div class="tag" data-tag="roof"><i></i><span>Roof &amp; leak inspection</span></div>
+  <div class="tag" data-tag="wall"><i></i><span>Electrical &amp; DB works</span></div>
+  <div class="tag" data-tag="floor"><i></i><span>Plumbing &amp; sanitary</span></div>
+</div>
+
+<div class="page">
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="#top" aria-label="HandalServ, back to top">
+        <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true">
+          <g fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 30 L32 8 L57 30" stroke="#E7EEF7"></path>
+            <path d="M18 21 V56 M46 21 V56" stroke="#E7EEF7"></path>
+            <path d="M18 43 H46" stroke="#E8A33D"></path>
+          </g>
+        </svg>
+        <span class="wordmark"><b>Handal</b><span>Serv</span></span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="#services">Services</a>
+        <a href="#how">How It Works</a>
+        <a href="#split">Split Payment</a>
+        <a href="#why">Why Us</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a class="btn btn-primary btn-sm" data-wa="quote" href="https://wa.me/60173734274" target="_blank" rel="noopener">Get a Quote</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <div class="eyebrow">Servis Pro, Kerja Handal</div>
+          <h1>Home &amp; building maintenance, <em>engineered.</em></h1>
+          <p class="lede">Repairs, electrical, leaks, painting, plumbing, renovation and scheduled maintenance across the Klang Valley, 24/7. Send a photo of the problem and get a clear written quotation before any work begins.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" data-wa="quote" href="https://wa.me/60173734274" target="_blank" rel="noopener">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"></path></svg>
+              WhatsApp for a Quote
+            </a>
+            <a class="btn btn-ghost" href="#services">View Services</a>
+          </div>
+          <ul class="chips" aria-label="What every job includes">
+            <li>Written quotation</li>
+            <li>Before &amp; after photo report</li>
+            <li>Open 24/7</li>
+            <li>SSM-registered company</li>
+          </ul>
+        </div>
+        <div class="stage" id="stage" aria-label="Animated 3D HandalServ house">
+          <span class="bracket b-tl"></span><span class="bracket b-tr"></span><span class="bracket b-bl"></span><span class="bracket b-br"></span>
+          <div class="hud hud-tl"><strong>HS · Maintenance System</strong><br>Zone: Klang Valley</div>
+          <div class="hud hud-br">Inspection scan<br><span class="pct" id="scanPct">000%</span></div>
+          <svg class="fallback" viewBox="0 0 64 64" aria-hidden="true">
+            <g fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 30 L32 8 L57 30" stroke="#A9C8EE"></path>
+              <path d="M18 21 V56 M46 21 V56" stroke="#A9C8EE"></path>
+              <path d="M18 43 H46" stroke="#E8A33D"></path>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="services">
+      <div class="wrap">
+        <div class="sec-head">
+          <div class="eyebrow">Our Services</div>
+          <h2>One call for all your maintenance work</h2>
+          <p>From small repairs at home to scheduled maintenance for entire buildings.</p>
+        </div>
+        <div class="grid-3">
+          <article class="card">
+            <div class="top"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"></path></svg></div><span class="trade">Civil</span></div>
+            <h3>General Repairs</h3>
+            <p>Doors, windows, hinges, ceilings and minor damage around your premises.</p>
+          </article>
+          <article class="card">
+            <div class="top"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"></path></svg></div><span class="trade">Electrical</span></div>
+            <h3>Electrical Works</h3>
+            <p>Wiring, lighting, power points, ceiling fans and distribution board works for homes and offices.</p>
+            <a class="flag" href="#split">Split Payment 3× available</a>
+          </article>
+          <article class="card">
+            <div class="top"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"></path></svg></div><span class="trade">Waterproofing</span></div>
+            <h3>Leak Repair &amp; Waterproofing</h3>
+            <p>We trace the source of leaks in roofs, windows and walls, then repair and waterproof.</p>
+          </article>
+          <article class="card">
+            <div class="top"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h13v5H4z M17 6.5h3v5h-8v3 M10.5 14.5h3V21h-3z"></path></svg></div><span class="trade">Finishes</span></div>
+            <h3>Painting &amp; Make Good</h3>
+            <p>Interior and exterior repainting, crack patching and water damage repair.</p>
+          </article>
+          <article class="card">
+            <div class="top"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h9a4 4 0 0 1 4 4v1 M8 9V5 M5 5h6 M17 18v.5 M17 21v.5"></path></svg></div><span class="trade">Plumbing</span></div>
+            <h3>Plumbing &amp; Sanitary</h3>
+            <p>Leaking pipes, clogged sinks, taps, toilets and water heaters.</p>
+          </article>
+          <article class="card">
+            <div class="top"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16v15H4z M4 11h16 M8 3v5 M16 3v5 M9 16l2 2 4-4"></path></svg></div><span class="trade">PPM</span></div>
+            <h3>Scheduled Maintenance</h3>
+            <p>Planned preventive maintenance contracts for offices, shops and buildings.</p>
+          </article>
+          <article class="card wide">
+            <div class="top"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18 M5 21V10l7-6 7 6v11 M12 11v7 M8.5 14.5h7"></path></svg></div><span class="trade">Renovation</span></div>
+            <h3>Renovation &amp; Improvement Works</h3>
+            <p>Upgrades and makeovers for homes and offices, from flooring, ceilings and partitions to kitchen and bathroom improvements.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band alt">
+      <div class="wrap">
+        <div class="sec-head">
+          <div class="eyebrow">Who We Serve</div>
+          <h2>Built for homes and buildings alike</h2>
+        </div>
+        <div class="grid-3">
+          <article class="card"><span class="trade">Residential</span><h3>Homeowners</h3><p>Terrace houses, condominiums and bungalows. Get repairs done without chasing multiple contractors.</p></article>
+          <article class="card"><span class="trade">Commercial</span><h3>Offices &amp; shops</h3><p>Commercial premises that need fast, tidy work with proper documents for your accounts.</p></article>
+          <article class="card"><span class="trade">Property</span><h3>Building management</h3><p>JMBs, MCs, building owners and property managers who need a dependable maintenance partner.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="how">
+      <div class="wrap">
+        <div class="sec-head">
+          <div class="eyebrow">How It Works</div>
+          <h2>Four steps, no surprises</h2>
+          <p>Every job runs as a work order, from the first photo to the final report.</p>
+        </div>
+        <div class="process">
+          <ol class="steps" id="steps">
+            <li class="step"><span class="num">01</span><div><h3>Send a photo</h3><p>WhatsApp us a photo of the problem and your location.</p></div></li>
+            <li class="step on"><span class="num">02</span><div><h3>Inspection &amp; quotation</h3><p>We assess the scope and send you a written quotation.</p></div></li>
+            <li class="step"><span class="num">03</span><div><h3>Work completed</h3><p>Our team arrives on the agreed schedule and gets it done.</p></div></li>
+            <li class="step"><span class="num">04</span><div><h3>Job report</h3><p>You receive a report with before and after photos.</p></div></li>
+          </ol>
+          <div class="ticket" aria-live="polite">
+            <span class="bracket b-tl"></span><span class="bracket b-br"></span>
+            <div class="meta"><span class="wo">HS-WO-2026-001</span><span>Example ticket</span></div>
+            <h3>Window frame leak, Level 2</h3>
+            <dl class="kv">
+              <dt>Site</dt><dd>Office premises, Kuala Lumpur</dd>
+              <dt>Trade</dt><dd>Waterproofing</dd>
+              <dt>Quote</dt><dd>HS-QT-2026-001</dd>
+            </dl>
+            <div class="bar"><span id="bar"></span></div>
+            <div class="status" id="status">Inspection &amp; quotation</div>
+            <p class="note">Sample work order to show how a job is tracked.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band alt" id="split">
+      <div class="wrap split">
+        <div class="sec-head">
+          <div class="eyebrow">Split Payment 3×</div>
+          <span class="only">Electrical works only</span>
+          <h2>Pay for electrical works in 3, at 0% interest</h2>
+          <p>Electrical problems can't wait for payday. Pay 40% before work starts, then 30% the next month and 30% the month after.</p>
+          <ul class="perks">
+            <li>0% interest</li>
+            <li>No late fee</li>
+            <li>No admin charge</li>
+            <li>Settle early anytime</li>
+          </ul>
+          <div class="split-actions">
+            <a class="btn btn-primary" data-wa="split" href="https://wa.me/60173734274" target="_blank" rel="noopener">Ask about Split Payment</a>
+            <a class="btn btn-ghost" href="/a/demo" target="_blank" rel="noopener">See the application form</a>
+          </div>
+          <p class="fine">Split Payment is available for electrical works only, subject to approval, one active plan per customer. Payment 1 is made before work starts. Apply online in about 2 minutes: your details, IC photo and signature.</p>
+        </div>
+        <div class="pays" aria-label="Example: RM1,000 of electrical works">
+          <div class="trade">Example: RM1,000 of electrical works</div>
+          <div class="pay first"><span class="n">1</span><span><b>RM400</b><small>Before work starts</small></span><span class="pct">40%</span></div>
+          <div class="pay"><span class="n">2</span><span><b>RM300</b><small>The next month</small></span><span class="pct">30%</span></div>
+          <div class="pay"><span class="n">3</span><span><b>RM300</b><small>The month after</small></span><span class="pct">30%</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="why">
+      <div class="wrap why">
+        <div class="sec-head">
+          <div class="eyebrow">Why HandalServ</div>
+          <h2>Facility management discipline, for your premises</h2>
+          <p>We bring the standards used for office buildings: clear records, scheduled work, and a report for every job.</p>
+          <div class="spec"><span>Work orders</span><span>PPM schedules</span><span>Method statements</span><span>Photo reports</span></div>
+        </div>
+        <div class="grid-2">
+          <article class="card"><h3>Clear pricing upfront</h3><p>A written quotation before any work begins.</p></article>
+          <article class="card"><h3>Photo reports</h3><p>Every job documented with before and after photos.</p></article>
+          <article class="card"><h3>Facility experience</h3><p>Background in managing office building facilities.</p></article>
+          <article class="card"><h3>Registered company</h3><p>A brand of MA Legacy Solutions, registered with SSM (SA0494184-P).</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta" id="contact">
+      <div class="wrap">
+        <div class="cta-box">
+          <div class="cta-copy">
+            <h2>Something broken? Send a photo, get a quote.</h2>
+            <p>Service area: Klang Valley · Open 24/7</p>
+            <div class="contact-line">WhatsApp: 017-373 4274</div>
+          </div>
+          <a class="btn btn-primary" data-wa="quote" href="https://wa.me/60173734274" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"></path></svg>
+            WhatsApp 017-373 4274
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="foot-grid">
+        <div>
+          <a class="brand" href="#top" aria-label="HandalServ, back to top">
+            <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true">
+              <g fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 30 L32 8 L57 30" stroke="#E7EEF7"></path>
+                <path d="M18 21 V56 M46 21 V56" stroke="#E7EEF7"></path>
+                <path d="M18 43 H46" stroke="#E8A33D"></path>
+              </g>
+            </svg>
+            <span class="wordmark"><b>Handal</b><span>Serv</span></span>
+          </a>
+          <span>Home and building maintenance. Servis Pro, Kerja Handal.</span>
+        </div>
+        <div>
+          <h4>Contact</h4>
+          <a data-wa="quote" href="https://wa.me/60173734274" target="_blank" rel="noopener">WhatsApp: 017-373 4274</a>
+          <span>Operating hours: 24/7</span>
+          <span>Service area: Klang Valley</span>
+        </div>
+        <div>
+          <h4>Links</h4>
+          <a href="#services">Services</a>
+          <a href="#how">How It Works</a>
+          <a href="#split">Split Payment</a>
+          <a href="#why">Why Us</a>
+        </div>
+      </div>
+      <div class="legal">HandalServ is a brand of MA Legacy Solutions (SA0494184-P). © <span id="year">2026</span></div>
+    </div>
+  </footer>
+</div>
+
+<a class="wa-float" data-wa="quote" href="https://wa.me/60173734274" target="_blank" rel="noopener" aria-label="WhatsApp HandalServ">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s1 2.6 1.1 2.7c.1.2 1.9 2.9 4.6 4.1 1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.8-1.2.2-.6.2-1.1.1-1.2l-.4-.2Z"/></svg>
+</a>
+
+<script>
+/* WhatsApp buttons open a chat with a ready message. */
+(function () {
+  var NUMBER = '60173734274';
+  var TEXT = {
+    quote: "Hi HandalServ, I'd like a quotation for: ",
+    split: "Hi HandalServ, I'd like to ask about Split Payment 3x for electrical works."
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-wa]'), function (a) {
+    a.href = 'https://wa.me/' + NUMBER + '?text=' + encodeURIComponent(TEXT[a.getAttribute('data-wa')] || TEXT.quote);
+  });
+  document.getElementById('year').textContent = new Date().getFullYear();
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Work order demo: cycles through the four steps */
+  var steps = Array.prototype.slice.call(document.querySelectorAll('#steps .step'));
+  var bar = document.getElementById('bar');
+  var statusEl = document.getElementById('status');
+  var labels = ['Photo received', 'Inspection & quotation', 'Work in progress', 'Report delivered'];
+  var current = 1;
+  function setStep(i) {
+    current = i;
+    steps.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+    bar.style.width = ((i + 1) / steps.length * 100) + '%';
+    statusEl.textContent = labels[i];
+  }
+  setStep(1);
+  if (!reduce) setInterval(function () { setStep((current + 1) % steps.length); }, 2600);
+
+  /* 3D scene */
+  var stage = document.getElementById('stage');
+  var scanPct = document.getElementById('scanPct');
+  var tagEls = {};
+  Array.prototype.forEach.call(document.querySelectorAll('.tag'), function (el) { tagEls[el.getAttribute('data-tag')] = el; });
+
+  if (!window.THREE) return;
+  var canvas = document.getElementById('scene');
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  } catch (e) { return; }
+  document.documentElement.classList.add('webgl');
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 0);
+
+  var scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x050a14, 0.035);
+  var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+  camera.position.set(0, 0, 16);
+
+  var ICE = 0xa9c8ee, AMBER = 0xe8a33d, CORE = 0xeaf3ff;
+  var add = THREE.AdditiveBlending;
+
+  function glowTexture() {
+    var c = document.createElement('canvas'); c.width = c.height = 128;
+    var g = c.getContext('2d');
+    var r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    r.addColorStop(0, 'rgba(255,255,255,1)');
+    r.addColorStop(0.22, 'rgba(255,255,255,0.5)');
+    r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  }
+  var glow = glowTexture();
+
+  var root = new THREE.Group();
+  scene.add(root);
+
+  /* HandalServ symbol: roof over H, as glowing tubes */
+  var S = 0.07;
+  function P(x, y, z) { return new THREE.Vector3((x - 32) * S, -(y - 32) * S + 0.15, z || 0); }
+  function tube(pts, r, mat) {
+    var path = new THREE.CurvePath();
+    for (var i = 0; i < pts.length - 1; i++) path.add(new THREE.LineCurve3(pts[i], pts[i + 1]));
+    return new THREE.Mesh(new THREE.TubeGeometry(path, 48 * (pts.length - 1), r, 14, false), mat);
+  }
+  function caps(pts, r, mat, group) {
+    pts.forEach(function (p) { var s = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat); s.position.copy(p); group.add(s); });
+  }
+  var symbol = new THREE.Group();
+  root.add(symbol);
+  var coreMat = new THREE.MeshBasicMaterial({ color: CORE });
+  var amberMat = new THREE.MeshBasicMaterial({ color: 0xf6bb5c });
+  var haloIce = new THREE.MeshBasicMaterial({ color: 0x4f8fe0, transparent: true, opacity: 0.22, blending: add, depthWrite: false });
+  var haloAmber = new THREE.MeshBasicMaterial({ color: AMBER, transparent: true, opacity: 0.3, blending: add, depthWrite: false });
+  var strokes = [
+    { pts: [P(7, 30), P(32, 8), P(57, 30)], m: coreMat, h: haloIce },
+    { pts: [P(18, 21), P(18, 56)], m: coreMat, h: haloIce },
+    { pts: [P(46, 21), P(46, 56)], m: coreMat, h: haloIce },
+    { pts: [P(18, 43), P(46, 43)], m: amberMat, h: haloAmber }
+  ];
+  var R = 0.12;
+  strokes.forEach(function (s) {
+    symbol.add(tube(s.pts, R, s.m));
+    symbol.add(tube(s.pts, R * 2.8, s.h));
+    caps([s.pts[0], s.pts[s.pts.length - 1]], R, s.m, symbol);
+    caps([s.pts[0], s.pts[s.pts.length - 1]], R * 2.8, s.h, symbol);
+    [-0.5, 0.5].forEach(function (z) {
+      var echo = s.pts.map(function (p) { return new THREE.Vector3(p.x, p.y, z); });
+      var line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(echo),
+        new THREE.LineBasicMaterial({ color: s.m === amberMat ? AMBER : ICE, transparent: true, opacity: 0.35 }));
+      symbol.add(line);
+    });
+  });
+  var apex = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: 0xffffff, blending: add, transparent: true, depthWrite: false }));
+  apex.position.copy(P(32, 8)); apex.scale.set(1.6, 1.6, 1);
+  symbol.add(apex);
+  var crossGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: AMBER, blending: add, transparent: true, opacity: 0.8, depthWrite: false }));
+  crossGlow.position.copy(P(32, 43)); crossGlow.scale.set(3.2, 1.4, 1);
+  symbol.add(crossGlow);
+
+  /* Blueprint house wireframe around the symbol */
+  var house = new THREE.Group();
+  root.add(house);
+  var W = 2.9, D = 2.2, B = -1.75, E = 0.55, RID = 2.35;
+  var segs = [
+    [-W, B, -D, W, B, -D], [W, B, -D, W, B, D], [W, B, D, -W, B, D], [-W, B, D, -W, B, -D],
+    [-W, E, -D, W, E, -D], [W, E, -D, W, E, D], [W, E, D, -W, E, D], [-W, E, D, -W, E, -D],
+    [-W, B, -D, -W, E, -D], [W, B, -D, W, E, -D], [W, B, D, W, E, D], [-W, B, D, -W, E, D],
+    [-W, E, D, 0, RID, D], [W, E, D, 0, RID, D], [-W, E, -D, 0, RID, -D], [W, E, -D, 0, RID, -D],
+    [0, RID, -D, 0, RID, D]
+  ];
+  var hp = [];
+  segs.forEach(function (s) { hp.push(s[0], s[1], s[2], s[3], s[4], s[5]); });
+  var hg = new THREE.BufferGeometry();
+  hg.setAttribute('position', new THREE.Float32BufferAttribute(hp, 3));
+  house.add(new THREE.LineSegments(hg, new THREE.LineBasicMaterial({ color: ICE, transparent: true, opacity: 0.42 })));
+  var floorGrid = new THREE.GridHelper(W * 2, 10, 0x3d6fae, 0x24466f);
+  floorGrid.position.y = B; floorGrid.scale.z = D / W;
+  floorGrid.material.transparent = true; floorGrid.material.opacity = 0.45;
+  house.add(floorGrid);
+  /* corner nodes */
+  var nodeMat = new THREE.SpriteMaterial({ map: glow, color: 0x8fb8ee, blending: add, transparent: true, opacity: 0.9, depthWrite: false });
+  [[-W, B, -D], [W, B, -D], [W, B, D], [-W, B, D], [-W, E, -D], [W, E, -D], [W, E, D], [-W, E, D], [0, RID, D], [0, RID, -D]].forEach(function (p) {
+    var n = new THREE.Sprite(nodeMat); n.position.set(p[0], p[1], p[2]); n.scale.set(0.45, 0.45, 1); house.add(n);
+  });
+
+  /* Hotspot anchors (in house space) */
+  var anchors = {
+    roof: new THREE.Vector3(W * 0.55, E + (RID - E) * 0.45, D),
+    wall: new THREE.Vector3(W, (B + E) / 2, D * 0.2),
+    floor: new THREE.Vector3(-W * 0.55, B, D * 0.6)
+  };
+  Object.keys(anchors).forEach(function (k) {
+    var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: AMBER, blending: add, transparent: true, depthWrite: false }));
+    s.position.copy(anchors[k]); s.scale.set(0.7, 0.7, 1); house.add(s);
+  });
+
+  /* Inspection scan plane */
+  var scan = new THREE.Group();
+  house.add(scan);
+  var scanFill = new THREE.Mesh(new THREE.PlaneGeometry(W * 2, D * 2),
+    new THREE.MeshBasicMaterial({ color: AMBER, transparent: true, opacity: 0.07, blending: add, depthWrite: false, side: THREE.DoubleSide }));
+  scanFill.rotation.x = -Math.PI / 2;
+  scan.add(scanFill);
+  var scanEdge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(W * 2, D * 2)),
+    new THREE.LineBasicMaterial({ color: AMBER, transparent: true, opacity: 0.85 }));
+  scanEdge.rotation.x = -Math.PI / 2;
+  scan.add(scanEdge);
+
+  /* Orbit rings */
+  var rings = new THREE.Group();
+  root.add(rings);
+  function ring(radius, color, opacity) {
+    var m = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.012, 6, 220),
+      new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: opacity, blending: add, depthWrite: false }));
+    rings.add(m); return m;
+  }
+  var r1 = ring(4.3, ICE, 0.45); r1.rotation.x = Math.PI / 2.25;
+  var r2 = ring(4.9, AMBER, 0.35); r2.rotation.x = Math.PI / 1.9; r2.rotation.y = 0.35;
+  var dotsPos = [];
+  for (var a = 0; a < 72; a++) { var t = a / 72 * Math.PI * 2; dotsPos.push(Math.cos(t) * 5.5, 0, Math.sin(t) * 5.5); }
+  var dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.Float32BufferAttribute(dotsPos, 3));
+  var dots = new THREE.Points(dg, new THREE.PointsMaterial({ color: AMBER, size: 0.07, transparent: true, opacity: 0.7 }));
+  dots.rotation.x = Math.PI / 2.1;
+  rings.add(dots);
+
+  /* Background: wave grid floor and drifting dust */
+  var GX = 64, GZ = 46, SP = 0.75;
+  var gp = new Float32Array(GX * GZ * 3);
+  for (var ix = 0; ix < GX; ix++) for (var iz = 0; iz < GZ; iz++) {
+    var o = (ix * GZ + iz) * 3;
+    gp[o] = (ix - GX / 2) * SP; gp[o + 1] = -6; gp[o + 2] = -iz * SP + 6;
+  }
+  var gridGeo = new THREE.BufferGeometry(); gridGeo.setAttribute('position', new THREE.BufferAttribute(gp, 3));
+  var gridPts = new THREE.Points(gridGeo, new THREE.PointsMaterial({ color: 0x5f8fcf, size: 0.06, transparent: true, opacity: 0.75 }));
+  scene.add(gridPts);
+  var dustN = 500, dp = new Float32Array(dustN * 3);
+  for (var d = 0; d < dustN; d++) { dp[d * 3] = (Math.random() - 0.5) * 50; dp[d * 3 + 1] = (Math.random() - 0.5) * 30; dp[d * 3 + 2] = -Math.random() * 30 + 4; }
+  var dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute('position', new THREE.BufferAttribute(dp, 3));
+  var dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xa9c8ee, size: 0.05, transparent: true, opacity: 0.55 }));
+  scene.add(dust);
+
+  /* Sizing, pointer, scroll */
+  var w = 1, h = 1;
+  function resize() {
+    w = window.innerWidth; h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  var mx = 0, my = 0, tx = 0, ty = 0;
+  window.addEventListener('pointermove', function (e) { tx = e.clientX / w * 2 - 1; ty = e.clientY / h * 2 - 1; }, { passive: true });
+  var scrollY = window.scrollY;
+  window.addEventListener('scroll', function () { scrollY = window.scrollY; }, { passive: true });
+
+  var v = new THREE.Vector3(), dir = new THREE.Vector3(), tmp = new THREE.Vector3();
+  function placeRoot() {
+    var r = stage.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    v.set(cx / w * 2 - 1, -(cy / h) * 2 + 1, 0.5).unproject(camera);
+    dir.copy(v).sub(camera.position).normalize();
+    var dist = -camera.position.z / dir.z;
+    root.position.copy(camera.position).add(dir.multiplyScalar(dist));
+    var visH = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z;
+    var target = Math.min(r.height, r.width) / h * visH;
+    var s = target / 10.5;
+    root.scale.setScalar(s);
+    return r;
+  }
+
+  var clock = new THREE.Clock();
+  var elapsed = 0;
+  function frame() {
+    var dt = reduce ? 0 : Math.min(clock.getDelta(), 0.05);
+    elapsed += dt;
+    var t = elapsed;
+    mx += (tx - mx) * 0.05; my += (ty - my) * 0.05;
+    camera.position.x = mx * 0.9; camera.position.y = -my * 0.6;
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+
+    var r = placeRoot();
+    var sp = scrollY * 0.0018;
+    symbol.rotation.y = Math.sin(t * 0.45) * 0.55 + mx * 0.35;
+    symbol.rotation.x = -my * 0.15;
+    house.rotation.y = t * 0.18 + sp + 0.5;
+    house.rotation.x = 0.18;
+    rings.rotation.y = -t * 0.12;
+    r1.rotation.z = t * 0.3; r2.rotation.z = -t * 0.22;
+
+    var phase = (Math.sin(t * 0.7) + 1) / 2;
+    scan.position.y = B + phase * (RID - B);
+    scanPct.textContent = String(Math.round(phase * 100)).padStart(3, '0') + '%';
+
+    var pos = gridGeo.attributes.position.array;
+    for (var ix = 0; ix < GX; ix++) for (var iz = 0; iz < GZ; iz++) {
+      var o = (ix * GZ + iz) * 3;
+      pos[o + 1] = -6 + Math.sin(ix * 0.35 + t * 0.8) * 0.25 + Math.cos(iz * 0.3 + t * 0.6) * 0.25 + scrollY * 0.0012;
+    }
+    gridGeo.attributes.position.needsUpdate = true;
+    dust.rotation.y = t * 0.01; dust.position.y = scrollY * 0.002;
+
+    /* Hotspot labels follow their anchors while the hero is on screen */
+    var heroVisible = r.bottom > 80 && r.top < h;
+    root.updateMatrixWorld();
+    Object.keys(anchors).forEach(function (k) {
+      var el = tagEls[k]; if (!el) return;
+      tmp.copy(anchors[k]); house.localToWorld(tmp); tmp.project(camera);
+      var x = (tmp.x + 1) / 2 * w, y = (1 - tmp.y) / 2 * h;
+      el.style.transform = 'translate(' + (x - 4) + 'px,' + (y - 12) + 'px)';
+      el.style.opacity = heroVisible && tmp.z < 1 ? '1' : '0';
+    });
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
