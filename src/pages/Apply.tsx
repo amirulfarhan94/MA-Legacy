@@ -5,6 +5,7 @@ import { formatMoney } from '../lib/calc'
 import { applicantProblems, formatIcNo, type ApplicantDraft } from '../lib/applicant'
 import { openApplication, submitApplication, type Application } from '../lib/cloud'
 import { photoDataUrl } from '../lib/image'
+import { BRAND } from '../lib/brand'
 import { addDays, today } from '../lib/calc'
 import { dmy, splitSchedule } from '../lib/split'
 import { SPLIT_TERMS } from '../lib/splitTerms'
@@ -68,7 +69,7 @@ export default function Apply() {
 
   useEffect(() => {
     const prev = document.title
-    document.title = 'Split Payment Application · MA Legacy Solutions'
+    document.title = `Split Payment Application · ${BRAND.name}`
     ;(token === DEMO_TOKEN ? Promise.resolve(demoApplication()) : openApplication(token))
       .then((a) => {
         if (!a || new Date(a.expiresAt).getTime() < Date.now()) return setStage('gone')
@@ -115,12 +116,10 @@ export default function Apply() {
 
   return (
     <div className="mx-auto min-h-screen max-w-xl px-4 pb-16 pt-6 text-stone-900">
-      <header className="mb-5 flex items-center gap-3">
-        <img src="./logo-mark.png" alt="" className="h-11 w-11 object-contain" />
-        <div>
-          <div className="font-display text-[17px] leading-tight">{app?.company.name || 'MA Legacy Solutions'}</div>
-          <div className="text-xs text-stone-500">Permohonan Bayaran Ansuran 3× · Split Payment Application</div>
-        </div>
+      <header className="mb-5">
+        <img src={BRAND.logo} alt={BRAND.name} className="h-10 w-auto dark:hidden" />
+        <img src={BRAND.logoOnDark} alt={BRAND.name} className="hidden h-10 w-auto dark:block" />
+        <div className="mt-2 text-xs text-stone-500">Permohonan Bayaran Ansuran 3× · Split Payment Application</div>
       </header>
 
       {token === DEMO_TOKEN && (
@@ -139,9 +138,9 @@ export default function Apply() {
         <Panel>
           <h1 className="font-display text-xl">Pautan ini tidak aktif</h1>
           <p className="mt-2 text-sm text-stone-600">
-            Pautan ini telah digunakan, dibatalkan atau tamat tempoh. Sila hubungi MA Legacy Solutions untuk pautan baharu.
+            Pautan ini telah digunakan, dibatalkan atau tamat tempoh. Sila hubungi {BRAND.name} untuk pautan baharu.
           </p>
-          <p className="mt-2 text-sm text-stone-500">This link has been used, cancelled or has expired. Please contact MA Legacy Solutions for a new one.</p>
+          <p className="mt-2 text-sm text-stone-500">This link has been used, cancelled or has expired. Please contact {BRAND.name} for a new one.</p>
         </Panel>
       )}
       {stage === 'error' && (
@@ -155,7 +154,7 @@ export default function Apply() {
           <CheckCircle2 size={36} className="text-[var(--good)]" />
           <h1 className="mt-2 font-display text-xl">Terima kasih! Permohonan dihantar.</h1>
           <p className="mt-2 text-sm text-stone-600">
-            {app?.company.name} akan menyemak permohonan anda dan menghubungi anda. Bayaran 1 (deposit) dibuat sebelum kerja bermula.
+            {BRAND.name} akan menyemak permohonan anda dan menghubungi anda. Bayaran 1 (deposit) dibuat sebelum kerja bermula.
           </p>
           <p className="mt-2 text-sm text-stone-500">Thank you! Your application has been sent. We will review it and contact you. Payment 1 (deposit) is made before work starts.</p>
         </Panel>
@@ -256,9 +255,9 @@ export default function Apply() {
                 </span>
               </Check>
               <Check checked={form.consent} onChange={(v) => set('consent', v)}>
-                Saya bersetuju {app.company.name} menyimpan maklumat, salinan IC dan tandatangan saya dengan selamat (termasuk dalam storan awan yang dilindungi) untuk perjanjian ini dan rekod bayarannya sahaja.
+                Saya bersetuju {app.company.name} ({BRAND.name}) menyimpan maklumat, salinan IC dan tandatangan saya dengan selamat (termasuk dalam storan awan yang dilindungi) untuk perjanjian ini dan rekod bayarannya sahaja.
                 <span className="block text-stone-500">
-                  I agree to {app.company.name} keeping my details, IC copy and signature securely (including in protected cloud storage) for this agreement and its payment records only.
+                  I agree to {app.company.name} ({BRAND.name}) keeping my details, IC copy and signature securely (including in protected cloud storage) for this agreement and its payment records only.
                 </span>
               </Check>
             </div>
@@ -286,11 +285,17 @@ export default function Apply() {
           </Button>
           <p className="flex items-start gap-2 text-xs text-stone-500">
             <LockKeyhole size={14} className="mt-0.5 shrink-0" />
-            Maklumat dihantar terus kepada {app.company.name} dan pautan ini tidak boleh digunakan lagi selepas dihantar. · Your details go straight to{' '}
-            {app.company.name}; this link stops working once sent.
+            Maklumat dihantar terus kepada {BRAND.name} dan pautan ini tidak boleh digunakan lagi selepas dihantar. · Your details go straight to{' '}
+            {BRAND.name}; this link stops working once sent.
           </p>
         </div>
       )}
+
+      <footer className="mt-10 text-center text-xs text-stone-500">
+        <div className="font-semibold text-stone-600">{BRAND.slogan}</div>
+        {BRAND.name} ialah jenama {app?.company.name || 'MA Legacy Solutions'}
+        {app?.company.regNo ? ` (SSM: ${app.company.regNo})` : ''} · a brand of {app?.company.name || 'MA Legacy Solutions'}
+      </footer>
     </div>
   )
 }

@@ -61,7 +61,8 @@ finger and agree to the terms and to how their data is used. The app shows a ban
 **Review & approve** copies the details, signature and IC photos into the plan (the agreement then prints the customer's
 signature and a page with the IC copy) and deletes the online copy. This uses Firebase (project `ma-legacy`): sign in
 under **Settings → Online account**; access rules are in `firestore.rules`. A link works once and expires after 14
-days. `https://ma-legacy.web.app/a/demo` shows a sample application (electrical job, RM1,000) that can be filled in
+days. Customers see the **HandalServ** brand (a brand of MA Legacy Solutions, `src/lib/brand.ts`) on the
+application page and in the link message; the agreement, invoices and receipts stay in the company's name. `https://ma-legacy.web.app/a/demo` shows a sample application (electrical job, RM1,000) that can be filled in
 but sends nothing — for videos or for customers who want to see it first. Links look like `https://ma-legacy.web.app/a/…`: the same deploy also publishes the app to Firebase Hosting
 (free), which only serves these customer links — keep using the GitHub Pages address yourself. That step runs once the
 repository has a `FIREBASE_SERVICE_ACCOUNT` secret. Everything else still stays on the device.

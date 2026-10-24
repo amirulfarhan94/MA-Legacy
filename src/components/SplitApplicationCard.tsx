@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, CheckCircle2, Copy, LoaderCircle, MessageCircle, Send, Share2, X } from 'lucide-react'
+import { BRAND } from '../lib/brand'
 import { addDays, formatDate, formatMoney, today, toISODate } from '../lib/calc'
 import {
   APPLICATION_DAYS,
@@ -192,13 +193,12 @@ export default function SplitApplicationCard({ invoice }: { invoice: Document })
 
 function ShareLinkModal({ invoice, token, onClose }: { invoice: Document; token: string; onClose: () => void }) {
   const plan = invoice.split!
-  const company = useStore((s) => s.settings.companyName)
   const customer = useStore((s) => s.customers.find((c) => c.id === invoice.customerId))
   const [copied, setCopied] = useState(false)
   const url = applicationUrl(token)
   const message =
     `Salam ${plan.customerName || customer?.name || ''}, sila lengkapkan permohonan bayaran ansuran 3× (0% faedah) untuk invois ${invoice.number} di pautan ini:\n${url}\n\n` +
-    `Anda perlu isi maklumat, ambil gambar IC (depan & belakang) dan tandatangan. Terima kasih! — ${company}`
+    `Anda perlu isi maklumat, ambil gambar IC (depan & belakang) dan tandatangan. Terima kasih! — ${BRAND.name}`
   const phone = plan.phone || customer?.phone
   const canShare = typeof navigator.share === 'function' && window.matchMedia('(pointer: coarse)').matches
 
