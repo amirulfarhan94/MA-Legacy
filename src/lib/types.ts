@@ -287,6 +287,8 @@ export interface Settings {
   /** Signature and company stamp images (PNG data URLs) for agreements; blank leaves space to sign and stamp by hand. */
   signatureDataUrl: string
   stampDataUrl: string
+  /** Show the HandalServ brand logo under the company details on documents. */
+  brandOnDocuments: boolean
 }
 
 export type DocumentStyle = 'classic' | 'engineering'

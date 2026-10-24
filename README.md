@@ -36,7 +36,8 @@ Unpaid invoices get a **Remind** button: the invoice PDF with a polite reminder 
 details) goes out through the share sheet — on a computer the PDF downloads and the customer's WhatsApp chat opens with
 the message — and the invoice keeps a count of reminders sent.
 
-Pick the look of printed documents under **Settings → Document style**: **Engineering** (the default — a title
+Printed documents (and the split payment agreement) carry a small **HandalServ** logo under the company details;
+turn it off under **Settings → Document style**. Pick the look of printed documents there too: **Engineering** (the default — a title
 block, mono figures, and page numbers with a running header on long documents) or **Classic** (the original look).
 Both styles' fonts ship with the app, so they print the same offline. Page numbers need a recent Chrome or Edge (131+).
 

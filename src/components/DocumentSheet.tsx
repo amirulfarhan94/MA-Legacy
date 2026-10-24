@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { amountInWords, docTotals, formatDate, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
 import { useStore } from '../lib/store'
+import BrandMark from './BrandMark'
 import { printedSplit, SPLIT_BADGE, SplitPaymentDetailsClassic, SplitScheduleClassic } from './SplitPrint'
 import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Customer, type Document } from '../lib/types'
 
@@ -339,6 +340,7 @@ export function SheetHeader({ title, rows, badge }: { title: string; rows: MetaE
           <div>{[settings.phone && `Tel: ${settings.phone}`, settings.email].filter(Boolean).join(' · ')}</div>
           {settings.website && <div>{settings.website}</div>}
           {settings.sstNo && <div>SST No: {settings.sstNo}</div>}
+          <BrandMark className="mt-2 h-5" />
         </div>
       </div>
       <div className="text-right">

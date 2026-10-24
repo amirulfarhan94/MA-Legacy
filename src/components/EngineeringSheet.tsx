@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 import { amountInWords, docTotals, formatDate, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
 import { useStore } from '../lib/store'
+import BrandMark from './BrandMark'
 import { printedSplit, SPLIT_BADGE, SplitScheduleEng } from './SplitPrint'
 import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Customer, type Document, type DocType } from '../lib/types'
 
@@ -73,6 +74,7 @@ export function EngHeader({ title, kicker, cells, badge }: { title: string; kick
           <div className="min-w-0">
             <div className="eng-co-name">{settings.companyName}</div>
             {info && <div className="eng-co-info">{info}</div>}
+            <BrandMark className="mt-2 h-[13px]" />
           </div>
         </div>
         <div className="eng-title">

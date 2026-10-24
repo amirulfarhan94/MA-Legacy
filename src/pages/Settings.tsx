@@ -154,6 +154,13 @@ export default function SettingsPage() {
                 </button>
               ))}
             </div>
+            <label className="flex items-start gap-3 border-t border-stone-200 px-5 py-4 text-sm">
+              <input type="checkbox" className="mt-0.5 h-4 w-4 accent-gold-600" checked={form.brandOnDocuments} onChange={(e) => set('brandOnDocuments', e.target.checked)} />
+              <span>
+                <span className="block font-semibold text-stone-900">Show the HandalServ logo on documents</span>
+                <span className="block text-xs text-stone-500">A small logo under the company details, so customers from HandalServ adverts recognise the documents. They stay in MA Legacy Solutions&apos; name.</span>
+              </span>
+            </label>
           </Card>
           <Section id="set-payment" title="Payment details" subtitle="Bank details show on quotations, proforma invoices and invoices; the QR code on invoices and proforma invoices.">
             <Field label="Bank">

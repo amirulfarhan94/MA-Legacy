@@ -7,6 +7,7 @@ import { SPLIT_TERMS as TERMS } from '../lib/splitTerms'
 import { usePhotoUrls } from '../lib/photos'
 import { useStore } from '../lib/store'
 import { DOC_META } from '../lib/types'
+import BrandMark from '../components/BrandMark'
 import SharePdfButton from '../components/SharePdfButton'
 import SheetPreview from '../components/SheetPreview'
 import { Button, PageHeader } from '../components/ui'
@@ -218,7 +219,10 @@ export default function Agreement() {
 function Head({ title, rows, logo, small }: { title: string; rows: [string, string][]; logo: string; small?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-6 border-b-2 border-gold-600 pb-4">
-      <img src={logo} alt="" className={`${small ? 'h-12' : 'h-16'} w-auto max-w-[150px] object-contain`} />
+      <div>
+        <img src={logo} alt="" className={`${small ? 'h-12' : 'h-16'} w-auto max-w-[150px] object-contain`} />
+        <BrandMark className="mt-2 h-4" />
+      </div>
       <div className="text-right">
         <div className={`whitespace-nowrap font-bold tracking-wider text-gold-700 ${small ? 'text-[16px]' : 'text-[20px]'}`}>{title.toUpperCase()}</div>
         <table className="ml-auto mt-1.5 text-[11px]">

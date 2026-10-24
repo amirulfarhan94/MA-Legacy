@@ -62,6 +62,7 @@ export const defaultSettings: Settings = {
   signerPosition: '',
   signatureDataUrl: '',
   stampDataUrl: '',
+  brandOnDocuments: true,
 }
 
 /** Fills settings keys added in later versions (new document types, QR…) from the defaults. */
