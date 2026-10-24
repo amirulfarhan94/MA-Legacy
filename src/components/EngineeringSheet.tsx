@@ -74,7 +74,7 @@ export function EngHeader({ title, kicker, cells, badge }: { title: string; kick
           <div className="min-w-0">
             <div className="eng-co-name">{settings.companyName}</div>
             {info && <div className="eng-co-info">{info}</div>}
-            <BrandMark className="mt-2 h-[13px]" />
+            <BrandMark className="h-[13px]" />
           </div>
         </div>
         <div className="eng-title">

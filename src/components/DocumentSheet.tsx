@@ -340,7 +340,7 @@ export function SheetHeader({ title, rows, badge }: { title: string; rows: MetaE
           <div>{[settings.phone && `Tel: ${settings.phone}`, settings.email].filter(Boolean).join(' · ')}</div>
           {settings.website && <div>{settings.website}</div>}
           {settings.sstNo && <div>SST No: {settings.sstNo}</div>}
-          <BrandMark className="mt-2 h-5" />
+          <BrandMark className="h-5" />
         </div>
       </div>
       <div className="text-right">

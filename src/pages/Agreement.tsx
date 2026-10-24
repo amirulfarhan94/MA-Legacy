@@ -221,7 +221,7 @@ function Head({ title, rows, logo, small }: { title: string; rows: [string, stri
     <div className="flex items-start justify-between gap-6 border-b-2 border-gold-600 pb-4">
       <div>
         <img src={logo} alt="" className={`${small ? 'h-12' : 'h-16'} w-auto max-w-[150px] object-contain`} />
-        <BrandMark className="mt-2 h-4" />
+        <BrandMark className="h-4" />
       </div>
       <div className="text-right">
         <div className={`whitespace-nowrap font-bold tracking-wider text-gold-700 ${small ? 'text-[16px]' : 'text-[20px]'}`}>{title.toUpperCase()}</div>
