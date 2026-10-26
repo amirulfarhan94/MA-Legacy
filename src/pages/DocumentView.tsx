@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRightLeft, BellRing, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
 import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid, toISODate, today } from '../lib/calc'
 import { reminderMessage, shouldMarkSent } from '../lib/reminder'
@@ -39,6 +39,7 @@ export default function DocumentView() {
   const sheetBox = useRef<HTMLDivElement>(null)
   // Split payment (3×): the payments being recorded, while the dialog is open.
   const [splitRecording, setSplitRecording] = useState<number[] | null>(null)
+  const [params, setParams] = useSearchParams()
 
   // The browser uses the page title as the default PDF file name.
   useEffect(() => {
@@ -49,6 +50,14 @@ export default function DocumentView() {
       document.title = prev
     }
   }, [doc, customer])
+
+  // "Record payment" in the invoice list opens a split invoice here with ?pay=1: start recording its next payment.
+  useEffect(() => {
+    if (params.get('pay') !== '1' || !doc) return
+    const next = doc.split ? splitPaymentStates(doc, documents, today()).find((p) => p.status !== 'Paid') : undefined
+    if (next) setSplitRecording([next.seq])
+    setParams({}, { replace: true })
+  }, [params, doc, documents, setParams])
 
   const related = useMemo(() => {
     if (!doc) return []

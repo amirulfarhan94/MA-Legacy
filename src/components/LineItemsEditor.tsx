@@ -109,14 +109,15 @@ export default function LineItemsEditor({
           let pricedNo = 0
           return (
             <div key={item.id} className="rounded-lg border border-stone-200 p-2 sm:border-0 sm:p-0">
-              <div className={`grid grid-cols-2 gap-2 ${grid}`}>
+              {/* Phones: description, then qty · unit · price on one row, then the amount beside the bin. */}
+              <div className={`grid grid-cols-[1fr_1fr_1.35fr] gap-2 ${grid}`}>
                 <div className="hidden flex-col items-center justify-center text-stone-300 sm:flex">
                   <button type="button" className="leading-none hover:text-stone-600" onClick={() => move(idx, idx - 1)} aria-label="Move up">▲</button>
                   <GripVertical size={12} />
                   <button type="button" className="leading-none hover:text-stone-600" onClick={() => move(idx, idx + 1)} aria-label="Move down">▼</button>
                 </div>
                 <ItemDescriptionInput
-                  className="col-span-2 sm:col-span-1"
+                  className="col-span-3 sm:col-span-1"
                   value={item.description}
                   onChange={(description) => update(item.id, { description })}
                   onPick={(s) => update(item.id, { description: s.description, unit: s.unit || item.unit, ...(showPrices ? { unitPrice: s.unitPrice } : {}) })}
@@ -150,15 +151,15 @@ export default function LineItemsEditor({
                   </Cell>
                 )}
                 {showPrices && (
-                  <div className={`tabular flex items-end justify-end pb-2 text-sm font-medium sm:items-center sm:pb-0 ${fromSubs ? 'max-sm:col-span-2' : ''}`}>
-                    {fromSubs && <span className="mr-auto text-xs font-normal text-stone-500 sm:hidden">Total of sub items</span>}
+                  <div className="tabular flex items-center justify-end text-sm font-medium max-sm:col-span-2 max-sm:h-9">
+                    <span className="mr-auto text-xs font-normal text-stone-500 sm:hidden">{fromSubs ? 'Total of sub items' : 'Amount'}</span>
                     {formatMoney(lineTotal(item, adj), currency)}
                   </div>
                 )}
                 <button
                   type="button"
                   onClick={() => remove(item.id)}
-                  className="flex items-center justify-center rounded text-stone-400 hover:bg-red-50 hover:text-red-600 max-sm:col-span-2 max-sm:h-8"
+                  className="flex items-center justify-center rounded text-stone-400 hover:bg-red-50 hover:text-red-600 max-sm:h-9 max-sm:justify-end max-sm:pr-1"
                   aria-label="Remove line"
                 >
                   <Trash2 size={16} />

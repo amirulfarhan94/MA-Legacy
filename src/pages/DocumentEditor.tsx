@@ -20,6 +20,7 @@ import {
   type SplitPlan,
 } from '../lib/types'
 import CustomerForm from '../components/CustomerForm'
+import PartyPicker from '../components/PartyPicker'
 import LineItemsEditor from '../components/LineItemsEditor'
 import PhotosEditor from '../components/PhotosEditor'
 import SplitPlanEditor from '../components/SplitPlanEditor'
@@ -216,24 +217,18 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
             <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
               <Field label={partyLabel} className="sm:col-span-2">
                 <div className="flex gap-2">
-                  <Select
+                  <PartyPicker
                     value={doc.customerId}
-                    onChange={(e) =>
+                    parties={sortedParties}
+                    placeholder={`Search or select ${partyLabel.toLowerCase()}`}
+                    onChange={(id) =>
                       setDoc((d) => ({
                         ...d,
-                        customerId: e.target.value,
+                        customerId: id,
                         invoiceId: d.type === 'receipt' || d.type === 'credit_note' ? undefined : d.invoiceId,
                       }))
                     }
-                  >
-                    <option value="">— Select {partyLabel.toLowerCase()} —</option>
-                    {sortedParties.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {customerLabel(c)}
-                        {c.company && c.name ? ` (${c.name})` : ''}
-                      </option>
-                    ))}
-                  </Select>
+                  />
                   <Button type="button" onClick={() => setAddingCustomer(true)} title={`New ${partyLabel.toLowerCase()}`}>
                     <UserPlus size={16} />
                   </Button>
