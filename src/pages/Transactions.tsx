@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Download, Plus, Search, X } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Camera, Download, LoaderCircle, Paperclip, Plus, Search, X } from 'lucide-react'
 import { docTotals, formatDate, formatMoney, today } from '../lib/calc'
 import { cashMovements } from '../lib/finance'
+import { addPhoto, usePhotoUrls } from '../lib/photos'
+import { readReceipt } from '../lib/receiptOcr'
 import { customerLabel, uid, useStore } from '../lib/store'
 import { DOC_META, PAYMENT_METHODS, type PaymentMethod, type Transaction, type TxnKind } from '../lib/types'
-import { Button, Card, ChipGroup, EmptyState, Field, Input, MetricStrip, Modal, NumberInput, PageHeader, Select, StatusBadge, tableCls } from '../components/ui'
+import { Button, buttonClass, Card, ChipGroup, EmptyState, Field, Input, MetricStrip, Modal, NumberInput, PageHeader, Select, StatusBadge, tableCls } from '../components/ui'
 
 const CATEGORIES: Record<TxnKind, string[]> = {
   income: ['Sales', 'Service', 'Deposit', 'Other income'],
@@ -54,6 +56,13 @@ export default function Transactions() {
   const [to, setTo] = useState('')
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [params, setParams] = useSearchParams()
+
+  // "Expense · Snap a receipt" in the Create sheet lands here with ?snap=1.
+  useEffect(() => {
+    if (params.get('snap') !== '1') return
+    setEditing(blankTxn('expense'))
+    setParams({}, { replace: true })
+  }, [params, setParams])
 
   // "Record payment" on a purchase order lands here with ?po=<id>: open a pre-filled expense.
   useEffect(() => {
@@ -221,7 +230,10 @@ export default function Transactions() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-start justify-between gap-3">
-                          <span className="line-clamp-2 text-sm font-semibold text-stone-900">{r.description || r.category}</span>
+                          <span className="line-clamp-2 text-sm font-semibold text-stone-900">
+                            {r.txn?.receiptPhotoId && <Paperclip size={13} className="mr-1 inline align-[-1px] text-stone-400" aria-label="Receipt photo" />}
+                            {r.description || r.category}
+                          </span>
                           <span className={`tabular shrink-0 whitespace-nowrap text-sm font-bold ${isIn ? 'text-emerald-700' : 'text-red-700'}`}>
                             {isIn ? '+' : '−'} {formatMoney(r.amount, currency)}
                           </span>
@@ -278,7 +290,10 @@ export default function Transactions() {
                                 {r.description}
                               </Link>
                             ) : (
-                              r.description || '—'
+                              <>
+                                {r.txn?.receiptPhotoId && <Paperclip size={13} className="mr-1 inline align-[-1px] text-stone-400" aria-label="Receipt photo" />}
+                                {r.description || '—'}
+                              </>
                             )}
                             {r.reference && <div className="text-xs text-stone-500">Ref: {r.reference}</div>}
                           </td>
@@ -424,6 +439,106 @@ function TxnModal({
           <Input value={form.reference} onChange={(e) => set('reference', e.target.value)} />
         </Field>
       </div>
+      {form.kind === 'expense' && <ReceiptPhoto form={form} setForm={setForm} />}
     </Modal>
+  )
+}
+
+/**
+ * The shop receipt for an expense: snap or pick a photo, and the amount, date, shop and category
+ * fill themselves in from it (only fields still empty). Read on the device; check before saving.
+ */
+function ReceiptPhoto({ form, setForm }: { form: Transaction; setForm: (f: (t: Transaction | null) => Transaction | null) => void }) {
+  const currency = useStore((s) => s.settings.currency)
+  const urls = usePhotoUrls(form.receiptPhotoId ? [form.receiptPhotoId] : [])
+  const url = form.receiptPhotoId ? urls[form.receiptPhotoId] : undefined
+  const [reading, setReading] = useState<number | null>(null)
+  const [note, setNote] = useState('')
+
+  const onFile = async (file?: File) => {
+    if (!file) return
+    setNote('')
+    let id: string
+    try {
+      id = await addPhoto(file)
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : 'Could not read that photo.')
+      return
+    }
+    setForm((t) => t && { ...t, receiptPhotoId: id })
+    setReading(0)
+    try {
+      const r = await readReceipt(file, setReading)
+      const found: string[] = []
+      setForm((t) => {
+        if (!t) return t
+        const next = { ...t }
+        if (r.total && !t.amount) {
+          next.amount = r.total
+          found.push(formatMoney(r.total, currency))
+        }
+        // The form starts on today's date; a date on the receipt replaces it.
+        if (r.date && t.date === today() && r.date !== t.date) {
+          next.date = r.date
+          found.push(formatDate(r.date))
+        }
+        if (r.vendor && !t.description.trim()) {
+          next.description = r.vendor
+          found.push(r.vendor)
+        }
+        if (r.category && t.category === CATEGORIES.expense[0] && CATEGORIES.expense.includes(r.category)) {
+          next.category = r.category
+          found.push(r.category)
+        }
+        return next
+      })
+      const sst = r.sst ? ` (SST ${formatMoney(r.sst, currency)} on the receipt)` : ''
+      setNote(found.length ? `Filled in from the receipt: ${found.join(' · ')}${sst}. Please check before saving.` : "Couldn't read the amount or date from this photo. Fill them in by hand.")
+    } catch {
+      setNote('Reading receipts needs the internet the first time (about 5 MB). The photo is kept; fill the details in by hand.')
+    } finally {
+      setReading(null)
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-2xl border border-dashed border-stone-300 p-3">
+      <div className="flex flex-wrap items-center gap-3">
+        {url ? (
+          <button type="button" onClick={() => window.open(url, '_blank')} className="shrink-0" title="Open the receipt photo">
+            <img src={url} alt="Receipt" className="h-20 w-16 rounded-lg border border-stone-200 object-cover" />
+          </button>
+        ) : (
+          <span className="grid h-20 w-16 shrink-0 place-items-center rounded-lg bg-stone-100 text-stone-400">
+            <Paperclip size={18} />
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-stone-900">Receipt</div>
+          <div className="text-xs text-stone-500">{url ? 'Kept with this expense, in backups and on your synced devices.' : 'Snap the receipt and the details fill themselves in.'}</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <label className={`${buttonClass('primary', 'sm')} cursor-pointer`}>
+              <Camera size={14} /> {url ? 'Retake' : 'Snap receipt'}
+              <input type="file" accept="image/*" capture="environment" className="sr-only" disabled={reading !== null} onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = '' }} />
+            </label>
+            <label className={`${buttonClass('secondary', 'sm')} cursor-pointer`}>
+              Choose photo
+              <input type="file" accept="image/*" className="sr-only" disabled={reading !== null} onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = '' }} />
+            </label>
+            {url && (
+              <Button size="sm" variant="ghost" onClick={() => setForm((t) => t && { ...t, receiptPhotoId: undefined })}>
+                Remove
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+      {reading !== null && (
+        <p className="mt-2 flex items-center gap-2 text-sm text-stone-600">
+          <LoaderCircle size={14} className="animate-spin" /> Reading the receipt… {Math.round(reading * 100)}%
+        </p>
+      )}
+      {note && <p className="mt-2 text-sm text-stone-600">{note}</p>}
+    </div>
   )
 }

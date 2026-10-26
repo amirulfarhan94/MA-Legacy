@@ -87,7 +87,7 @@ export type BackupResult = 'shared' | 'downloaded' | 'cancelled'
  */
 export async function backupNow(): Promise<BackupResult> {
   const data = useStore.getState().exportData()
-  const photos = await exportPhotos(data.documents)
+  const photos = await exportPhotos(data.documents, data.transactions)
   const json = JSON.stringify(Object.keys(photos).length ? { ...data, photos } : data, null, 2)
   const base = `ma-legacy-backup-${today()}`
   // Chrome on Android only shares an allow-list of file types that excludes .json,

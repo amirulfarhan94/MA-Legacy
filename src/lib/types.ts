@@ -250,6 +250,8 @@ export interface Transaction {
   reference: string
   /** Document this entry pays for (e.g. a purchase order). */
   docId?: string
+  /** Photo of the shop's receipt, kept with the work photos (photos.ts). */
+  receiptPhotoId?: string
   createdAt: string
 }
 

@@ -29,7 +29,7 @@ export default function App() {
     if (!ready) return
     requestPersistentStorage()
     // Free the space of photos removed from documents (or from deleted ones) last time.
-    cleanUpPhotos(useStore.getState().documents).catch(() => {})
+    cleanUpPhotos(useStore.getState().documents, useStore.getState().transactions).catch(() => {})
   }, [ready])
 
   if (!ready) return null

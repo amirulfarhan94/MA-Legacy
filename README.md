@@ -19,7 +19,10 @@ Plus a **dashboard** (a greeting that follows the time of day — set your name 
 the next document number, collected this month, outstanding, open quotations, net for the year, and a money-collected
 chart for 12 months, this year or 90 days), **search** (Ctrl K / ⌘K or the search bar: documents, customers, suppliers,
 pages and "new …" shortcuts),
-**transactions** (receipts, refunds and manual income/expense entries, date filters, CSV export), **customer and
+**transactions** (receipts, refunds and manual income/expense entries, date filters, CSV export), **receipt
+snapping** for expenses (Create → Expense: take a photo of the shop receipt and the amount, date, shop name and
+category fill themselves in, read on the phone itself — nothing is sent anywhere; the reader, about 5 MB, downloads the
+first time; the photo stays with the expense, in backups and sync), **customer and
 supplier records** (every document per contact, billed / paid / outstanding), a printable **statement of account** per
 customer (running balance and aging), **reports** (outstanding invoices by age, monthly profit & loss, expenses by
 category) with **Export for accountant** — one Excel file for a chosen period with tabs for the summary, sales

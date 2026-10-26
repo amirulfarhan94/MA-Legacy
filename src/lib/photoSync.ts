@@ -3,7 +3,13 @@ import type { Bytes } from 'firebase/firestore'
 import { cloud } from './cloud'
 import { cloudDeleteQueue, getRecord, putRecord, referencedIds, setRemotePhotos } from './photos'
 import { useStore } from './store'
-import type { Document } from './types'
+import type { Document, Transaction } from './types'
+
+/** Records in Recently deleted, whose photos stay in the cloud so they can be restored. */
+export interface InBin {
+  documents: Document[]
+  transactions: Transaction[]
+}
 
 /**
  * Work photos and IC photos in the cloud, while sync is on. Each photo is one Firestore
@@ -27,7 +33,7 @@ interface CloudPhoto {
 
 let uid: string | undefined
 let stopWatch: (() => void) | undefined
-let deletedDocs: () => Document[] = () => []
+let inBinNow: () => InBin = () => ({ documents: [], transactions: [] })
 /** Photos known to be in the cloud, so they are not looked up again. */
 const known = new Set<string>()
 let queue: string[] = []
@@ -119,7 +125,8 @@ async function work() {
 
 function scan() {
   if (!uid) return
-  const used = referencedIds(useStore.getState().documents)
+  const { documents, transactions } = useStore.getState()
+  const used = referencedIds(documents, transactions)
   const todo = [...used].filter((id) => !known.has(id) && !queue.includes(id))
   if (!todo.length) return
   queue = [...queue, ...todo]
@@ -127,13 +134,14 @@ function scan() {
   work()
 }
 
-/** Deletes from the cloud photos removed here that no document, not even a deleted one, still uses. */
+/** Deletes from the cloud photos removed here that no record, not even a deleted one, still uses. */
 async function cleanUp() {
   const ids = cloudDeleteQueue.get()
   if (!uid || !ids.length) return
-  const docs = useStore.getState().documents
-  const live = referencedIds(docs)
-  const inBin = referencedIds(deletedDocs())
+  const { documents, transactions } = useStore.getState()
+  const live = referencedIds(documents, transactions)
+  const bin = inBinNow()
+  const inBin = referencedIds(bin.documents, bin.transactions)
   const { fs } = await cloud()
   const keep: string[] = []
   for (const id of ids) {
@@ -152,11 +160,11 @@ async function cleanUp() {
  * Called by sync once every list has heard from the server: sends up photos the cloud has not
  * got (on the first run, every photo already on this device) and from then on watches for new ones.
  */
-export function startPhotoSync(ownerUid: string, inBin: () => Document[]) {
+export function startPhotoSync(ownerUid: string, inBin: () => InBin) {
   if (uid === ownerUid) return
   stopPhotoSync()
   uid = ownerUid
-  deletedDocs = inBin
+  inBinNow = inBin
   setRemotePhotos(async (id) => {
     const { fs } = await cloud()
     const snap = await fs.getDoc(await photoRef(id))
@@ -166,7 +174,7 @@ export function startPhotoSync(ownerUid: string, inBin: () => Document[]) {
     return new Blob([p.data.toUint8Array() as Uint8Array<ArrayBuffer>], { type: p.type })
   })
   stopWatch = useStore.subscribe((st, prev) => {
-    if (st.documents === prev.documents) return
+    if (st.documents === prev.documents && st.transactions === prev.transactions) return
     clearTimeout(timer)
     timer = setTimeout(scan, 1500)
   })

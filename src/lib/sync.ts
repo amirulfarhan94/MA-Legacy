@@ -4,7 +4,7 @@ import { cloud, useCloudUser } from './cloud'
 import { startPhotoSync, stopPhotoSync } from './photoSync'
 import { useStore } from './store'
 import { applyRemote, diffRecords, localOnly, type RemoteChange, type SyncRecord } from './syncMerge'
-import type { CatalogItem, Document, Settings } from './types'
+import type { CatalogItem, Document, Settings, Transaction } from './types'
 
 /**
  * Keeps the owner's records the same on every signed-in device through Firestore.
@@ -292,7 +292,8 @@ export async function startSync(uid: string) {
   // Photos start once every list is up to date, so they are checked against current documents.
   const whenLoaded = () => {
     if (loaded.size < SYNCED_LISTS.length + 1) return
-    startPhotoSync(uid, () => [...deleted.values()].filter((d) => d.list === 'documents').map((d) => d.record as Document))
+    const inBin = (list: SyncedList) => [...deleted.values()].filter((d) => d.list === list).map((d) => d.record)
+    startPhotoSync(uid, () => ({ documents: inBin('documents') as Document[], transactions: inBin('transactions') as Transaction[] }))
   }
 
   const onSettings = (snap: DocumentSnapshot) => {

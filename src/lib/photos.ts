@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Document } from './types'
+import type { Document, Transaction } from './types'
 
 /**
  * Work photos. The pictures are too big for localStorage, so they live in this browser's
@@ -159,15 +159,19 @@ export function usePhotoUrls(ids: string[]): Record<string, string | null> {
 /** Waits until the photos are ready to show, e.g. before printing or making a PDF. */
 export const photosReady = (ids: string[]) => Promise.all(ids.map(load))
 
-/** Photos still in use: work photos on documents and IC copies on split payment plans. */
-export const referencedIds = (docs: Document[]) => new Set(docs.flatMap((d) => [...(d.photos?.map((p) => p.id) ?? []), ...(d.split?.icPhotoIds ?? [])]))
+/** Photos still in use: work photos on documents, IC copies on split payment plans and receipts on expenses. */
+export const referencedIds = (docs: Document[], txns: Transaction[] = []) =>
+  new Set([
+    ...docs.flatMap((d) => [...(d.photos?.map((p) => p.id) ?? []), ...(d.split?.icPhotoIds ?? [])]),
+    ...txns.flatMap((t) => (t.receiptPhotoId ? [t.receiptPhotoId] : [])),
+  ])
 
 /**
  * Deletes pictures no document uses any more. Photos from the last day are kept, since a
  * document being edited may not have been saved yet.
  */
-export async function cleanUpPhotos(docs: Document[]) {
-  const used = referencedIds(docs)
+export async function cleanUpPhotos(docs: Document[], txns: Transaction[] = []) {
+  const used = referencedIds(docs, txns)
   const all = await run<PhotoRecord[]>('readonly', (s) => s.getAll())
   const staleRecords = all.filter((r) => !used.has(r.id) && Date.now() - r.createdAt > DAY)
   const stale = staleRecords.map((r) => r.id)
@@ -187,9 +191,9 @@ const toDataUrl = (blob: Blob) =>
   })
 
 /** The documents' photos as data URLs, for a backup file. */
-export async function exportPhotos(docs: Document[]): Promise<Record<string, string>> {
+export async function exportPhotos(docs: Document[], txns: Transaction[] = []): Promise<Record<string, string>> {
   const out: Record<string, string> = {}
-  for (const id of referencedIds(docs)) {
+  for (const id of referencedIds(docs, txns)) {
     const r = await getRecord(id)
     // With sync on, photos taken on another device come from the cloud.
     const blob = r?.blob ?? (remote ? await remote(id).catch(() => null) : null)
