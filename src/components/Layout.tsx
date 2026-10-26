@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigationType } from 'react-router-dom'
 import { Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, X } from 'lucide-react'
 import { invoiceBalance } from '../lib/calc'
 import { daypartOf, useNow } from '../lib/daypart'
@@ -238,6 +238,11 @@ export default function Layout() {
   const [compact, toggleCompact] = useCompactSidebar()
   useAutoSync()
   const { pathname } = useLocation()
+  // A new page opens at the top; Back and Forward leave the browser to restore where you were.
+  const navigationType = useNavigationType()
+  useEffect(() => {
+    if (navigationType !== 'POP') window.scrollTo(0, 0)
+  }, [pathname, navigationType])
   // The background light follows the time of day.
   const daypart = daypartOf(useNow(60_000))
 

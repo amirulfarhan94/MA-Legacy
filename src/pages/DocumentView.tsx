@@ -273,8 +273,15 @@ export default function DocumentView() {
                     </span>
                   </div>
                 )}
+                {doc.type === 'invoice' && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-stone-500">Payment</span>
+                    <StatusBadge status={status} />
+                  </div>
+                )}
                 <label className="block pt-1 @min-[520px]:col-span-2 @min-[520px]:max-w-xs">
-                  <span className="mb-1 block text-xs text-stone-500">Status</span>
+                  {/* An invoice's paid / unpaid / overdue comes from its receipts; by hand it is only drafted, sent or cancelled. */}
+                  <span className="mb-1 block text-xs text-stone-500">{doc.type === 'invoice' ? 'Document status (draft · sent · cancelled)' : 'Status'}</span>
                   <Select
                     value={doc.status}
                     onChange={(e) => saveDocument({ ...doc, status: e.target.value as Document['status'] })}
