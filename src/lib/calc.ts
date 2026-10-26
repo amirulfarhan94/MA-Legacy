@@ -136,14 +136,17 @@ export function addDays(isoDate: string, days: number): string {
   return toISODate(new Date(y, m - 1, d + days))
 }
 
+/** Each year's numbers start here, so a new business doesn't show "0001" to customers. */
+export const FIRST_DOC_NUMBER = 1101
+
 /**
- * Next running number for a doc type, e.g. INV-2026-0007.
- * Numbering restarts every year and never reuses a number already taken.
+ * Next running number for a doc type, e.g. INV/26/1107.
+ * Numbering restarts at 1101 every year and never reuses a number already taken.
+ * (Documents made before this format, like INV-2026-0003, keep their numbers.)
  */
 export function nextDocNumber(type: DocType, prefix: string, date: string, docs: Document[]): string {
-  const year = date.slice(0, 4)
-  const head = `${prefix}-${year}-`
-  let max = 0
+  const head = `${prefix}/${date.slice(2, 4)}/`
+  let max = FIRST_DOC_NUMBER - 1
   for (const d of docs) {
     if (d.type !== type || !d.number.startsWith(head)) continue
     const n = parseInt(d.number.slice(head.length), 10)

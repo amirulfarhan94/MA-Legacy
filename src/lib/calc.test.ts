@@ -41,14 +41,16 @@ describe('docTotals', () => {
 })
 
 describe('nextDocNumber', () => {
-  it('increments per type and year', () => {
+  it('increments per type and year, starting at 1101', () => {
     const docs = [
+      baseDoc({ type: 'invoice', number: 'INV/26/1103' }),
+      baseDoc({ type: 'invoice', number: 'INV/25/1180' }),
       baseDoc({ type: 'invoice', number: 'INV-2026-0003' }),
-      baseDoc({ type: 'invoice', number: 'INV-2025-0010' }),
-      baseDoc({ type: 'quotation', number: 'QT-2026-0009' }),
+      baseDoc({ type: 'quotation', number: 'QT/26/1109' }),
     ]
-    expect(nextDocNumber('invoice', 'INV', '2026-05-01', docs)).toBe('INV-2026-0004')
-    expect(nextDocNumber('invoice', 'INV', '2027-01-01', docs)).toBe('INV-2027-0001')
+    expect(nextDocNumber('invoice', 'INV', '2026-05-01', docs)).toBe('INV/26/1104')
+    expect(nextDocNumber('invoice', 'INV', '2027-01-01', docs)).toBe('INV/27/1101')
+    expect(nextDocNumber('receipt', 'OR', '2026-05-01', docs)).toBe('OR/26/1101')
   })
 })
 

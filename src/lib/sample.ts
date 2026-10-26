@@ -1,4 +1,4 @@
-import { addDays, docTotals, today } from './calc'
+import { addDays, docTotals, FIRST_DOC_NUMBER, today } from './calc'
 import { defaultSettings, uid, type BackupData } from './store'
 import type { Customer, Document, LineItem, Transaction } from './types'
 
@@ -26,7 +26,7 @@ export function sampleData(): BackupData {
     const d: Document = {
       id: uid(),
       type,
-      number: `${prefix}-${year}-${String(counters[type]).padStart(4, '0')}`,
+      number: `${prefix}/${String(year).slice(2)}/${FIRST_DOC_NUMBER - 1 + counters[type]}`,
       customerId: customer.id,
       date,
       dueDate: ['receipt', 'service_report', 'credit_note', 'delivery_order'].includes(type) ? '' : addDays(date, 14),

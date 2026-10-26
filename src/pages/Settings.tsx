@@ -235,12 +235,12 @@ export default function SettingsPage() {
           </Section>
         </div>
 
-        <Section id="set-numbering" title="Document numbering" subtitle="Numbers look like PREFIX-YEAR-0001 and restart each year.">
+        <Section id="set-numbering" title="Document numbering" subtitle="Numbers look like INV/26/1101 (prefix / year / number) and restart at 1101 each year.">
           {DOC_TYPES.map((t) => (
             <Field key={t} label={DOC_META[t].label}>
               <Input
                 value={form.prefixes[t]}
-                onChange={(e) => set('prefixes', { ...form.prefixes, [t]: e.target.value.toUpperCase().replace(/\s/g, '') })}
+                onChange={(e) => set('prefixes', { ...form.prefixes, [t]: e.target.value.toUpperCase().replace(/[\s/]/g, '') })}
               />
             </Field>
           ))}

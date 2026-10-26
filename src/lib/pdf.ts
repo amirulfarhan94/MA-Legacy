@@ -8,7 +8,7 @@ import { downloadFile } from './backup'
 
 export interface PdfOptions {
   fileName: string
-  /** Document number, e.g. INV-2026-0001. */
+  /** Document number, e.g. INV/26/1101. */
   docNo: string
   /** Document title as printed, e.g. INVOICE. */
   heading: string

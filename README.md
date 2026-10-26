@@ -28,7 +28,8 @@ customer (running balance and aging), **reports** (outstanding invoices by age, 
 category) with **Export for accountant** — one Excel file for a chosen period with tabs for the summary, sales
 invoices, credit notes, money in, expenses and SST by month — and an **items catalog**: products and services with their
 usual price, suggested (with items from earlier quotations and invoices) as you type a line; "Save to catalog" under a
-line adds it.
+line adds it. Document numbers run per type and year from 1101, like `INV/26/1101`, `QT/26/1101` (prefixes in
+Settings); documents made before keep their old numbers, and a PDF of `INV/26/1101` saves as `INV-26-1101.pdf`.
 
 Every document prints on A4 with the company logo, amount in words (Ringgit Malaysia), bank details and signature
 blocks. Use **Print / PDF** and choose "Save as PDF" to get a PDF file. **Share PDF** (documents and statements)

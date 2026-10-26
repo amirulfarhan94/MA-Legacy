@@ -121,7 +121,7 @@ export default function DocumentView() {
     if (cur && shouldMarkSent(cur)) saveDocument({ ...cur, status: 'sent' })
   }
   const pdfOptions = {
-    fileName: `${doc.number}.pdf`,
+    fileName: `${doc.number.replace(/[\\/:*?"<>|]/g, '-')}.pdf`,
     docNo: doc.number,
     heading: meta.title,
     company: settings.companyName,
