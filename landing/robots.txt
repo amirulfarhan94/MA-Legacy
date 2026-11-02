@@ -1,0 +1,7 @@
+# handalserv.my: the landing page is public; customer application links (/a/…) and the app page are not.
+User-agent: *
+Allow: /
+Disallow: /a/
+Disallow: /app.html
+
+Sitemap: https://handalserv.my/sitemap.xml
