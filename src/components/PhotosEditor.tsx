@@ -1,10 +1,17 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, ImageOff, ImagePlus, LoaderCircle, Trash2 } from 'lucide-react'
+import { pairPhotos, stageLabel } from '../lib/beforeAfter'
 import { addPhoto, usePhotoUrls } from '../lib/photos'
-import type { DocPhoto } from '../lib/types'
+import type { DocPhoto, PhotoStage } from '../lib/types'
 import { buttonClass, Card, CardHeader, Input } from './ui'
 
-/** Work photos on a document: add from the camera or gallery, caption, reorder, remove. */
+/** Work photos on a document: add from the camera or gallery, caption, tag before / after, reorder, remove. */
+const STAGES: { value: PhotoStage; label: string }[] = [
+  { value: 'before', label: 'Before' },
+  { value: 'during', label: 'During' },
+  { value: 'after', label: 'After' },
+]
+
 export default function PhotosEditor({ title, photos, onChange }: { title: string; photos: DocPhoto[]; onChange: (photos: DocPhoto[]) => void }) {
   const input = useRef<HTMLInputElement>(null)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
@@ -32,6 +39,7 @@ export default function PhotosEditor({ title, photos, onChange }: { title: strin
     if (failed.length) alert(failed.join('\n'))
   }
 
+  const pairCount = pairPhotos(photos).pairs.length
   const update = (i: number, p: Partial<DocPhoto>) => onChange(photos.map((x, j) => (j === i ? { ...x, ...p } : x)))
   const move = (i: number, by: number) => {
     const next = [...photos]
@@ -44,7 +52,11 @@ export default function PhotosEditor({ title, photos, onChange }: { title: strin
     <Card>
       <CardHeader
         title={title}
-        subtitle="Printed as report pages after the document, 4 per page. Kept on this device."
+        subtitle={
+          pairCount
+            ? `${pairCount} before & after pair${pairCount === 1 ? '' : 's'}, printed side by side. The first Before goes with the first After, and so on.`
+            : 'Printed as report pages after the document, 4 per page. Tag photos Before and After to print them side by side.'
+        }
         action={
           <label className={buttonClass('secondary', 'sm', progress ? 'pointer-events-none opacity-60' : 'cursor-pointer')}>
             {progress ? <LoaderCircle size={14} className="animate-spin" /> : <ImagePlus size={14} />}
@@ -77,7 +89,9 @@ export default function PhotosEditor({ title, photos, onChange }: { title: strin
                       </div>
                     )
                   )}
-                  <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[11px] font-semibold tabular-nums text-white">{i + 1}</span>
+                  <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[11px] font-semibold tabular-nums text-white">
+                    {stageLabel(photos, p) || i + 1}
+                  </span>
                   <div className="absolute right-1 top-1 flex gap-1">
                     <PhotoButton label="Move earlier" disabled={i === 0} onClick={() => move(i, -1)}>
                       <ChevronLeft size={15} />
@@ -89,6 +103,24 @@ export default function PhotosEditor({ title, photos, onChange }: { title: strin
                       <Trash2 size={14} />
                     </PhotoButton>
                   </div>
+                </div>
+                <div role="group" aria-label={`Photo ${i + 1}: before or after`} className="mt-1.5 grid grid-cols-3 gap-1">
+                  {STAGES.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      aria-pressed={p.stage === s.value}
+                      // Tap the chosen one again to untag.
+                      onClick={() => update(i, { stage: p.stage === s.value ? undefined : s.value })}
+                      className={`h-7 rounded-full border text-[11px] font-bold transition-colors ${
+                        p.stage === s.value
+                          ? 'border-transparent bg-stone-900 text-[var(--color-canvas)]'
+                          : 'border-[var(--btn-line)] bg-[var(--btn)] text-stone-600 hover:text-stone-900'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
                 </div>
                 <Input
                   value={p.caption}

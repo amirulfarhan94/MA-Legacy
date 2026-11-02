@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+import { pairPhotos, type PhotoPair } from '../lib/beforeAfter'
 import { usePhotoUrls } from '../lib/photos'
 import { useStore } from '../lib/store'
 import { formatDate } from '../lib/calc'
@@ -6,11 +8,13 @@ import { SheetHeader } from './DocumentSheet'
 import { EngHeader, EngSheet } from './EngineeringSheet'
 
 const PER_PAGE = 4
+const PAIRS_PER_PAGE = 3
 const pad2 = (n: number) => String(n).padStart(2, '0')
 
 /**
- * Work photos as A4 report pages after the document, four to a page, in the chosen
- * document style. Photos that are not on this device are left out.
+ * Work photos as A4 report pages after the document, in the chosen document style: before &
+ * after pairs side by side, then the other photos four to a page. Photos that are not on this
+ * device are left out.
  */
 export default function PhotoPages({ doc, customer }: { doc: Document; customer?: Customer }) {
   const style = useStore((s) => s.settings.documentStyle)
@@ -19,14 +23,25 @@ export default function PhotoPages({ doc, customer }: { doc: Document; customer?
   const photos = all.filter((p) => urls[p.id] !== null)
   if (!photos.length) return null
 
-  const title = doc.type === 'quotation' ? 'SITE PHOTOS' : 'WORK REPORT'
+  // Before & after pairs come first, three to a page side by side; the other photos follow, four to a page.
+  const { pairs, rest } = pairPhotos(photos)
   const party = customer ? customer.company || customer.name : '—'
-  const pages = Array.from({ length: Math.ceil(photos.length / PER_PAGE) }, (_, i) => photos.slice(i * PER_PAGE, (i + 1) * PER_PAGE))
+  const pages: { title: string; label: string; range: string; body: ReactNode }[] = []
+  for (let i = 0; i < pairs.length; i += PAIRS_PER_PAGE) {
+    const page = pairs.slice(i, i + PAIRS_PER_PAGE)
+    pages.push({ title: 'BEFORE & AFTER', label: 'Pairs', range: `${i + 1}–${i + page.length} of ${pairs.length}`, body: <PairGrid pairs={page} first={i + 1} urls={urls} /> })
+  }
+  for (let i = 0; i < rest.length; i += PER_PAGE) {
+    const page = rest.slice(i, i + PER_PAGE)
+    pages.push({
+      title: doc.type === 'quotation' ? 'SITE PHOTOS' : 'WORK REPORT',
+      label: 'Photos',
+      range: `${i + 1}–${i + page.length} of ${rest.length}`,
+      body: <PhotoGrid photos={page} first={i + 1} urls={urls} />,
+    })
+  }
 
-  return pages.map((page, i) => {
-    const first = i * PER_PAGE + 1
-    const range = `${first}–${first + page.length - 1} of ${photos.length}`
-    const grid = <PhotoGrid photos={page} first={first} urls={urls} />
+  return pages.map(({ title, label, range, body }, i) => {
     if (style === 'engineering') {
       return (
         <EngSheet key={i} docNo={doc.number} title={DOC_META[doc.type].title} className="photo-page mt-6 print:mt-0">
@@ -37,12 +52,14 @@ export default function PhotoPages({ doc, customer }: { doc: Document; customer?
               ['Document no.', doc.number],
               ['Date', formatDate(doc.date)],
               ['Customer', party],
-              ['Photos', range],
+              [label, range],
             ]}
           />
-          {grid}
+          {body}
           <div className="eng-foot">
-            <span>Photos {range}</span>
+            <span>
+              {label} {range}
+            </span>
             <b>{doc.number}</b>
           </div>
         </EngSheet>
@@ -58,13 +75,35 @@ export default function PhotoPages({ doc, customer }: { doc: Document; customer?
             ['Customer', party],
           ]}
         />
-        {grid}
+        {body}
         <div className="mt-3 border-t border-stone-200 pt-2 text-center text-[10px] text-stone-500">
-          Photos {range} · {DOC_META[doc.type].label} {doc.number}
+          {label} {range} · {DOC_META[doc.type].label} {doc.number}
         </div>
       </div>
     )
   })
+}
+
+function PairGrid({ pairs, first, urls }: { pairs: PhotoPair[]; first: number; urls: Record<string, string | null> }) {
+  const cell = (p: DocPhoto, alt: string) => (
+    <div className="ph">{urls[p.id] ? <img src={urls[p.id]!} alt={p.caption || alt} /> : <i data-photo-loading="" />}</div>
+  )
+  return (
+    <div className="pair-grid">
+      <b className="pair-head">Before</b>
+      <b className="pair-head">After</b>
+      {pairs.map((pair, i) => (
+        <figure key={pair.before.id}>
+          {cell(pair.before, `Before ${first + i}`)}
+          {cell(pair.after, `After ${first + i}`)}
+          <figcaption>
+            <b>{pad2(first + i)}</b>
+            <span>{[pair.before.caption.trim(), pair.after.caption.trim()].filter(Boolean).join(' → ')}</span>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  )
 }
 
 function PhotoGrid({ photos, first, urls }: { photos: DocPhoto[]; first: number; urls: Record<string, string | null> }) {

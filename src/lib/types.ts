@@ -221,7 +221,11 @@ export interface DocPhoto {
   /** Key of the picture in this device's photo storage (see lib/photos.ts). */
   id: string
   caption: string
+  /** Before, during or after the work. The nth "before" pairs with the nth "after" (lib/beforeAfter.ts). */
+  stage?: PhotoStage
 }
+
+export type PhotoStage = 'before' | 'during' | 'after'
 
 /** Document types that can carry work photos. */
 export const PHOTO_TYPES: DocType[] = ['invoice', 'service_report', 'quotation']
