@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { pairPhotos, type PhotoPair } from '../lib/beforeAfter'
+import { BEFORE_AFTER_TYPES, pairPhotos, type PhotoPair } from '../lib/beforeAfter'
 import { usePhotoUrls } from '../lib/photos'
 import { useStore } from '../lib/store'
 import { formatDate } from '../lib/calc'
@@ -24,7 +24,7 @@ export default function PhotoPages({ doc, customer }: { doc: Document; customer?
   if (!photos.length) return null
 
   // Before & after pairs come first, three to a page side by side; the other photos follow, four to a page.
-  const { pairs, rest } = pairPhotos(photos)
+  const { pairs, rest } = BEFORE_AFTER_TYPES.includes(doc.type) ? pairPhotos(photos) : { pairs: [], rest: photos }
   const party = customer ? customer.company || customer.name : '—'
   const pages: { title: string; label: string; range: string; body: ReactNode }[] = []
   for (let i = 0; i < pairs.length; i += PAIRS_PER_PAGE) {

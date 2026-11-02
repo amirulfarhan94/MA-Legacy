@@ -12,7 +12,18 @@ const STAGES: { value: PhotoStage; label: string }[] = [
   { value: 'after', label: 'After' },
 ]
 
-export default function PhotosEditor({ title, photos, onChange }: { title: string; photos: DocPhoto[]; onChange: (photos: DocPhoto[]) => void }) {
+export default function PhotosEditor({
+  title,
+  photos,
+  onChange,
+  stages = false,
+}: {
+  title: string
+  photos: DocPhoto[]
+  onChange: (photos: DocPhoto[]) => void
+  /** Offer Before / During / After tags (invoices and service reports). */
+  stages?: boolean
+}) {
   const input = useRef<HTMLInputElement>(null)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const urls = usePhotoUrls(photos.map((p) => p.id))
@@ -39,7 +50,7 @@ export default function PhotosEditor({ title, photos, onChange }: { title: strin
     if (failed.length) alert(failed.join('\n'))
   }
 
-  const pairCount = pairPhotos(photos).pairs.length
+  const pairCount = stages ? pairPhotos(photos).pairs.length : 0
   const update = (i: number, p: Partial<DocPhoto>) => onChange(photos.map((x, j) => (j === i ? { ...x, ...p } : x)))
   const move = (i: number, by: number) => {
     const next = [...photos]
@@ -55,7 +66,9 @@ export default function PhotosEditor({ title, photos, onChange }: { title: strin
         subtitle={
           pairCount
             ? `${pairCount} before & after pair${pairCount === 1 ? '' : 's'}, printed side by side. The first Before goes with the first After, and so on.`
-            : 'Printed as report pages after the document, 4 per page. Tag photos Before and After to print them side by side.'
+            : stages
+              ? 'Printed as report pages after the document, 4 per page. Tag photos Before and After to print them side by side.'
+              : 'Printed as report pages after the document, 4 per page. Kept on this device.'
         }
         action={
           <label className={buttonClass('secondary', 'sm', progress ? 'pointer-events-none opacity-60' : 'cursor-pointer')}>
@@ -90,7 +103,7 @@ export default function PhotosEditor({ title, photos, onChange }: { title: strin
                     )
                   )}
                   <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[11px] font-semibold tabular-nums text-white">
-                    {stageLabel(photos, p) || i + 1}
+                    {(stages && stageLabel(photos, p)) || i + 1}
                   </span>
                   <div className="absolute right-1 top-1 flex gap-1">
                     <PhotoButton label="Move earlier" disabled={i === 0} onClick={() => move(i, -1)}>
@@ -104,24 +117,26 @@ export default function PhotosEditor({ title, photos, onChange }: { title: strin
                     </PhotoButton>
                   </div>
                 </div>
-                <div role="group" aria-label={`Photo ${i + 1}: before or after`} className="mt-1.5 grid grid-cols-3 gap-1">
-                  {STAGES.map((s) => (
-                    <button
-                      key={s.value}
-                      type="button"
-                      aria-pressed={p.stage === s.value}
-                      // Tap the chosen one again to untag.
-                      onClick={() => update(i, { stage: p.stage === s.value ? undefined : s.value })}
-                      className={`h-7 rounded-full border text-[11px] font-bold transition-colors ${
-                        p.stage === s.value
-                          ? 'border-transparent bg-stone-900 text-[var(--color-canvas)]'
-                          : 'border-[var(--btn-line)] bg-[var(--btn)] text-stone-600 hover:text-stone-900'
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
+                {stages && (
+                  <div role="group" aria-label={`Photo ${i + 1}: before or after`} className="mt-1.5 grid grid-cols-3 gap-1">
+                    {STAGES.map((s) => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        aria-pressed={p.stage === s.value}
+                        // Tap the chosen one again to untag.
+                        onClick={() => update(i, { stage: p.stage === s.value ? undefined : s.value })}
+                        className={`h-7 rounded-full border text-[11px] font-bold transition-colors ${
+                          p.stage === s.value
+                            ? 'border-transparent bg-stone-900 text-[var(--color-canvas)]'
+                            : 'border-[var(--btn-line)] bg-[var(--btn)] text-stone-600 hover:text-stone-900'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <Input
                   value={p.caption}
                   onChange={(e) => update(i, { caption: e.target.value })}

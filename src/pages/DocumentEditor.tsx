@@ -23,6 +23,7 @@ import CustomerForm from '../components/CustomerForm'
 import PartyPicker from '../components/PartyPicker'
 import LineItemsEditor from '../components/LineItemsEditor'
 import PhotosEditor from '../components/PhotosEditor'
+import { BEFORE_AFTER_TYPES } from '../lib/beforeAfter'
 import SplitPlanEditor from '../components/SplitPlanEditor'
 import { Button, Card, CardHeader, Field, Input, NumberInput, PageHeader, Select, Textarea } from '../components/ui'
 
@@ -474,7 +475,12 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
           )}
 
           {PHOTO_TYPES.includes(type) && (
-            <PhotosEditor title={type === 'quotation' ? 'Site photos' : 'Work photos'} photos={doc.photos ?? []} onChange={(photos) => set('photos', photos)} />
+            <PhotosEditor
+              title={type === 'quotation' ? 'Site photos' : 'Work photos'}
+              photos={doc.photos ?? []}
+              onChange={(photos) => set('photos', photos)}
+              stages={BEFORE_AFTER_TYPES.includes(type)}
+            />
           )}
 
           <Card>

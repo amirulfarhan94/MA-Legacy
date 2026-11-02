@@ -1,4 +1,7 @@
-import type { DocPhoto } from './types'
+import type { DocPhoto, DocType } from './types'
+
+/** Documents whose photos can be tagged before & after. A quotation's site photos stay as they are. */
+export const BEFORE_AFTER_TYPES: DocType[] = ['invoice', 'service_report']
 
 export interface PhotoPair {
   before: DocPhoto

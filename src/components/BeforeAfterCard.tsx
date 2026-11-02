@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ImageDown, LoaderCircle, Share2 } from 'lucide-react'
-import { pairCaption, pairPhotos, type PhotoPair } from '../lib/beforeAfter'
+import { BEFORE_AFTER_TYPES, pairCaption, pairPhotos, type PhotoPair } from '../lib/beforeAfter'
 import { makeBeforeAfterPost } from '../lib/beforeAfterPost'
 import { BRAND } from '../lib/brand'
 import { shareFile } from '../lib/pdf'
@@ -20,7 +20,7 @@ export default function BeforeAfterCard({ doc }: { doc: Document }) {
     if (post) URL.revokeObjectURL(post.url)
   }, [post])
 
-  if (!pairs.length) return null
+  if (!pairs.length || !BEFORE_AFTER_TYPES.includes(doc.type)) return null
 
   async function make(pair: PhotoPair) {
     const before = urls[pair.before.id]
