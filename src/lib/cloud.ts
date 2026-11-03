@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { FirebaseApp } from 'firebase/app'
 import type { Auth } from 'firebase/auth'
 import type { Firestore } from 'firebase/firestore'
 
@@ -28,6 +29,7 @@ export const APPLICATION_DAYS = 14
 const SIGNED_IN_KEY = 'ma-legacy-cloud'
 
 interface Cloud {
+  app: FirebaseApp
   auth: Auth
   db: Firestore
   au: typeof import('firebase/auth')
@@ -51,9 +53,37 @@ export function cloud(): Promise<Cloud> {
       au.connectAuthEmulator(auth, `http://${emulator}:9099`, { disableWarnings: true })
       fs.connectFirestoreEmulator(db, emulator, 8080)
     }
-    return { auth, db, au, fs }
+    return { app, auth, db, au, fs }
   })()
   return cloudPromise
+}
+
+/** Our Cloud Functions run in Singapore, next to the Firestore data. */
+const FUNCTIONS_REGION = 'asia-southeast1'
+
+/**
+ * Calls one of the project's Cloud Functions (functions/index.js) as the signed-in owner.
+ * Throws when signed out, offline, or when the function fails or isn't deployed.
+ */
+export async function callFunction<T>(name: string, data: unknown): Promise<T> {
+  if (!flag.get()) throw new Error('Not signed in.')
+  const [{ auth }, { fn, functions }] = await Promise.all([cloud(), cloudFunctions()])
+  await auth.authStateReady()
+  if (!auth.currentUser) throw new Error('Not signed in.')
+  const result = await fn.httpsCallable<unknown, T>(functions, name, { timeout: 70_000 })(data)
+  return result.data
+}
+
+let functionsPromise: Promise<{ fn: typeof import('firebase/functions'); functions: import('firebase/functions').Functions }> | undefined
+
+function cloudFunctions() {
+  functionsPromise ??= Promise.all([cloud(), import('firebase/functions')]).then(([{ app }, fn]) => {
+    const functions = fn.getFunctions(app, FUNCTIONS_REGION)
+    const emulator = import.meta.env.VITE_FIREBASE_EMULATOR as string | undefined
+    if (emulator) fn.connectFunctionsEmulator(functions, emulator, 5001)
+    return { fn, functions }
+  })
+  return functionsPromise
 }
 
 // ---------------------------------------------------------------- owner sign-in
