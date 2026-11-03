@@ -26,8 +26,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # The Cloud Functions' tests (functions/*.test.js) need their own packages.
-      - run: npm ci --prefix functions
       - run: npm test
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
@@ -49,15 +47,6 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: ma-legacy
           channelId: live
-      # Cloud Functions (functions/): the receipt reader. Deploys once functions/.env names the
-      # owner's user id; needs the Blaze plan, the ANTHROPIC_API_KEY secret in Secret Manager and
-      # deploy roles on the service account. A failure here leaves the website deploys alone.
-      - if: ${{ env.FIREBASE_SERVICE_ACCOUNT != '' && hashFiles('functions/index.js') != '' }}
-        continue-on-error: true
-        run: |
-          if ! grep -q '^OWNER_UIDS=.' functions/.env; then echo "No owner id in functions/.env yet; skipping."; exit 0; fi
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
-          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" npx --yes firebase-tools@15.33.0 deploy --only functions --project ma-legacy --non-interactive --force
   deploy:
     needs: build
     runs-on: ubuntu-latest

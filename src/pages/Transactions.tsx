@@ -466,10 +466,9 @@ function ReceiptPhoto({ form, setForm }: { form: Transaction; setForm: (f: (t: T
       return
     }
     setForm((t) => t && { ...t, receiptPhotoId: id })
-    // NaN: reading, no percentage yet (the cloud reader gives none).
-    setReading(NaN)
+    setReading(0)
     try {
-      const r = await readReceipt(file, CATEGORIES.expense, setReading)
+      const r = await readReceipt(file, setReading)
       const found: string[] = []
       setForm((t) => {
         if (!t) return t
@@ -494,18 +493,7 @@ function ReceiptPhoto({ form, setForm }: { form: Transaction; setForm: (f: (t: T
         return next
       })
       const sst = r.sst ? ` (SST ${formatMoney(r.sst, currency)} on the receipt)` : ''
-      const items = r.items?.length
-        ? ` Items: ${r.items
-            .slice(0, 6)
-            .map((i) => (i.amount ? `${i.description} ${formatMoney(i.amount, currency)}` : i.description))
-            .join(' · ')}${r.items.length > 6 ? ' …' : ''}.`
-        : ''
-      const how = r.via === 'device' ? ' (Read on this phone, which is less accurate: sign in to Sync and stay online for the better reader.)' : ''
-      setNote(
-        found.length
-          ? `Filled in from the receipt: ${found.join(' · ')}${sst}.${items} Please check before saving.${how}`
-          : `Couldn't read the amount or date from this photo. Fill them in by hand.${how}`,
-      )
+      setNote(found.length ? `Filled in from the receipt: ${found.join(' · ')}${sst}. Please check before saving.` : "Couldn't read the amount or date from this photo. Fill them in by hand.")
     } catch {
       setNote('Reading receipts needs the internet the first time (about 5 MB). The photo is kept; fill the details in by hand.')
     } finally {
@@ -547,7 +535,7 @@ function ReceiptPhoto({ form, setForm }: { form: Transaction; setForm: (f: (t: T
       </div>
       {reading !== null && (
         <p className="mt-2 flex items-center gap-2 text-sm text-stone-600">
-          <LoaderCircle size={14} className="animate-spin" /> Reading the receipt…{Number.isFinite(reading) && ` ${Math.round(reading * 100)}%`}
+          <LoaderCircle size={14} className="animate-spin" /> Reading the receipt… {Math.round(reading * 100)}%
         </p>
       )}
       {note && <p className="mt-2 text-sm text-stone-600">{note}</p>}

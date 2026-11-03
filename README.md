@@ -21,9 +21,8 @@ chart for 12 months, this year or 90 days), **search** (Ctrl K / ⌘K or the sea
 pages and "new …" shortcuts),
 **transactions** (receipts, refunds and manual income/expense entries, date filters, CSV export), **receipt
 snapping** for expenses (Create → Expense: take a photo of the shop receipt and the amount, date, shop name and
-category fill themselves in; when signed in and online, Claude reads it through the `readReceipt` Cloud Function,
-otherwise a less accurate reader on the phone does, which downloads about 5 MB the first time; the photo stays with the
-expense, in backups and sync), **customer and
+category fill themselves in, read on the phone itself — nothing is sent anywhere; the reader, about 5 MB, downloads the
+first time; the photo stays with the expense, in backups and sync), **customer and
 supplier records** (every document per contact, billed / paid / outstanding), a printable **statement of account** per
 customer (running balance and aging), **reports** (outstanding invoices by age, monthly profit & loss, expenses by
 category) with **Export for accountant** — one Excel file for a chosen period with tabs for the summary, sales
@@ -102,11 +101,6 @@ Firebase Hosting site, next to the customer application links (`/a/…`, served 
 https://handalserv.my (custom domain on Firebase Hosting, DNS at Exabytes). `landing/robots.txt` and `landing/sitemap.xml` point
 search engines at the page and keep them off `/a/…`; the tab icons (`favicon.ico`, `hs-favicon.png`,
 `hs-apple-touch-icon.png`) are cut from `public/brand/handalserv-ikon.png`.
-
-**Receipt reader (Cloud Functions).** `functions/` holds `readReceipt`, which sends a receipt photo to Claude
-(Haiku 5.5) and returns the total, date, shop, SST, category and items. It runs in asia-southeast1 on the Blaze plan,
-reads the Anthropic API key from Secret Manager (`ANTHROPIC_API_KEY`, never in the repo) and answers only the user
-ids in `functions/.env` (`OWNER_UIDS`). The deploy workflow deploys it once that id is filled in.
 
 ## Install as an app (PWA)
 
