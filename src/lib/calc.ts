@@ -219,3 +219,11 @@ export function amountInWords(amount: number): string {
   if (sen) s += ` And Cents ${intToWords(sen)}`
   return `${s} Only`
 }
+
+/** "2026-11-04T15:07:00.000Z" → "04 Nov 2026, 11:07 PM" in the device's time zone. */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '-'
+  const time = d.toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase()
+  return `${formatDate(toISODate(d))}, ${time}`
+}

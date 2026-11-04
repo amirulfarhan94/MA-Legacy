@@ -155,6 +155,8 @@ export interface Document {
   sourceId?: string
   /** Receipts and credit notes: the invoice they apply to. */
   invoiceId?: string
+  /** Service reports and delivery orders: the customer's sign-off, signed on the owner's phone. */
+  customerSign?: CustomerSign
   /** Receipts: money received. */
   amountPaid?: number
   /** Credit notes: money paid back to the customer (0 = credit only). */
@@ -216,6 +218,17 @@ export interface SplitPlan {
   /** Photos of the customer's IC, front and back (ids in this device's photo storage). */
   icPhotoIds?: string[]
 }
+
+export interface CustomerSign {
+  name: string
+  /** When they signed (ISO date-time). */
+  signedAt: string
+  /** The signature, a trimmed PNG data URL from SignaturePad. */
+  image: string
+}
+
+/** Documents the customer can sign on the phone when the work is done or the goods arrive. */
+export const SIGN_TYPES: DocType[] = ['service_report', 'delivery_order']
 
 export interface DocPhoto {
   /** Key of the picture in this device's photo storage (see lib/photos.ts). */

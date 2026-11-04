@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, amountInWords, docTotals, formatDate, invoicePaymentState, monthLabel, nextDocNumber } from './calc'
+import { addDays, amountInWords, docTotals, formatDate, formatDateTime, invoicePaymentState, monthLabel, nextDocNumber } from './calc'
 import type { Document } from './types'
 
 const baseDoc = (over: Partial<Document>): Document => ({
@@ -109,5 +109,12 @@ describe('sub items', () => {
       taxRate: 0,
     })
     expect(t.total).toBe(300)
+  })
+})
+
+describe('formatDateTime', () => {
+  it('shows the local date and a 12-hour time', () => {
+    expect(formatDateTime(new Date(2026, 10, 4, 15, 7).toISOString())).toBe('04 Nov 2026, 3:07 PM')
+    expect(formatDateTime('nonsense')).toBe('-')
   })
 })

@@ -1,9 +1,9 @@
 import { Fragment } from 'react'
-import { amountInWords, docTotals, formatDate, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
+import { amountInWords, docTotals, formatDate, formatDateTime, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
 import { useStore } from '../lib/store'
 import BrandMark from './BrandMark'
 import { printedSplit, SPLIT_BADGE, SplitPaymentDetailsClassic, SplitScheduleClassic } from './SplitPrint'
-import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Customer, type Document } from '../lib/types'
+import { DOC_META, PAYMENT_METHODS, SIGN_TYPES, isPricedDoc, type Customer, type Document } from '../lib/types'
 
 const money = (n: number) => formatMoney(n, '').trim()
 
@@ -256,32 +256,41 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
           </div>
         )}
       </div>
-      {doc.type === 'delivery_order' && <ReceivedBy />}
-      {/* A delivery order is signed on receipt, so it drops the "no signature" line. */}
-      <ComputerGeneratedNote signatureRequired={doc.type === 'delivery_order'} />
+      {(doc.type === 'delivery_order' || (doc.customerSign && SIGN_TYPES.includes(doc.type))) && <ReceivedBy doc={doc} />}
+      {/* A delivery order is signed on receipt, so it drops the "no signature" line; so does anything signed. */}
+      <ComputerGeneratedNote signatureRequired={doc.type === 'delivery_order' || !!doc.customerSign} />
     </div>
   )
 }
 
-/** Acknowledgement box for the customer to sign when the goods arrive. */
-function ReceivedBy() {
+/**
+ * The customer's sign-off: on a delivery order a box to sign when the goods arrive, filled in when
+ * they signed on the phone; on a service report, shown only once signed.
+ */
+function ReceivedBy({ doc }: { doc: Document }) {
+  const sign = doc.customerSign
+  const isDo = doc.type === 'delivery_order'
   return (
     <div className="mt-6 rounded-md border border-stone-300 px-4 py-3 text-[11px]">
-      <div className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-gold-700">Received in good order and condition by</div>
+      <div className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-gold-700">
+        {isDo ? 'Received in good order and condition by' : 'Work completed and accepted by'}
+      </div>
       <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-        <SignLine label="Name" />
-        <SignLine label="IC / Staff no." />
-        <SignLine label="Date & time" />
-        <SignLine label="Signature & company stamp" tall />
+        <SignLine label="Name" value={sign?.name} />
+        {isDo ? <SignLine label="IC / Staff no." /> : <SignLine label="Date & time" value={sign && formatDateTime(sign.signedAt)} />}
+        {isDo && <SignLine label="Date & time" value={sign && formatDateTime(sign.signedAt)} />}
+        <SignLine label={isDo ? 'Signature & company stamp' : 'Signature'} tall image={sign?.image} />
       </div>
     </div>
   )
 }
 
-function SignLine({ label, tall }: { label: string; tall?: boolean }) {
+function SignLine({ label, tall, value, image }: { label: string; tall?: boolean; value?: string; image?: string }) {
   return (
     <div>
-      <div className={`border-b border-stone-400 ${tall ? 'h-12' : 'h-6'}`} />
+      <div className={`flex items-end border-b border-stone-400 ${tall ? 'h-12' : 'h-6'}`}>
+        {image ? <img src={image} alt="Signature" className="max-h-full max-w-full object-contain" /> : value && <span className="pb-0.5 text-stone-900">{value}</span>}
+      </div>
       <div className="mt-1 text-[10px] text-stone-500">{label}</div>
     </div>
   )

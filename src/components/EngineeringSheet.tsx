@@ -1,9 +1,9 @@
 import { Fragment, type ReactNode } from 'react'
-import { amountInWords, docTotals, formatDate, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
+import { amountInWords, docTotals, formatDate, formatDateTime, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
 import { useStore } from '../lib/store'
 import BrandMark from './BrandMark'
 import { printedSplit, SPLIT_BADGE, SplitScheduleEng } from './SplitPrint'
-import { DOC_META, PAYMENT_METHODS, isPricedDoc, type Customer, type Document, type DocType } from '../lib/types'
+import { DOC_META, PAYMENT_METHODS, SIGN_TYPES, isPricedDoc, type Customer, type Document, type DocType } from '../lib/types'
 
 const money = (n: number) => formatMoney(n, '').trim()
 const pad2 = (n: number) => String(n).padStart(2, '0')
@@ -490,25 +490,8 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
 
       <div className="eng-grow" />
       <EngTerms text={doc.terms} />
-      {doc.type === 'delivery_order' && (
-        <div className="eng-sign">
-          <span className="eng-cap">Received in good order and condition by</span>
-          <div className="eng-sign-grid">
-            {[
-              ['Name', false],
-              ['IC / Staff no.', false],
-              ['Date & time', false],
-              ['Signature & company stamp', true],
-            ].map(([label, tall]) => (
-              <section key={label as string}>
-                <div className={tall ? 'tall' : ''} />
-                <span>{label as string}</span>
-              </section>
-            ))}
-          </div>
-        </div>
-      )}
-      <EngFooter docNo={doc.number} signatureRequired={doc.type === 'delivery_order'} />
+      {(doc.type === 'delivery_order' || (doc.customerSign && SIGN_TYPES.includes(doc.type))) && <EngSignOff doc={doc} />}
+      <EngFooter docNo={doc.number} signatureRequired={doc.type === 'delivery_order' || !!doc.customerSign} />
     </EngSheet>
   )
 }
@@ -522,3 +505,35 @@ function EngSection({ title, text, plain }: { title: string; text: string; plain
   )
 }
 
+
+/** The customer's sign-off box: blank on a delivery order to sign by hand, filled in once signed on the phone. */
+function EngSignOff({ doc }: { doc: Document }) {
+  const sign = doc.customerSign
+  const isDo = doc.type === 'delivery_order'
+  const when = sign ? formatDateTime(sign.signedAt) : undefined
+  const cells: [string, { value?: string; image?: string; tall?: boolean }][] = isDo
+    ? [
+        ['Name', { value: sign?.name }],
+        ['IC / Staff no.', {}],
+        ['Date & time', { value: when }],
+        ['Signature & company stamp', { image: sign?.image, tall: true }],
+      ]
+    : [
+        ['Name', { value: sign?.name }],
+        ['Date & time', { value: when }],
+        ['Signature', { image: sign?.image, tall: true }],
+      ]
+  return (
+    <div className="eng-sign">
+      <span className="eng-cap">{isDo ? 'Received in good order and condition by' : 'Work completed and accepted by'}</span>
+      <div className="eng-sign-grid">
+        {cells.map(([label, c]) => (
+          <section key={label}>
+            <div className={c.tall ? 'tall' : ''}>{c.image ? <img src={c.image} alt="Signature" /> : c.value}</div>
+            <span>{label}</span>
+          </section>
+        ))}
+      </div>
+    </div>
+  )
+}

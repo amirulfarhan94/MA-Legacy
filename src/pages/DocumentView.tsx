@@ -6,7 +6,7 @@ import { reminderMessage, shouldMarkSent } from '../lib/reminder'
 import { splitPaymentStates, splitPlanStatus } from '../lib/split'
 import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
 import { waNumber } from '../lib/contact'
-import { DOC_META, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
+import { DOC_META, SIGN_TYPES, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
 import DocumentSheet from '../components/DocumentSheet'
 import EngineeringSheet from '../components/EngineeringSheet'
 import SheetPreview from '../components/SheetPreview'
@@ -14,6 +14,7 @@ import SharePdfButton from '../components/SharePdfButton'
 import PhotoPages from '../components/PhotoPages'
 import BeforeAfterCard from '../components/BeforeAfterCard'
 import JobCostCard from '../components/JobCostCard'
+import CustomerSignCard from '../components/CustomerSignCard'
 import SplitPaymentsCard from '../components/SplitPaymentsCard'
 import SplitApplicationCard from '../components/SplitApplicationCard'
 import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
@@ -309,6 +310,7 @@ export default function DocumentView() {
             </div>
           </Card>
           {doc.type === 'invoice' && doc.status !== 'cancelled' && <JobCostCard invoice={doc} />}
+          {SIGN_TYPES.includes(doc.type) && doc.status !== 'cancelled' && <CustomerSignCard doc={doc} />}
           <BeforeAfterCard doc={doc} />
           {doc.type === 'invoice' && doc.split && (
             <SplitPaymentsCard invoice={doc} recording={splitRecording} onRecord={setSplitRecording} />

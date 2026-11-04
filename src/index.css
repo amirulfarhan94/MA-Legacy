@@ -463,6 +463,8 @@ body {
 .eng-sign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; margin-top: 12px; }
 .eng-sign-grid div { border-bottom: .8px solid var(--e-ink-3); height: 22px; }
 .eng-sign-grid div.tall { height: 44px; }
+.eng-sign-grid div { display: flex; align-items: flex-end; font-size: 9.5px; color: var(--e-ink); padding-bottom: 2px; }
+.eng-sign-grid div img { max-height: 100%; max-width: 100%; object-fit: contain; }
 .eng-sign-grid span { display: block; margin-top: 4px; font: 500 6.8px/1 var(--e-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--e-ink-3); }
 .eng-foot { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-top: 14px; padding-top: 8px; border-top: .8px solid var(--e-ink); font-size: 8.4px; color: var(--e-ink-3); }
 .eng-foot b { font: 500 7.5px/1 var(--e-mono); letter-spacing: .14em; color: var(--e-ink-2); white-space: nowrap; }

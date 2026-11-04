@@ -31,6 +31,10 @@ usual price, suggested (with items from earlier quotations and invoices) as you 
 line adds it. Document numbers run per type and year from 1101, like `INV/26/1101`, `QT/26/1101` (prefixes in
 Settings); documents made before keep their old numbers, and a PDF of `INV/26/1101` saves as `INV-26-1101.pdf`.
 
+**Customer sign-off**: on a service report or delivery order, Sign now lets the customer sign on the phone with their
+name. The signature, name and date-time print in the document's sign-off box ("Work completed and accepted by" /
+"Received in good order and condition by"), and signing marks the report completed or the order delivered.
+
 **Job profit**: an expense can be marked "For job" with the invoice it was for (or added from the invoice's Job
 profit card with Add cost). The invoice page then shows the job's value before SST (less credit notes), its costs and the
 profit and margin, and Reports lists every job with costs as **Profit by job**, lowest margin first.
