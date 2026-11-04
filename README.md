@@ -31,6 +31,10 @@ usual price, suggested (with items from earlier quotations and invoices) as you 
 line adds it. Document numbers run per type and year from 1101, like `INV/26/1101`, `QT/26/1101` (prefixes in
 Settings); documents made before keep their old numbers, and a PDF of `INV/26/1101` saves as `INV-26-1101.pdf`.
 
+**Job profit**: an expense can be marked "For job" with the invoice it was for (or added from the invoice's Job
+profit card with Add cost). The invoice page then shows the job's value before SST (less credit notes), its costs and the
+profit and margin, and Reports lists every job with costs as **Profit by job**, lowest margin first.
+
 **Before & after**: work photos on an invoice or service report can be tagged Before, During or After.
 The first Before pairs with the first After, and so on; pairs print side by side on "Before & after" pages ahead of
 the other photos, and the document page's Before & after card turns any pair into a 1080 × 1350 picture for social

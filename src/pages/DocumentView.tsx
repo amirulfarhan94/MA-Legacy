@@ -13,6 +13,7 @@ import SheetPreview from '../components/SheetPreview'
 import SharePdfButton from '../components/SharePdfButton'
 import PhotoPages from '../components/PhotoPages'
 import BeforeAfterCard from '../components/BeforeAfterCard'
+import JobCostCard from '../components/JobCostCard'
 import SplitPaymentsCard from '../components/SplitPaymentsCard'
 import SplitApplicationCard from '../components/SplitApplicationCard'
 import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
@@ -307,6 +308,7 @@ export default function DocumentView() {
               </div>
             </div>
           </Card>
+          {doc.type === 'invoice' && doc.status !== 'cancelled' && <JobCostCard invoice={doc} />}
           <BeforeAfterCard doc={doc} />
           {doc.type === 'invoice' && doc.split && (
             <SplitPaymentsCard invoice={doc} recording={splitRecording} onRecord={setSplitRecording} />

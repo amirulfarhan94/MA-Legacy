@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { BarChart3, Download, Printer } from 'lucide-react'
 import { formatMoney, monthLabel, today } from '../lib/calc'
 import { AGING_BUCKETS, agingByCustomer, expensesByCategory, monthlyPnL, openInvoices } from '../lib/finance'
+import { jobCostsForYear } from '../lib/jobCosting'
 import { customerLabel, useStore } from '../lib/store'
 import { DOC_META } from '../lib/types'
 import { Button, Card, CardHeader, EmptyState, PageHeader, Select, tableCls } from '../components/ui'
@@ -64,6 +65,7 @@ export default function Reports() {
     { sales: 0, moneyIn: 0, moneyOut: 0, net: 0 },
   )
   const expenses = useMemo(() => expensesByCategory(year, transactions), [year, transactions])
+  const jobs = useMemo(() => jobCostsForYear(year, documents, transactions), [year, documents, transactions])
   const expenseTotal = expenses.reduce((s, e) => s + e.amount, 0)
   // Hide months after the current one in the current year.
   const visibleMonths = pnl.filter((r) => year < thisYear || r.month <= today().slice(0, 7))
@@ -303,6 +305,32 @@ export default function Reports() {
                   </span>
                   <span className="tabular shrink-0 text-right sm:w-28">{formatMoney(e.amount, cur)}</span>
                   <span className="tabular w-10 shrink-0 text-right text-xs text-stone-500">{Math.round((e.amount / expenseTotal) * 100)}%</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card>
+          <CardHeader title={`Profit by job · ${year}`} subtitle="Invoices with costs recorded for them, lowest margin first. Values are before SST." />
+          {jobs.length === 0 ? (
+            <EmptyState title="No job costs yet" text={'When you add an expense, choose the invoice under "For job" to see each job\'s profit here.'} />
+          ) : (
+            <ul className="divide-y divide-stone-200">
+              {jobs.map(({ invoice, cost }) => (
+                <li key={invoice.id}>
+                  <Link to={`/d/${DOC_META.invoice.path}/${invoice.id}`} className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-[var(--item-hover)]">
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold text-stone-900">{invoice.number}</span>
+                      <span className="block truncate text-xs text-stone-500">
+                        {customerLabel(customers.find((c) => c.id === invoice.customerId))} · {formatMoney(cost.value, cur)} − {formatMoney(cost.costs, cur)} costs
+                      </span>
+                    </span>
+                    <span className={`tabular shrink-0 text-right font-bold ${cost.profit < 0 ? 'text-red-700' : 'text-emerald-700'}`}>
+                      {formatMoney(cost.profit, cur)}
+                      {cost.margin !== null && <span className="block text-xs font-semibold">{Math.round(cost.margin * 100)}%</span>}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>

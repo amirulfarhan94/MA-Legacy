@@ -64,6 +64,14 @@ export default function Transactions() {
     setParams({}, { replace: true })
   }, [params, setParams])
 
+  // "Add cost" on an invoice's job costing lands here with ?job=<id>: a new expense for that job.
+  useEffect(() => {
+    const jobId = params.get('job')
+    if (!jobId) return
+    if (documents.some((d) => d.id === jobId)) setEditing({ ...blankTxn('expense'), category: 'Materials', jobId })
+    setParams({}, { replace: true })
+  }, [params, setParams, documents])
+
   // "Record payment" on a purchase order lands here with ?po=<id>: open a pre-filled expense.
   useEffect(() => {
     const poId = params.get('po')
@@ -102,6 +110,11 @@ export default function Transactions() {
     [documents, transactions],
   )
 
+
+  const jobLabel = (t?: Transaction) => {
+    const job = t?.jobId ? documents.find((d) => d.id === t.jobId) : undefined
+    return job ? `Job ${job.number}` : ''
+  }
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase()
@@ -239,7 +252,7 @@ export default function Transactions() {
                           </span>
                         </span>
                         <span className="tabular mt-1 block text-xs text-stone-500">
-                          {[formatDate(r.date), r.category, r.customerId ? customerLabel(c) : '', PAYMENT_METHODS[r.method]].filter(Boolean).join(' · ')}
+                          {[formatDate(r.date), r.category, r.customerId ? customerLabel(c) : '', PAYMENT_METHODS[r.method], jobLabel(r.txn)].filter(Boolean).join(' · ')}
                         </span>
                       </span>
                     </>
@@ -296,6 +309,7 @@ export default function Transactions() {
                               </>
                             )}
                             {r.reference && <div className="text-xs text-stone-500">Ref: {r.reference}</div>}
+                            {jobLabel(r.txn) && <div className="text-xs text-gold-700">{jobLabel(r.txn)}</div>}
                           </td>
                           <td className={tableCls.td}>{r.customerId ? customerLabel(c) : '—'}</td>
                           <td className={`${tableCls.td} text-stone-600`}>{PAYMENT_METHODS[r.method]}</td>
@@ -354,8 +368,18 @@ function TxnModal({
   onDelete?: () => void
 }) {
   const customers = useStore((s) => s.customers)
+  const documents = useStore((s) => s.documents)
   const currency = useStore((s) => s.settings.currency)
   const [form, setForm] = useState<Transaction | null>(txn)
+  // Jobs to pick from: invoices, newest first (and the one already chosen, even if cancelled since).
+  const jobs = useMemo(
+    () =>
+      documents
+        .filter((d) => d.type === 'invoice' && (d.status !== 'cancelled' || d.id === txn?.jobId))
+        .sort((a, b) => b.date.localeCompare(a.date) || b.number.localeCompare(a.number))
+        .slice(0, 200),
+    [documents, txn?.jobId],
+  )
   const [lastTxn, setLastTxn] = useState(txn)
   if (txn !== lastTxn) {
     setLastTxn(txn)
@@ -426,6 +450,18 @@ function TxnModal({
             ))}
           </Select>
         </Field>
+        {form.kind === 'expense' && (
+          <Field label="For job (optional)" hint="The invoice this cost was for, to see the job's profit.">
+            <Select value={form.jobId ?? ''} onChange={(e) => set('jobId', e.target.value || undefined)}>
+              <option value="">—</option>
+              {jobs.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.number} · {customerLabel(customers.find((c) => c.id === d.customerId))}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Field label="Method">
           <Select value={form.method} onChange={(e) => set('method', e.target.value as PaymentMethod)}>
             {Object.entries(PAYMENT_METHODS).map(([k, v]) => (

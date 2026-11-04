@@ -256,6 +256,8 @@ export interface Transaction {
   docId?: string
   /** Photo of the shop's receipt, kept with the work photos (photos.ts). */
   receiptPhotoId?: string
+  /** Expenses: the invoice (job) this cost was for, so the job's profit can be worked out (lib/jobCosting.ts). */
+  jobId?: string
   createdAt: string
 }
 
