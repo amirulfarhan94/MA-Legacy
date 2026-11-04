@@ -500,6 +500,20 @@ body {
 .eng .photo-grid figcaption { font-size: 10px; color: var(--e-ink-2); }
 .eng .photo-grid figcaption b { font: 500 9px/1.5 var(--e-mono); color: var(--e-gold); }
 
+/* HandalServ stickers on a 21-label A4 sheet (lib/sticker.ts has the layout). */
+.sheet.sticker-sheet { position: relative; padding: 0; height: 297mm; overflow: hidden; }
+.sticker-slot { position: absolute; width: 63.5mm; height: 38.1mm; }
+.sticker { position: relative; display: grid; grid-template-columns: 1fr 22mm; grid-template-rows: 1fr auto; column-gap: 2mm; width: 100%; height: 100%; padding: 3mm 3.2mm 2.4mm; background: #fff; color: #12355B; font-family: 'Manrope Variable', 'Inter', sans-serif; }
+.sticker-main { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.sticker-logo { width: 31mm; height: auto; }
+.sticker-line { margin-top: 2mm; font-size: 6.6pt; font-weight: 800; letter-spacing: .01em; white-space: nowrap; text-transform: uppercase; color: #E8A33D; line-height: 1.1; }
+.sticker-wa { margin-top: 1.4mm; font-size: 11pt; font-weight: 800; line-height: 1; white-space: nowrap; }
+.sticker-wa small { display: block; margin-bottom: .6mm; font-size: 5.6pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #4A5563; }
+.sticker-qr { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.sticker-qr img { width: 20mm; height: 20mm; }
+.sticker-qr small { margin-top: .8mm; font-size: 5pt; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #4A5563; white-space: nowrap; }
+.sticker-foot { grid-column: 1 / -1; margin-top: 1.2mm; padding-top: 1mm; border-top: .25mm solid #E1E6EC; font-size: 5.8pt; font-weight: 600; color: #4A5563; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* Paper: page numbers and the running head come from @page rules each sheet writes for itself. */
 @page eng { size: A4; margin: 10mm 14mm 14mm; }
 
@@ -512,6 +526,7 @@ body {
   .print-area { margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
   .glass, .glass-strong { background: #fff !important; box-shadow: none !important; border-color: #d9dde3 !important; }
   .sheet { box-shadow: none !important; margin: 0 !important; min-height: 296mm; }
+  .sheet.sticker-sheet { min-height: 0; height: 296mm; break-after: avoid; }
   .sheet.eng { page: eng; width: 182mm; min-height: 268mm; padding: 16px 0 0; }
   .eng-items thead { display: table-header-group; }
   .eng-items tr, .eng-sum, .eng-box, .eng-sign, .eng-due, .eng-receipt { break-inside: avoid; }

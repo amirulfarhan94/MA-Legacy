@@ -31,6 +31,12 @@ usual price, suggested (with items from earlier quotations and invoices) as you 
 line adds it. Document numbers run per type and year from 1101, like `INV/26/1101`, `QT/26/1101` (prefixes in
 Settings); documents made before keep their old numbers, and a PDF of `INV/26/1101` saves as `INV-26-1101.pdf`.
 
+**HandalServ stickers**: a document's More menu (service reports, invoices, delivery orders) has Print HandalServ
+sticker, and Settings prints general ones. Stickers (63.5 × 38.1 mm, on 21-label A4 sheets such as Avery L7160, with a
+start position for part-used sheets) carry the logo, "Kecemasan Elektrik 24/7", the WhatsApp number and a QR code that
+opens WhatsApp with a message naming the job. `public/brand/handalserv-sticker-63x38mm.{png,pdf}` is the general sticker
+for a print shop.
+
 **Customer sign-off**: on a service report or delivery order, Sign now lets the customer sign on the phone with their
 name. The signature, name and date-time print in the document's sign-off box ("Work completed and accepted by" /
 "Received in good order and condition by"), and signing marks the report completed or the order delivered.

@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Download, ImagePlus, QrCode, RotateCcw, Upload } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { backupNow, daysSince, useBackupEveryDays, useLastBackup } from '../lib/backup'
 import { useSyncWanted } from '../lib/sync'
 import { formatDate, toISODate } from '../lib/calc'
@@ -9,7 +10,7 @@ import { useStorageInfo } from '../lib/storage'
 import { sampleData } from '../lib/sample'
 import { useStore, type BackupData } from '../lib/store'
 import { DOC_META, DOC_TYPES, type DocumentStyle, type Settings } from '../lib/types'
-import { Button, Card, CardHeader, Field, Input, NumberInput, PageHeader, Textarea } from '../components/ui'
+import { Button, buttonClass, Card, CardHeader, Field, Input, NumberInput, PageHeader, Textarea } from '../components/ui'
 import OnlineAccount from '../components/OnlineAccount'
 
 export default function SettingsPage() {
@@ -161,6 +162,15 @@ export default function SettingsPage() {
                 <span className="block text-xs text-stone-500">A small logo under the company details, so customers from HandalServ adverts recognise the documents. They stay in MA Legacy Solutions&apos; name.</span>
               </span>
             </label>
+            <div className="flex items-center justify-between gap-3 border-t border-stone-200 px-5 py-4 text-sm">
+              <span>
+                <span className="block font-semibold text-stone-900">HandalServ stickers</span>
+                <span className="block text-xs text-stone-500">A sheet of stickers with a WhatsApp QR code to leave on the job. A document&apos;s More menu prints ones with its date and number.</span>
+              </span>
+              <Link to="/stickers" className={buttonClass('secondary', 'sm', 'shrink-0')}>
+                <QrCode size={14} /> Print
+              </Link>
+            </div>
           </Card>
           <Section id="set-payment" title="Payment details" subtitle="Bank details show on quotations, proforma invoices and invoices; the QR code on invoices and proforma invoices.">
             <Field label="Bank">

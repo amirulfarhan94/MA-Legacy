@@ -16,6 +16,7 @@ import Items from './pages/Items'
 import Agreement from './pages/Agreement'
 import SplitPlans from './pages/SplitPlans'
 import Apply from './pages/Apply'
+import Stickers from './pages/Stickers'
 import { cleanUpPhotos } from './lib/photos'
 import { useStore } from './lib/store'
 import { requestPersistentStorage } from './lib/storage'
@@ -57,6 +58,8 @@ export default function App() {
             <Route path="transactions" element={<Transactions />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="stickers" element={<Stickers />} />
+            <Route path="stickers/:docId" element={<Stickers />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

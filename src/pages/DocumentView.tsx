@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRightLeft, BellRing, Copy, FileMinus, MessageCircle, Pencil, Printer, ReceiptText, Trash2, Wallet } from 'lucide-react'
+import { ArrowLeft, ArrowRightLeft, BellRing, Copy, FileMinus, MessageCircle, Pencil, Printer, QrCode, ReceiptText, Trash2, Wallet } from 'lucide-react'
 import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid, toISODate, today } from '../lib/calc'
 import { reminderMessage, shouldMarkSent } from '../lib/reminder'
 import { splitPaymentStates, splitPlanStatus } from '../lib/split'
@@ -15,6 +15,7 @@ import PhotoPages from '../components/PhotoPages'
 import BeforeAfterCard from '../components/BeforeAfterCard'
 import JobCostCard from '../components/JobCostCard'
 import CustomerSignCard from '../components/CustomerSignCard'
+import { STICKER_TYPES } from '../lib/sticker'
 import SplitPaymentsCard from '../components/SplitPaymentsCard'
 import SplitApplicationCard from '../components/SplitApplicationCard'
 import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
@@ -165,6 +166,7 @@ export default function DocumentView() {
       icon: ArrowRightLeft,
       onSelect: () => nav(`/d/${DOC_META[t].path}/new?from=${doc.id}`),
     })),
+    ...(STICKER_TYPES.includes(doc.type) ? [{ label: 'Print HandalServ sticker', icon: QrCode, onSelect: () => nav(`/stickers/${doc.id}`) }] : []),
     { label: 'Duplicate', icon: Copy, onSelect: duplicate },
     { label: 'Delete', icon: Trash2, onSelect: remove, danger: true },
   ]
