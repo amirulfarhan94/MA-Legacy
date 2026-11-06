@@ -171,6 +171,11 @@ export default function SettingsPage() {
                 <QrCode size={14} /> Print
               </Link>
             </div>
+            <div className="border-t border-stone-200 px-5 py-4">
+              <Field label="Google review link" hint="For the Ask for review button on paid invoices, completed service reports and receipts. Leave blank to hide it.">
+                <Input {...text('reviewLink')} placeholder="https://g.page/r/…/review" inputMode="url" />
+              </Field>
+            </div>
           </Card>
           <Section id="set-payment" title="Payment details" subtitle="Bank details show on quotations, proforma invoices and invoices; the QR code on invoices and proforma invoices.">
             <Field label="Bank">

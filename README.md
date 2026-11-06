@@ -31,6 +31,10 @@ usual price, suggested (with items from earlier quotations and invoices) as you 
 line adds it. Document numbers run per type and year from 1101, like `INV/26/1101`, `QT/26/1101` (prefixes in
 Settings); documents made before keep their old numbers, and a PDF of `INV/26/1101` saves as `INV-26-1101.pdf`.
 
+**Ask for review**: paid invoices, completed or signed service reports and receipts get an Ask for review button
+that opens WhatsApp to the customer with a thank-you message and HandalServ's Google review link (Settings → Google
+review link; blank hides the button). The document remembers when it was sent and asks before sending again.
+
 **HandalServ stickers**: a document's More menu (service reports, invoices, delivery orders) has Print HandalServ
 sticker, and Settings prints general ones. Stickers (63.5 × 38.1 mm, on 21-label A4 sheets such as Avery L7160, with a
 start position for part-used sheets) carry the logo, "Kecemasan Elektrik 24/7", the WhatsApp number and a QR code that

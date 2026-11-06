@@ -157,6 +157,8 @@ export interface Document {
   invoiceId?: string
   /** Service reports and delivery orders: the customer's sign-off, signed on the owner's phone. */
   customerSign?: CustomerSign
+  /** When the customer was last asked on WhatsApp for a Google review (ISO date-time). */
+  reviewAskedAt?: string
   /** Receipts: money received. */
   amountPaid?: number
   /** Credit notes: money paid back to the customer (0 = credit only). */
@@ -310,6 +312,8 @@ export interface Settings {
   stampDataUrl: string
   /** Show the HandalServ brand logo under the company details on documents. */
   brandOnDocuments: boolean
+  /** HandalServ's Google review link, for the Ask for review button. Blank hides the button. */
+  reviewLink: string
 }
 
 export type DocumentStyle = 'classic' | 'engineering'

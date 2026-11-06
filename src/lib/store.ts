@@ -63,6 +63,7 @@ export const defaultSettings: Settings = {
   signatureDataUrl: '',
   stampDataUrl: '',
   brandOnDocuments: true,
+  reviewLink: 'https://g.page/r/CbWndWB3e2AeEBI/review',
 }
 
 /** Fills settings keys added in later versions (new document types, QR…) from the defaults. */

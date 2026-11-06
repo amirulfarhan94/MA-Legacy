@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRightLeft, BellRing, Copy, FileMinus, MessageCircle, Pencil, Printer, QrCode, ReceiptText, Trash2, Wallet } from 'lucide-react'
+import { ArrowLeft, ArrowRightLeft, BellRing, Copy, FileMinus, MessageCircle, Pencil, Printer, QrCode, ReceiptText, Star, Trash2, Wallet } from 'lucide-react'
 import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid, toISODate, today } from '../lib/calc'
 import { reminderMessage, shouldMarkSent } from '../lib/reminder'
 import { splitPaymentStates, splitPlanStatus } from '../lib/split'
 import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
-import { waNumber } from '../lib/contact'
+import { waHref, waNumber } from '../lib/contact'
 import { DOC_META, SIGN_TYPES, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
 import DocumentSheet from '../components/DocumentSheet'
 import EngineeringSheet from '../components/EngineeringSheet'
@@ -16,6 +16,7 @@ import BeforeAfterCard from '../components/BeforeAfterCard'
 import JobCostCard from '../components/JobCostCard'
 import CustomerSignCard from '../components/CustomerSignCard'
 import { STICKER_TYPES } from '../lib/sticker'
+import { canAskForReview, reviewMessage } from '../lib/review'
 import SplitPaymentsCard from '../components/SplitPaymentsCard'
 import SplitApplicationCard from '../components/SplitApplicationCard'
 import { Button, buttonClass, Card, CardHeader, MoreMenu, Select, StatusBadge, type MenuItem } from '../components/ui'
@@ -92,9 +93,11 @@ export default function DocumentView() {
       status: fresh.status,
       sourceId: undefined,
       invoiceId: undefined,
-      // A copy starts without the original's split plan or reminder history.
+      // A copy starts without the original's split plan, reminder history, sign-off or review request.
       split: undefined,
       reminders: undefined,
+      customerSign: undefined,
+      reviewAskedAt: undefined,
       items: cloneItems(doc.items),
       createdAt: fresh.createdAt,
     }
@@ -220,6 +223,25 @@ export default function DocumentView() {
             {customer?.phone && (
               <a href={`https://wa.me/${waNumber(customer.phone)}?text=${waText}`} target="_blank" rel="noreferrer" onClick={markSent} className={buttonClass()}>
                 <MessageCircle size={15} className="text-[var(--good)]" /> WhatsApp
+              </a>
+            )}
+            {customer?.phone && settings.reviewLink.trim() && canAskForReview(doc, status) && (
+              <a
+                href={waHref(customer.phone, reviewMessage(settings.reviewLink.trim(), customer))}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => {
+                  if (doc.reviewAskedAt && !confirm(`You asked for a review on ${formatDate(toISODate(new Date(doc.reviewAskedAt)))}. Ask again?`)) {
+                    e.preventDefault()
+                    return
+                  }
+                  saveDocument({ ...doc, reviewAskedAt: new Date().toISOString() })
+                }}
+                className={buttonClass()}
+                title={doc.reviewAskedAt ? `Review asked ${formatDate(toISODate(new Date(doc.reviewAskedAt)))}` : 'Ask the customer for a Google review on WhatsApp'}
+              >
+                <Star size={15} className="text-gold-600" />
+                {doc.reviewAskedAt ? `Review asked · ${formatDate(toISODate(new Date(doc.reviewAskedAt))).slice(0, 6)}` : 'Ask for review'}
               </a>
             )}
             <Button onClick={() => nav(`/d/${meta.path}/${doc.id}/edit`)}>
