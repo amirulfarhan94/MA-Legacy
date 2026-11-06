@@ -1,4 +1,4 @@
-import { Camera, X } from 'lucide-react'
+import { CalendarDays, Camera, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { DOC_META, DOC_TYPES, type DocType } from '../lib/types'
 import { DOC_HINT, DOC_ICON } from './nav'
@@ -51,6 +51,24 @@ export default function CreateSheet({
             </button>
           )
         })}
+        {!customerId && types === DOC_TYPES && (
+          <button
+            type="button"
+            onClick={() => {
+              onClose()
+              nav('/schedule?new=1')
+            }}
+            className="flex min-h-14 min-w-0 items-center gap-3 rounded-[18px] border border-[var(--btn-line)] bg-[var(--btn)] p-2.5 text-left transition-colors hover:border-gold-500"
+          >
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-sky-50 text-sky-700">
+              <CalendarDays size={17} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-bold text-stone-900">Booking</span>
+              <span className="block truncate text-xs font-medium text-stone-500">A visit on the schedule</span>
+            </span>
+          </button>
+        )}
         {!customerId && types === DOC_TYPES && (
           <button
             type="button"

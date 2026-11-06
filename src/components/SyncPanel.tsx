@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { CloudCheck, CloudOff, LoaderCircle, RefreshCw, RotateCcw, TriangleAlert } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { backupNow } from '../lib/backup'
+import { formatDate } from '../lib/calc'
 import type { CloudUser } from '../lib/cloud'
 import { cloudPhotoUsage, usePhotosToUpload } from '../lib/photoSync'
 import { useStore } from '../lib/store'
@@ -17,7 +18,7 @@ import {
   type DeletedRecord,
   type SyncStatus,
 } from '../lib/sync'
-import { DOC_META, type CatalogItem, type Customer, type Document, type Transaction } from '../lib/types'
+import { DOC_META, type Booking, type CatalogItem, type Customer, type Document, type Transaction } from '../lib/types'
 import { Button } from './ui'
 
 export function syncLabel(s: SyncStatus): string {
@@ -79,6 +80,10 @@ function deletedLabel(d: DeletedRecord): string {
     case 'transactions': {
       const t = d.record as Transaction
       return `Transaction · ${t.description || t.category} (${t.amount.toFixed(2)})`
+    }
+    case 'bookings': {
+      const b = d.record as Booking
+      return `Booking · ${formatDate(b.date)} · ${b.title}`
     }
   }
 }

@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   CalendarClock,
+  CalendarDays,
   BarChart3,
   ClipboardCheck,
   FileCheck2,
@@ -42,7 +43,7 @@ export const DOC_HINT: Record<DocType, string> = {
   purchase_order: 'Order from a supplier',
 }
 
-export type NavCount = 'quotations' | 'invoices'
+export type NavCount = 'quotations' | 'invoices' | 'bookings'
 export interface NavLinkItem {
   to: string
   label: string
@@ -57,6 +58,7 @@ const doc = (t: DocType, count?: NavCount): NavLinkItem => ({ to: `/d/${DOC_META
 
 export const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/schedule', label: 'Schedule', icon: CalendarDays, count: 'bookings' },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/suppliers', label: 'Suppliers', icon: Warehouse },
   { to: '/items', label: 'Items', icon: Package },

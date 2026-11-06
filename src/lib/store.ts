@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { appStorage } from './storage'
 import { addDays, invoiceBalance, nextDocNumber, today } from './calc'
-import type { CatalogItem, Customer, Document, DocType, LineItem, Settings, Transaction } from './types'
+import type { Booking, CatalogItem, Customer, Document, DocType, LineItem, Settings, Transaction } from './types'
 
 export const uid = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -87,6 +87,8 @@ export interface BackupData {
   catalog?: CatalogItem[]
   /** Work photos as data URLs, keyed by photo id. */
   photos?: Record<string, string>
+  /** Schedule; missing in backups made before it existed. */
+  bookings?: Booking[]
 }
 
 interface State {
@@ -94,6 +96,7 @@ interface State {
   documents: Document[]
   catalog: CatalogItem[]
   transactions: Transaction[]
+  bookings: Booking[]
   settings: Settings
 
   saveCustomer: (c: Customer) => void
@@ -114,6 +117,9 @@ interface State {
 
   saveTransaction: (t: Transaction) => void
   deleteTransaction: (id: string) => void
+
+  saveBooking: (b: Booking) => void
+  deleteBooking: (id: string) => void
 
   updateSettings: (s: Partial<Settings>) => void
   exportData: () => BackupData
@@ -175,6 +181,7 @@ export const useStore = create<State>()(
       documents: [],
       catalog: [],
       transactions: [],
+      bookings: [],
       settings: defaultSettings,
 
       saveCustomer: (c) =>
@@ -285,11 +292,19 @@ export const useStore = create<State>()(
         }),
       deleteTransaction: (id) => set((st) => ({ transactions: st.transactions.filter((t) => t.id !== id) })),
 
+      saveBooking: (b) =>
+        set((st) => {
+          const saved = { ...b, updatedAt: now() }
+          const exists = st.bookings.some((x) => x.id === b.id)
+          return { bookings: exists ? st.bookings.map((x) => (x.id === b.id ? saved : x)) : [saved, ...st.bookings] }
+        }),
+      deleteBooking: (id) => set((st) => ({ bookings: st.bookings.filter((b) => b.id !== id) })),
+
       updateSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
 
       exportData: () => {
-        const { customers, documents, transactions, settings, catalog } = get()
-        return { version: 1, exportedAt: now(), customers, documents, transactions, settings, catalog }
+        const { customers, documents, transactions, settings, catalog, bookings } = get()
+        return { version: 1, exportedAt: now(), customers, documents, transactions, settings, catalog, bookings }
       },
       importData: (data) => {
         if (!data || !Array.isArray(data.customers) || !Array.isArray(data.documents)) {
@@ -300,10 +315,11 @@ export const useStore = create<State>()(
           documents: data.documents,
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
           catalog: Array.isArray(data.catalog) ? data.catalog : [],
+          bookings: Array.isArray(data.bookings) ? data.bookings : [],
           settings: normalizeSettings(data.settings),
         })
       },
-      resetAll: () => set({ customers: [], documents: [], catalog: [], transactions: [], settings: defaultSettings }),
+      resetAll: () => set({ customers: [], documents: [], catalog: [], transactions: [], bookings: [], settings: defaultSettings }),
     }),
     {
       name: 'ma-legacy-data',

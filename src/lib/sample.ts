@@ -1,6 +1,6 @@
 import { addDays, docTotals, FIRST_DOC_NUMBER, today } from './calc'
 import { defaultSettings, uid, type BackupData } from './store'
-import type { Customer, Document, LineItem, Transaction } from './types'
+import type { Booking, Customer, Document, LineItem, Transaction } from './types'
 
 /** Demo data spread over the last few months so the dashboard has something to show. */
 export function sampleData(): BackupData {
@@ -107,5 +107,14 @@ export function sampleData(): BackupData {
     ['Wi-Fi access point installation', 'unit', 180],
   ].map(([description, unit, unitPrice]) => ({ id: uid(), description: String(description), unit: String(unit), unitPrice: Number(unitPrice), createdAt: stamp }))
 
-  return { version: 1, exportedAt: stamp, customers, documents: docs, transactions, settings: defaultSettings, catalog }
+  const booking = (daysAhead: number, time: string, c: Customer, title: string): Booking => ({
+    id: uid(), date: addDays(t, daysAhead), time, customerId: c.id, title, address: c.address, notes: '', status: 'booked', createdAt: stamp, updatedAt: stamp,
+  })
+  const bookings = [
+    booking(0, '10:30', customers[0], 'Semak DB box, elektrik trip'),
+    booking(0, '15:00', customers[1], 'Pasang lampu dapur'),
+    booking(1, '', customers[2], 'Tukar soket pejabat'),
+  ]
+
+  return { version: 1, exportedAt: stamp, customers, documents: docs, transactions, settings: defaultSettings, catalog, bookings }
 }

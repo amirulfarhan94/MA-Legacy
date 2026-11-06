@@ -246,6 +246,25 @@ export type PhotoStage = 'before' | 'during' | 'after'
 export const PHOTO_TYPES: DocType[] = ['invoice', 'service_report', 'quotation']
 
 /** A product or service with its usual price, offered as a suggestion when typing a line item. */
+/** A booked visit to a customer, shown on the Schedule page. */
+export interface Booking {
+  id: string
+  /** YYYY-MM-DD */
+  date: string
+  /** HH:MM, or '' for "any time that day". */
+  time: string
+  customerId: string
+  /** What the job is, e.g. "Elektrik trip, semak DB". */
+  title: string
+  address: string
+  notes: string
+  status: BookingStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export type BookingStatus = 'booked' | 'done' | 'cancelled'
+
 export interface CatalogItem {
   id: string
   description: string

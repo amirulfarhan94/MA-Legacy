@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigationType } from 'react-router-dom'
 import { Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, X } from 'lucide-react'
-import { invoiceBalance } from '../lib/calc'
+import { invoiceBalance, today } from '../lib/calc'
 import { daypartOf, useNow } from '../lib/daypart'
 import { isOpenInvoice } from '../lib/finance'
 import { useStore } from '../lib/store'
@@ -41,12 +41,15 @@ function useCompactSidebar(): [boolean, () => void] {
 
 function useNavCounts(): Record<NavCount, number> {
   const documents = useStore((s) => s.documents)
+  const bookings = useStore((s) => s.bookings)
   return useMemo(
     () => ({
+      // Booked for today, or for a day already gone and not marked done.
+      bookings: bookings.filter((b) => b.status === 'booked' && b.date <= today()).length,
       quotations: documents.filter((d) => d.type === 'quotation' && (d.status === 'draft' || d.status === 'sent')).length,
       invoices: documents.filter((d) => isOpenInvoice(d) && invoiceBalance(d, documents) > 0.005).length,
     }),
-    [documents],
+    [documents, bookings],
   )
 }
 

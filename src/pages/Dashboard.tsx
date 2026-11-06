@@ -10,6 +10,8 @@ import AreaChart, { type ChartPoint } from '../components/AreaChart'
 import { DOC_ICON } from '../components/nav'
 import { Button, Card } from '../components/ui'
 import SplitDueList from '../components/SplitDueList'
+import { groupBookings, time12 } from '../lib/schedule'
+import { customerLabel } from '../lib/store'
 import { activeSplitPlans } from '../lib/split'
 
 const QUICK: DocType[] = ['quotation', 'invoice', 'receipt', 'service_report']
@@ -121,6 +123,8 @@ export default function Dashboard() {
           </div>
         </Card>
       )}
+
+      <TodaySchedule />
 
       <SectionLabel>Quick create</SectionLabel>
       <div className="grid grid-cols-2 gap-2.5 @min-[600px]:grid-cols-4 @min-[600px]:gap-3">
@@ -283,5 +287,37 @@ function InOut({ moneyIn, moneyOut }: { moneyIn: number; moneyOut: number }) {
         </div>
       ))}
     </div>
+  )
+}
+
+/** Today's booked visits (and any from earlier days not marked done), linking to the schedule. */
+function TodaySchedule() {
+  const bookings = useStore((s) => s.bookings)
+  const customers = useStore((s) => s.customers)
+  const { overdue, today: todays } = useMemo(() => groupBookings(bookings, toISODate(new Date())), [bookings])
+  const list = [...overdue, ...todays]
+  if (!list.length) return null
+  return (
+    <Card className="mt-5">
+      <Link to="/schedule" className="flex items-center justify-between gap-3 px-5 pb-2 pt-4">
+        <span className="text-sm font-bold text-stone-900">Today&apos;s schedule</span>
+        <span className="text-xs font-semibold text-gold-700">Open schedule →</span>
+      </Link>
+      <ul className="divide-y divide-stone-200 pb-1">
+        {list.slice(0, 5).map((b) => (
+          <li key={b.id}>
+            <Link to="/schedule" className="flex items-baseline gap-3 px-5 py-2.5 text-sm hover:bg-[var(--item-hover)]">
+              <span className={`w-16 shrink-0 font-semibold ${b.date < toISODate(new Date()) ? 'text-red-700' : 'text-stone-900'}`}>
+                {b.date < toISODate(new Date()) ? 'Not done' : b.time ? time12(b.time) : 'Any time'}
+              </span>
+              <span className="min-w-0 flex-1 truncate">
+                {b.title || 'Visit'}
+                {b.customerId && <span className="text-stone-500"> · {customerLabel(customers.find((c) => c.id === b.customerId))}</span>}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Card>
   )
 }

@@ -17,7 +17,7 @@ import type { CatalogItem, Document, Settings, Transaction } from './types'
  * Work photos and IC photos are synced separately, by photoSync.ts.
  */
 
-export const SYNCED_LISTS = ['customers', 'documents', 'catalog', 'transactions'] as const
+export const SYNCED_LISTS = ['customers', 'documents', 'catalog', 'transactions', 'bookings'] as const
 export type SyncedList = (typeof SYNCED_LISTS)[number]
 
 export const KEEP_DELETED_DAYS = 30
@@ -356,7 +356,7 @@ export async function cloudHasData(uid: string): Promise<boolean> {
  * cloud's. Settings always come from the cloud when it has them.
  */
 export async function enableSync(uid: string, mode: 'merge' | 'replace') {
-  if (mode === 'replace') putInStore({ customers: [], documents: [], catalog: [], transactions: [] })
+  if (mode === 'replace') putInStore({ customers: [], documents: [], catalog: [], transactions: [], bookings: [] })
   storeUid(uid)
   await startSync(uid)
 }

@@ -31,6 +31,12 @@ usual price, suggested (with items from earlier quotations and invoices) as you 
 line adds it. Document numbers run per type and year from 1101, like `INV/26/1101`, `QT/26/1101` (prefixes in
 Settings); documents made before keep their old numbers, and a PDF of `INV/26/1101` saves as `INV-26-1101.pdf`.
 
+**Schedule**: bookings for customer visits (day, optional time, customer, job, address, notes), on a Schedule page
+grouped into not marked done, today, tomorrow and later, with a menu badge and a Today's schedule card on the
+Dashboard. Each booking has WhatsApp buttons to confirm it (day, time and place in Malay) and to say we are on the way,
+a Call button, and Done, after which a service report can be started for the customer. Bookings sync and are in
+backups; Create → Booking adds one.
+
 **Ask for review**: paid invoices, completed or signed service reports and receipts get an Ask for review button
 that opens WhatsApp to the customer with a thank-you message and HandalServ's Google review link (Settings → Google
 review link; blank hides the button). The document remembers when it was sent and asks before sending again.
