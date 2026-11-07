@@ -5,6 +5,10 @@
   "hosting": {
     "public": "dist-hosting",
     "ignore": ["firebase.json", "**/.*"],
+    "redirects": [
+      { "source": "/hs-og-neon.png", "destination": "/hs-og-neon.jpg", "type": 301 },
+      { "source": "/hs-og-image.png", "destination": "/hs-og-neon.jpg", "type": 301 }
+    ],
     "rewrites": [{ "source": "/a/**", "destination": "/app.html" }]
   },
   "emulators": {
