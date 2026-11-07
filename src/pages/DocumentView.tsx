@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRightLeft, BellRing, Copy, FileMinus, MessageCircle, Pencil, Printer, QrCode, ReceiptText, Star, Trash2, Wallet } from 'lucide-react'
-import { displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid, toISODate, today } from '../lib/calc'
+import { amountDue, depositDue, depositLabel, displayStatus, docAmount, docTotals, formatDate, formatMoney, invoiceBalance, invoiceCredited, invoicePaid, toISODate, today } from '../lib/calc'
 import { reminderMessage, shouldMarkSent } from '../lib/reminder'
 import { splitPaymentStates, splitPlanStatus } from '../lib/split'
 import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '../lib/store'
@@ -76,9 +76,12 @@ export default function DocumentView() {
 
   const meta = DOC_META[doc.type]
   const status = displayStatus(doc, documents)
-  const paid = doc.type === 'invoice' ? invoicePaid(doc.id, documents) : 0
+  const isPi = doc.type === 'proforma'
+  const paid = doc.type === 'invoice' || isPi ? invoicePaid(doc.id, documents) : 0
   const credited = doc.type === 'invoice' ? invoiceCredited(doc.id, documents) : 0
-  const balance = doc.type === 'invoice' ? invoiceBalance(doc, documents) : 0
+  const balance = doc.type === 'invoice' ? invoiceBalance(doc, documents) : isPi ? amountDue(doc, documents) : 0
+  const depositFrom = doc.type === 'invoice' && doc.depositFrom ? documents.find((d) => d.id === doc.depositFrom) : undefined
+  const depositPaid = depositFrom ? invoicePaid(depositFrom.id, documents) : 0
   const poPaid = doc.type === 'purchase_order' ? transactions.filter((t) => t.docId === doc.id).reduce((s, t) => s + t.amount, 0) : 0
   const party = isPurchaseDoc(doc.type) ? 'Supplier' : 'Customer'
 
@@ -98,6 +101,7 @@ export default function DocumentView() {
       reminders: undefined,
       customerSign: undefined,
       reviewAskedAt: undefined,
+      depositFrom: undefined,
       items: cloneItems(doc.items),
       createdAt: fresh.createdAt,
     }
@@ -157,7 +161,7 @@ export default function DocumentView() {
   }
   const lastReminder = doc.reminders?.at(-1)
 
-  const canPay = doc.type === 'invoice' && doc.status !== 'cancelled' && balance > 0
+  const canPay = (doc.type === 'invoice' || isPi) && doc.status !== 'cancelled' && balance > 0
   const splitOpen = doc.type === 'invoice' && !!doc.split && ['Active', 'Overdue'].includes(splitPlanStatus(doc, documents, today()))
   const canPayPo = doc.type === 'purchase_order' && doc.status !== 'cancelled' && poPaid + 0.005 < docTotals(doc).total
   const more: MenuItem[] = [
@@ -178,9 +182,17 @@ export default function DocumentView() {
     ...(doc.type !== 'service_report' && doc.type !== 'delivery_order'
       ? [[doc.type === 'receipt' ? 'Amount received' : 'Total', formatMoney(docAmount(doc), settings.currency)] as [string, string]]
       : []),
+    ...(isPi
+      ? ([
+          ...(depositDue(doc) < docTotals(doc).total ? [[depositLabel(doc), formatMoney(depositDue(doc), settings.currency)]] : []),
+          ['Paid', formatMoney(paid, settings.currency)],
+          ['Still to pay now', formatMoney(balance, settings.currency), balance > 0 ? 'text-amber-700 font-semibold' : ''],
+        ] as [string, string, string?][])
+      : []),
     ...(doc.type === 'invoice'
       ? ([
           ['Paid', formatMoney(paid, settings.currency)],
+          ...(depositPaid > 0 ? [[`incl. deposit (${depositFrom!.number})`, formatMoney(depositPaid, settings.currency)]] : []),
           ...(credited > 0 ? [['Credit notes', formatMoney(credited, settings.currency)]] : []),
           ['Balance', formatMoney(balance, settings.currency), balance > 0 ? 'text-amber-700 font-semibold' : ''],
         ] as [string, string, string?][])

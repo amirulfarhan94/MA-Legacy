@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { appStorage } from './storage'
-import { addDays, invoiceBalance, nextDocNumber, today } from './calc'
+import { addDays, amountDue, nextDocNumber, today } from './calc'
 import type { Booking, CatalogItem, Customer, Document, DocType, LineItem, Settings, Transaction } from './types'
 
 export const uid = () =>
@@ -238,6 +238,11 @@ export const useStore = create<State>()(
           taxRate: src.taxRate,
           itemAdjustments: src.itemAdjustments,
           notes: src.notes,
+          // An invoice made from a proforma counts what was paid against it (the deposit), once.
+          depositFrom:
+            src.type === 'proforma' && to === 'invoice' && !get().documents.some((d) => d.type === 'invoice' && d.status !== 'cancelled' && d.depositFrom === src.id)
+              ? src.id
+              : undefined,
           // An invoice for a service visit carries the report's work photos along.
           photos: src.type === 'service_report' && to === 'invoice' && src.photos?.length ? src.photos.map((p) => ({ ...p })) : undefined,
         }
@@ -253,8 +258,8 @@ export const useStore = create<State>()(
           invoiceId: inv.id,
           sourceId: inv.id,
           reference: inv.number,
-          amountPaid: invoiceBalance(inv, docs),
-          notes: `Payment for ${inv.number}`,
+          amountPaid: amountDue(inv, docs),
+          notes: `${inv.type === 'proforma' && inv.deposit ? 'Deposit' : 'Payment'} for ${inv.number}`,
         }
       },
 

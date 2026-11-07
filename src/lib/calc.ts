@@ -78,11 +78,34 @@ export const isIssuedCredit = (d: Document) => d.type === 'credit_note' && d.sta
 
 /** Sum of non-cancelled receipts issued against an invoice. */
 export function invoicePaid(invoiceId: string, docs: Document[]): number {
+  // An invoice made from a proforma also counts the deposit paid against that proforma.
+  const depositFrom = docs.find((d) => d.id === invoiceId && d.type === 'invoice')?.depositFrom
   return round2(
     docs
-      .filter((d) => d.type === 'receipt' && d.invoiceId === invoiceId && d.status !== 'cancelled')
+      .filter((d) => d.type === 'receipt' && (d.invoiceId === invoiceId || (!!depositFrom && d.invoiceId === depositFrom)) && d.status !== 'cancelled')
       .reduce((s, d) => s + (Number(d.amountPaid) || 0), 0),
   )
+}
+
+/** Proforma invoice: what it asks to be paid now, a deposit or the full total. */
+export function depositDue(doc: Document): number {
+  const total = docTotals(doc).total
+  const dep = doc.type === 'proforma' ? doc.deposit : undefined
+  if (!dep || !(dep.value > 0)) return total
+  return Math.min(total, round2(dep.mode === 'percent' ? (total * Math.min(dep.value, 100)) / 100 : dep.value))
+}
+
+/** "Deposit payable (50%)", "Deposit payable" or "Amount payable". */
+export function depositLabel(doc: Document): string {
+  const dep = doc.type === 'proforma' ? doc.deposit : undefined
+  if (!dep || !(dep.value > 0) || depositDue(doc) >= docTotals(doc).total) return 'Amount payable'
+  return dep.mode === 'percent' ? `Deposit payable (${dep.value}%)` : 'Deposit payable'
+}
+
+/** What is still to be paid: an invoice's balance, or what a proforma asks for less payments against it. */
+export function amountDue(doc: Document, docs: Document[]): number {
+  if (doc.type === 'proforma') return Math.max(0, round2(depositDue(doc) - invoicePaid(doc.id, docs)))
+  return invoiceBalance(doc, docs)
 }
 
 /** Sum of issued credit notes against an invoice. */
@@ -110,6 +133,10 @@ export function invoicePaymentState(invoice: Document, docs: Document[]): Paymen
 
 /** Status to display: invoices show payment state unless draft/cancelled. */
 export function displayStatus(doc: Document, docs: Document[]): string {
+  // A proforma with payments against it shows whether what it asked for is in.
+  if (doc.type === 'proforma' && doc.status !== 'cancelled' && invoicePaid(doc.id, docs) > 0) {
+    return amountDue(doc, docs) > 0.005 ? 'partial' : 'paid'
+  }
   if (doc.type === 'invoice' && doc.status !== 'cancelled') {
     const state = invoicePaymentState(doc, docs)
     if (doc.status === 'draft' && state === 'unpaid') return 'draft'

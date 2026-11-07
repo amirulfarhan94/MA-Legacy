@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { amountInWords, docTotals, formatDate, formatDateTime, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
+import { amountInWords, depositDue, depositLabel, docTotals, formatDate, formatDateTime, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
 import { useStore } from '../lib/store'
 import BrandMark from './BrandMark'
 import { printedSplit, SPLIT_BADGE, SplitPaymentDetailsClassic, SplitScheduleClassic } from './SplitPrint'
@@ -34,7 +34,8 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
         ? doc.deliverTo || [settings.companyName, settings.address].filter(Boolean).join('\n')
         : undefined
 
-  const paidSoFar = doc.type === 'invoice' ? invoicePaid(doc.id, documents) : 0
+  const paidSoFar = doc.type === 'invoice' || doc.type === 'proforma' ? invoicePaid(doc.id, documents) : 0
+  const asked = doc.type === 'proforma' ? depositDue(doc) : 0
   const creditedSoFar = doc.type === 'invoice' ? invoiceCredited(doc.id, documents) : 0
   const refund = doc.type === 'credit_note' ? Number(doc.refundAmount) || 0 : 0
   const split = printedSplit(doc)
@@ -100,12 +101,12 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
       {doc.type === 'receipt' ? (
         <div className="mt-8 space-y-3 text-[12.5px]">
           <ReceiptLine label="The sum of" value={amountInWords(doc.amountPaid ?? 0)} />
-          <ReceiptLine label="Being payment for" value={doc.notes || (invoice ? `Invoice ${invoice.number}` : '—')} />
+          <ReceiptLine label="Being payment for" value={doc.notes || (invoice ? `${DOC_META[invoice.type].label} ${invoice.number}` : '—')} />
           <ReceiptLine
             label="Payment method"
             value={`${PAYMENT_METHODS[doc.paymentMethod ?? 'other']}${doc.paymentRef ? ` (Ref: ${doc.paymentRef})` : ''}`}
           />
-          {invoice && <ReceiptLine label="Invoice no." value={invoice.number} />}
+          {invoice && <ReceiptLine label={invoice.type === 'proforma' ? 'Proforma no.' : 'Invoice no.'} value={invoice.number} />}
           <div className="mt-6 inline-block rounded-md border-2 border-gold-600 px-5 py-2.5 text-[18px] font-bold">
             {formatMoney(doc.amountPaid ?? 0, cur)}
           </div>
@@ -202,6 +203,17 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
                     <td className="py-2">Total</td>
                     <td className="tabular py-2 text-right">{formatMoney(totals.total, cur)}</td>
                   </tr>
+                  {doc.type === 'proforma' && (asked < totals.total || paidSoFar > 0) && (
+                    <>
+                      {asked < totals.total && <TotalRow label={depositLabel(doc)} value={formatMoney(asked, cur)} />}
+                      {paidSoFar > 0 && <TotalRow label="Paid" value={`- ${formatMoney(paidSoFar, cur)}`} />}
+                      <tr className="font-semibold">
+                        <td className="py-1">{paidSoFar > 0 ? 'Amount due now' : 'Payable now'}</td>
+                        <td className="tabular py-1 text-right">{formatMoney(Math.max(0, asked - paidSoFar), cur)}</td>
+                      </tr>
+                      {asked < totals.total && <TotalRow label="Balance on completion" value={formatMoney(totals.total - asked, cur)} />}
+                    </>
+                  )}
                   {doc.type === 'invoice' && paidSoFar + creditedSoFar > 0 && (
                     <>
                       {paidSoFar > 0 && <TotalRow label="Paid" value={`- ${formatMoney(paidSoFar, cur)}`} />}

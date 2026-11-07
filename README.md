@@ -31,6 +31,11 @@ usual price, suggested (with items from earlier quotations and invoices) as you 
 line adds it. Document numbers run per type and year from 1101, like `INV/26/1101`, `QT/26/1101` (prefixes in
 Settings); documents made before keep their old numbers, and a PDF of `INV/26/1101` saves as `INV-26-1101.pdf`.
 
+**Proforma deposits**: a proforma invoice can ask for the full amount or a deposit (a percentage or a fixed amount).
+It prints the deposit payable, what was paid and the balance on completion, takes receipts (Record payment), and shows
+partial / paid. An invoice made from it (Turn into invoice) counts those payments as paid, so the invoice shows only
+what is left.
+
 **Schedule**: bookings for customer visits (day, optional time, customer, job, address, notes), on a Schedule page
 grouped into not marked done, today, tomorrow and later, with a menu badge and a Today's schedule card on the
 Dashboard. Each booking has WhatsApp buttons to confirm it (day, time and place in Malay) and to say we are on the way,

@@ -153,8 +153,12 @@ export interface Document {
   status: DocStatus
   /** The document this one was converted from (e.g. invoice ← quotation). */
   sourceId?: string
-  /** Receipts and credit notes: the invoice they apply to. */
+  /** Receipts and credit notes: the invoice they apply to (a receipt can also apply to a proforma invoice). */
   invoiceId?: string
+  /** Proforma invoices: a deposit to ask for instead of the full total. */
+  deposit?: DepositRequest
+  /** Invoices made from a proforma: payments received against that proforma count towards this invoice. */
+  depositFrom?: string
   /** Service reports and delivery orders: the customer's sign-off, signed on the owner's phone. */
   customerSign?: CustomerSign
   /** When the customer was last asked on WhatsApp for a Google review (ISO date-time). */
@@ -219,6 +223,11 @@ export interface SplitPlan {
   signedAt?: string
   /** Photos of the customer's IC, front and back (ids in this device's photo storage). */
   icPhotoIds?: string[]
+}
+
+export interface DepositRequest {
+  mode: 'percent' | 'amount'
+  value: number
 }
 
 export interface CustomerSign {

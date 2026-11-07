@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, UserPlus } from 'lucide-react'
-import { docTotals, formatMoney, invoiceBalance, today } from '../lib/calc'
+import { amountDue, depositDue, depositLabel, docTotals, formatMoney, today } from '../lib/calc'
 import { recentItems, sameItem, suggestItems } from '../lib/catalog'
 import { nextAgreementNo, splitEligibility, splitLocked, splitSchedule } from '../lib/split'
 import { contactKind, customerLabel, uid, useStore } from '../lib/store'
@@ -81,21 +81,22 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
   // Balances ignore this document itself, so editing a receipt/credit note shows the balance before it.
   const others = useMemo(() => documents.filter((x) => x.id !== doc.id), [documents, doc.id])
   // Invoices a receipt or credit note can be applied to: the customer's issued invoices that
-  // still have a balance (plus the one already linked, when editing).
+  // still have a balance (plus the one already linked, when editing). A receipt can also go
+  // against a proforma invoice that is still waiting for its deposit or payment.
   const linkableInvoices = useMemo(
     () =>
       documents.filter(
         (d) =>
-          d.type === 'invoice' &&
+          (d.type === 'invoice' || (type === 'receipt' && d.type === 'proforma')) &&
           d.customerId === doc.customerId &&
           d.status !== 'cancelled' &&
-          (d.id === doc.invoiceId || invoiceBalance(d, others) > 0),
+          (d.id === doc.invoiceId || amountDue(d, others) > 0),
       ),
-    [documents, others, doc.customerId, doc.invoiceId],
+    [documents, others, doc.customerId, doc.invoiceId, type],
   )
 
   const linkedInvoice = documents.find((d) => d.id === doc.invoiceId)
-  const linkedBalance = linkedInvoice ? invoiceBalance(linkedInvoice, others) : 0
+  const linkedBalance = linkedInvoice ? amountDue(linkedInvoice, others) : 0
 
   // Split payment (3×), invoices only.
   const customer = customers.find((c) => c.id === doc.customerId)
@@ -271,11 +272,48 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
             </div>
           </Card>
 
+          {type === 'proforma' && (
+            <Card>
+              <CardHeader title="Payment requested" subtitle="Ask for the full amount, or a deposit before work starts. Payments recorded here count towards the invoice made from this proforma." />
+              <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+                <Field label="Ask for">
+                  <Select
+                    value={doc.deposit?.mode ?? 'full'}
+                    onChange={(e) => {
+                      const mode = e.target.value
+                      setDoc((d) => ({ ...d, deposit: mode === 'full' ? undefined : { mode: mode as 'percent' | 'amount', value: mode === 'percent' ? 50 : 0 } }))
+                    }}
+                  >
+                    <option value="full">Full amount</option>
+                    <option value="percent">Deposit, % of total</option>
+                    <option value="amount">Deposit, fixed amount</option>
+                  </Select>
+                </Field>
+                {doc.deposit && (
+                  <Field
+                    label={doc.deposit.mode === 'percent' ? 'Deposit (%)' : `Deposit (${settings.currency})`}
+                    hint={`${depositLabel(doc)}: ${formatMoney(depositDue(doc), settings.currency)} of ${formatMoney(totals.total, settings.currency)}`}
+                  >
+                    <NumberInput value={doc.deposit.value} onValueChange={(v) => setDoc((d) => ({ ...d, deposit: d.deposit && { ...d.deposit, value: v } }))} />
+                  </Field>
+                )}
+              </div>
+            </Card>
+          )}
+
           {type === 'receipt' && (
             <Card>
               <CardHeader title="Payment" />
               <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
-                <Field label="Apply to invoice" className="sm:col-span-2" hint={linkedInvoice ? `Balance before this receipt: ${formatMoney(linkedBalance, settings.currency)}` : 'Optional — leave blank for a standalone receipt.'}>
+                <Field
+                  label="Apply to invoice"
+                  className="sm:col-span-2"
+                  hint={
+                    linkedInvoice
+                      ? `${linkedInvoice.type === 'proforma' ? 'Still to pay on this proforma' : 'Balance'} before this receipt: ${formatMoney(linkedBalance, settings.currency)}`
+                      : 'Optional — leave blank for a standalone receipt.'
+                  }
+                >
                   <Select
                     value={doc.invoiceId ?? ''}
                     onChange={(e) => {
@@ -284,7 +322,7 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                         ...d,
                         invoiceId: inv?.id,
                         reference: inv ? inv.number : d.reference,
-                        amountPaid: inv && !d.amountPaid ? invoiceBalance(inv, others) : d.amountPaid,
+                        amountPaid: inv && !d.amountPaid ? amountDue(inv, others) : d.amountPaid,
                       }))
                     }}
                     disabled={!doc.customerId}
@@ -292,7 +330,8 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                     <option value="">— No invoice —</option>
                     {linkableInvoices.map((i) => (
                       <option key={i.id} value={i.id}>
-                        {i.number} · {formatMoney(docTotals(i).total, settings.currency)}
+                        {i.number}
+                        {i.type === 'proforma' ? ' (proforma)' : ''} · {formatMoney(docTotals(i).total, settings.currency)}
                       </option>
                     ))}
                   </Select>

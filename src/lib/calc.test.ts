@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, amountInWords, docTotals, formatDate, formatDateTime, invoicePaymentState, monthLabel, nextDocNumber } from './calc'
+import { addDays, amountDue, amountInWords, depositDue, depositLabel, displayStatus, docTotals, formatDate, formatDateTime, invoiceBalance, invoicePaid, invoicePaymentState, monthLabel, nextDocNumber } from './calc'
 import type { Document } from './types'
 
 const baseDoc = (over: Partial<Document>): Document => ({
@@ -116,5 +116,37 @@ describe('formatDateTime', () => {
   it('shows the local date and a 12-hour time', () => {
     expect(formatDateTime(new Date(2026, 10, 4, 15, 7).toISOString())).toBe('04 Nov 2026, 3:07 PM')
     expect(formatDateTime('nonsense')).toBe('-')
+  })
+})
+
+describe('proforma deposits', () => {
+  const pi = baseDoc({ id: 'pi', type: 'proforma', items: [{ id: 'l', description: 'Rewire', qty: 1, unit: 'job', unitPrice: 3800 }] })
+  const receipt = (id: string, invoiceId: string, amountPaid: number) => baseDoc({ id, type: 'receipt', invoiceId, amountPaid, status: 'completed' })
+
+  it('asks for a percentage, an amount, or the full total', () => {
+    expect(depositDue({ ...pi, deposit: { mode: 'percent', value: 50 } })).toBe(1900)
+    expect(depositDue({ ...pi, deposit: { mode: 'amount', value: 500 } })).toBe(500)
+    expect(depositDue({ ...pi, deposit: { mode: 'amount', value: 9999 } })).toBe(3800)
+    expect(depositDue(pi)).toBe(3800)
+    expect(depositLabel({ ...pi, deposit: { mode: 'percent', value: 50 } })).toBe('Deposit payable (50%)')
+    expect(depositLabel(pi)).toBe('Amount payable')
+  })
+
+  it('tracks payments against the proforma', () => {
+    const p = { ...pi, deposit: { mode: 'percent' as const, value: 50 } }
+    expect(displayStatus(p, [p])).toBe('sent')
+    expect(amountDue(p, [p, receipt('r1', 'pi', 1000)])).toBe(900)
+    expect(displayStatus(p, [p, receipt('r1', 'pi', 1000)])).toBe('partial')
+    expect(displayStatus(p, [p, receipt('r1', 'pi', 1900)])).toBe('paid')
+  })
+
+  it('carries the deposit into the invoice made from the proforma', () => {
+    const inv = baseDoc({ id: 'inv', type: 'invoice', depositFrom: 'pi', items: pi.items })
+    const docs = [pi, inv, receipt('r1', 'pi', 1900), receipt('r2', 'inv', 500)]
+    expect(invoicePaid('inv', docs)).toBe(2400)
+    expect(invoiceBalance(inv, docs)).toBe(1400)
+    expect(invoicePaymentState(inv, docs)).toBe('partial')
+    // The proforma itself still only counts its own receipts.
+    expect(invoicePaid('pi', docs)).toBe(1900)
   })
 })

@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react'
-import { amountInWords, docTotals, formatDate, formatDateTime, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
+import { amountInWords, depositDue, depositLabel, docTotals, formatDate, formatDateTime, formatMoney, hasPricedSubs, invoiceCredited, invoicePaid, lineTotal, subAmount } from '../lib/calc'
 import { useStore } from '../lib/store'
 import BrandMark from './BrandMark'
 import { printedSplit, SPLIT_BADGE, SplitScheduleEng } from './SplitPrint'
@@ -212,7 +212,8 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
         ? doc.deliverTo || [settings.companyName, settings.address].filter(Boolean).join('\n')
         : undefined
 
-  const paid = doc.type === 'invoice' ? invoicePaid(doc.id, documents) : 0
+  const paid = doc.type === 'invoice' || doc.type === 'proforma' ? invoicePaid(doc.id, documents) : 0
+  const asked = doc.type === 'proforma' ? depositDue(doc) : 0
   const credited = doc.type === 'invoice' ? invoiceCredited(doc.id, documents) : 0
   const balance = Math.max(0, totals.total - paid - credited)
   const refund = doc.type === 'credit_note' ? Number(doc.refundAmount) || 0 : 0
@@ -239,7 +240,21 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
       />
     )
   } else if (doc.type === 'proforma') {
-    summary = <EngAmountBox label="Amount payable" amount={totals.total} currency={cur} sub={doc.dueDate ? `By ${formatDate(doc.dueDate)}` : undefined} />
+    const dueNow = Math.max(0, asked - paid)
+    summary = (
+      <EngAmountBox
+        label={paid > 0 ? (dueNow > 0.005 ? 'Amount due now' : 'Received') : depositLabel(doc)}
+        amount={paid > 0 && dueNow <= 0.005 ? paid : dueNow}
+        currency={cur}
+        sub={[
+          asked < totals.total ? `Total ${money(totals.total)} · ${money(totals.total - asked)} on completion` : '',
+          dueNow > 0.005 && doc.dueDate ? `By ${formatDate(doc.dueDate)}` : '',
+          dueNow <= 0.005 && paid > 0 ? 'Thank you' : '',
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+      />
+    )
   } else if (doc.type === 'quotation') {
     summary = <EngAmountBox label="Quoted total" amount={totals.total} currency={cur} sub={doc.dueDate ? `Valid until ${formatDate(doc.dueDate)}` : undefined} />
   } else if (doc.type === 'purchase_order') {
@@ -323,7 +338,7 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
           <dt>The sum of</dt>
           <dd>{amountInWords(doc.amountPaid ?? 0)}</dd>
           <dt>Being payment for</dt>
-          <dd>{doc.notes || (invoice ? `Invoice ${invoice.number}` : '—')}</dd>
+          <dd>{doc.notes || (invoice ? `${DOC_META[invoice.type].label} ${invoice.number}` : '—')}</dd>
           <dt>Payment method</dt>
           <dd>
             {PAYMENT_METHODS[doc.paymentMethod ?? 'other']}
@@ -331,7 +346,7 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
           </dd>
           {invoice && (
             <>
-              <dt>Invoice no.</dt>
+              <dt>{invoice.type === 'proforma' ? 'Proforma no.' : 'Invoice no.'}</dt>
               <dd className="eng-mono">{invoice.number}</dd>
             </>
           )}
@@ -460,6 +475,32 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
                       <span>Balance due</span>
                       <span>{formatMoney(balance, cur)}</span>
                     </div>
+                  </>
+                )}
+                {doc.type === 'proforma' && (asked < totals.total || paid > 0) && (
+                  <>
+                    {asked < totals.total && (
+                      <div className="row">
+                        <span>{depositLabel(doc)}</span>
+                        <span>{money(asked)}</span>
+                      </div>
+                    )}
+                    {paid > 0 && (
+                      <div className="row">
+                        <span>Paid</span>
+                        <span>− {money(paid)}</span>
+                      </div>
+                    )}
+                    <div className="row bal">
+                      <span>{paid > 0 ? 'Amount due now' : 'Payable now'}</span>
+                      <span>{formatMoney(Math.max(0, asked - paid), cur)}</span>
+                    </div>
+                    {asked < totals.total && (
+                      <div className="row">
+                        <span>Balance on completion</span>
+                        <span>{money(totals.total - asked)}</span>
+                      </div>
+                    )}
                   </>
                 )}
                 {refund > 0 && (
