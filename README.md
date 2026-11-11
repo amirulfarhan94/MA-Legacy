@@ -127,7 +127,7 @@ on, a backup file is asked for every 30 days. Signing out stops syncing and keep
 **HandalServ landing page.** `landing/index.html` is the public page for the HandalServ brand: a dark theme with the
 HandalServ logo drawn in blue and orange neon, sparks crackling off it (still and spark-free with reduced motion),
 and the page's content (services, how it
-works, Split Payment 3× for electrical works only, WhatsApp 017-373 4274). The deploy puts it at the root of the
+works, Split Payment 3× for electrical works only, WhatsApp 010-430 5436). The deploy puts it at the root of the
 Firebase Hosting site, next to the customer application links (`/a/…`, served by the app as `app.html`); it is live at
 https://handalserv.my (custom domain on Firebase Hosting, DNS at Exabytes). `landing/robots.txt` and `landing/sitemap.xml` point
 search engines at the page and keep them off `/a/…`; the tab icons (`favicon.ico`, `hs-favicon.png`,

@@ -9,6 +9,6 @@ export const BRAND = {
   /** Navy logo for light backgrounds, white one for dark. */
   logo: './brand/handalserv-logo-warna.svg',
   logoOnDark: './brand/handalserv-logo-putih.svg',
-  whatsapp: '017-373 4274',
+  whatsapp: '010-430 5436',
   site: 'handalserv.my',
 }

@@ -6,7 +6,7 @@ describe('stickerInfo', () => {
   it('names the job in the footer and the WhatsApp message', () => {
     const info = stickerInfo({ number: 'SR/26/1101', date: '2026-11-04' } as Document)
     expect(info.footer).toBe('Diservis 04 Nov 2026 · SR/26/1101')
-    expect(info.link).toBe(`https://wa.me/60173734274?text=${encodeURIComponent('Salam HandalServ, saya perlukan servis. (Sticker SR/26/1101)')}`)
+    expect(info.link).toBe(`https://wa.me/60104305436?text=${encodeURIComponent('Salam HandalServ, saya perlukan servis. (Sticker SR/26/1101)')}`)
   })
 
   it('has a general footer without a job', () => {
