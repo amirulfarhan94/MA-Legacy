@@ -155,6 +155,8 @@ export interface Document {
   sourceId?: string
   /** Receipts and credit notes: the invoice they apply to (a receipt can also apply to a proforma invoice). */
   invoiceId?: string
+  /** Quotations and invoices: when payment is due ('cash' or a number of days). */
+  paymentTerms?: PaymentTerm
   /** Proforma invoices: a deposit to ask for instead of the full total. */
   deposit?: DepositRequest
   /** Invoices made from a proforma: payments received against that proforma count towards this invoice. */
@@ -224,6 +226,21 @@ export interface SplitPlan {
   /** Photos of the customer's IC, front and back (ids in this device's photo storage). */
   icPhotoIds?: string[]
 }
+
+export type PaymentTerm = 'cash' | '3' | '7' | '10' | '14' | '30'
+export const PAYMENT_TERMS: { value: PaymentTerm; label: string }[] = [
+  { value: 'cash', label: 'Cash' },
+  { value: '3', label: '3 days' },
+  { value: '7', label: '7 days' },
+  { value: '10', label: '10 days' },
+  { value: '14', label: '14 days' },
+  { value: '30', label: '30 days' },
+]
+/** Documents that show payment terms under the date. */
+export const TERMS_TYPES: DocType[] = ['quotation', 'invoice']
+export const paymentTermLabel = (t?: PaymentTerm) => PAYMENT_TERMS.find((x) => x.value === t)?.label ?? ''
+/** An invoice's due date under these terms: the invoice date for cash, else that many days later. */
+export const termDueDate = (date: string, t: PaymentTerm, addDays: (d: string, n: number) => string) => (t === 'cash' ? date : addDays(date, Number(t)))
 
 export interface DepositRequest {
   mode: 'percent' | 'amount'

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { addDays, amountDue, amountInWords, depositDue, depositLabel, displayStatus, docTotals, formatDate, formatDateTime, invoiceBalance, invoicePaid, invoicePaymentState, monthLabel, nextDocNumber } from './calc'
 import type { Document } from './types'
+import { paymentTermLabel, termDueDate } from './types'
 
 const baseDoc = (over: Partial<Document>): Document => ({
   id: 'x',
@@ -148,5 +149,15 @@ describe('proforma deposits', () => {
     expect(invoicePaymentState(inv, docs)).toBe('partial')
     // The proforma itself still only counts its own receipts.
     expect(invoicePaid('pi', docs)).toBe(1900)
+  })
+})
+
+describe('payment terms', () => {
+  it('sets the due date from the invoice date', () => {
+    expect(termDueDate('2026-11-12', 'cash', addDays)).toBe('2026-11-12')
+    expect(termDueDate('2026-11-12', '7', addDays)).toBe('2026-11-19')
+    expect(termDueDate('2026-11-25', '14', addDays)).toBe('2026-12-09')
+    expect(paymentTermLabel('30')).toBe('30 days')
+    expect(paymentTermLabel(undefined)).toBe('')
   })
 })

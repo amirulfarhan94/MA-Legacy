@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { appStorage } from './storage'
 import { addDays, amountDue, nextDocNumber, today } from './calc'
-import type { Booking, CatalogItem, Customer, Document, DocType, LineItem, Settings, Transaction } from './types'
+import { TERMS_TYPES, termDueDate, type Booking, type CatalogItem, type Customer, type Document, type DocType, type LineItem, type Settings, type Transaction } from './types'
 
 export const uid = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -238,6 +238,8 @@ export const useStore = create<State>()(
           taxRate: src.taxRate,
           itemAdjustments: src.itemAdjustments,
           notes: src.notes,
+          paymentTerms: TERMS_TYPES.includes(to) ? src.paymentTerms : undefined,
+          dueDate: to === 'invoice' && src.paymentTerms ? termDueDate(base.date, src.paymentTerms, addDays) : base.dueDate,
           // An invoice made from a proforma counts what was paid against it (the deposit), once.
           depositFrom:
             src.type === 'proforma' && to === 'invoice' && !get().documents.some((d) => d.type === 'invoice' && d.status !== 'cancelled' && d.depositFrom === src.id)

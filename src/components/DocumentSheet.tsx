@@ -3,7 +3,7 @@ import { amountInWords, depositDue, depositLabel, docTotals, formatDate, formatD
 import { useStore } from '../lib/store'
 import BrandMark from './BrandMark'
 import { printedSplit, SPLIT_BADGE, SplitPaymentDetailsClassic, SplitScheduleClassic } from './SplitPrint'
-import { DOC_META, PAYMENT_METHODS, SIGN_TYPES, isPricedDoc, type Customer, type Document } from '../lib/types'
+import { DOC_META, PAYMENT_METHODS, SIGN_TYPES, isPricedDoc, paymentTermLabel, type Customer, type Document } from '../lib/types'
 
 const money = (n: number) => formatMoney(n, '').trim()
 
@@ -49,6 +49,7 @@ export default function DocumentSheet({ doc, customer }: { doc: Document; custom
         rows={[
           ['No.', doc.number, true],
           ['Date', formatDate(doc.date)],
+          ...(doc.paymentTerms ? [['Payment terms', paymentTermLabel(doc.paymentTerms)] as MetaEntry] : []),
           ...(doc.dueDate
             ? [[doc.type === 'quotation' ? 'Valid until' : doc.type === 'purchase_order' ? 'Delivery date' : 'Due date', formatDate(doc.dueDate)] as MetaEntry]
             : []),

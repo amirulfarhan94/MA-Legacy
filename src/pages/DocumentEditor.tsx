@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, UserPlus } from 'lucide-react'
-import { amountDue, depositDue, depositLabel, docTotals, formatMoney, today } from '../lib/calc'
+import { addDays, amountDue, depositDue, depositLabel, docTotals, formatMoney, today } from '../lib/calc'
 import { recentItems, sameItem, suggestItems } from '../lib/catalog'
 import { nextAgreementNo, splitEligibility, splitLocked, splitSchedule } from '../lib/split'
 import { contactKind, customerLabel, uid, useStore } from '../lib/store'
@@ -13,7 +13,11 @@ import {
   isPricedDoc,
   isPurchaseDoc,
   PHOTO_TYPES,
+  PAYMENT_TERMS,
+  TERMS_TYPES,
+  termDueDate,
   type Document,
+  type PaymentTerm,
   type LineItem,
   type PaymentMethod,
   type ServiceReportFields,
@@ -240,8 +244,34 @@ function Editor({ existing, type }: { existing?: Document; type: Document['type'
                 <Input value={doc.number} onChange={(e) => set('number', e.target.value)} />
               </Field>
               <Field label="Date">
-                <Input type="date" value={doc.date} onChange={(e) => set('date', e.target.value)} />
+                <Input
+                  type="date"
+                  value={doc.date}
+                  onChange={(e) => {
+                    const date = e.target.value
+                    // An invoice's due date follows its payment terms.
+                    setDoc((d) => ({ ...d, date, dueDate: d.type === 'invoice' && d.paymentTerms && date && !d.split ? termDueDate(date, d.paymentTerms, addDays) : d.dueDate }))
+                  }}
+                />
               </Field>
+              {TERMS_TYPES.includes(type) && (
+                <Field label="Payment terms" hint={type === 'invoice' && doc.paymentTerms && !doc.split ? 'Sets the due date.' : undefined}>
+                  <Select
+                    value={doc.paymentTerms ?? ''}
+                    onChange={(e) => {
+                      const t = (e.target.value || undefined) as PaymentTerm | undefined
+                      setDoc((d) => ({ ...d, paymentTerms: t, dueDate: d.type === 'invoice' && t && !d.split ? termDueDate(d.date, t, addDays) : d.dueDate }))
+                    }}
+                  >
+                    <option value="">—</option>
+                    {PAYMENT_TERMS.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
               {hasDue && (
                 <Field label={dueLabel} hint={doc.split ? 'Set by the split payment schedule (Payment 3).' : undefined}>
                   <Input

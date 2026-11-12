@@ -3,7 +3,7 @@ import { amountInWords, depositDue, depositLabel, docTotals, formatDate, formatD
 import { useStore } from '../lib/store'
 import BrandMark from './BrandMark'
 import { printedSplit, SPLIT_BADGE, SplitScheduleEng } from './SplitPrint'
-import { DOC_META, PAYMENT_METHODS, SIGN_TYPES, isPricedDoc, type Customer, type Document, type DocType } from '../lib/types'
+import { DOC_META, PAYMENT_METHODS, SIGN_TYPES, isPricedDoc, paymentTermLabel, type Customer, type Document, type DocType } from '../lib/types'
 
 const money = (n: number) => formatMoney(n, '').trim()
 const pad2 = (n: number) => String(n).padStart(2, '0')
@@ -223,6 +223,7 @@ export default function EngineeringSheet({ doc, customer }: { doc: Document; cus
   const cells: [string, string][] = [
     ['Document no.', doc.number],
     ['Date', formatDate(doc.date)],
+    ...(doc.paymentTerms ? [['Payment terms', paymentTermLabel(doc.paymentTerms)] as [string, string]] : []),
     ...(doc.dueDate ? [[dueLabel, formatDate(doc.dueDate)] as [string, string]] : []),
     ['Reference', doc.reference || '—'],
     ...(split ? [['Agreement no.', split.agreementNo] as [string, string]] : []),
