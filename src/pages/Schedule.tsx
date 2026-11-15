@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CalendarDays, Check, ClipboardCheck, MessageCircle, Pencil, Phone, Plus, Send } from 'lucide-react'
+import { CalendarDays, Check, ClipboardCheck, FileText, MessageCircle, Pencil, Phone, Plus, Send } from 'lucide-react'
 import PartyPicker from '../components/PartyPicker'
 import { Button, buttonClass, Card, EmptyState, Field, Input, Modal, PageHeader, Textarea } from '../components/ui'
 import { formatDate, today } from '../lib/calc'
@@ -152,6 +152,9 @@ function BookingCard({ booking: b, showDate, onEdit }: { booking: Booking; showD
               </a>
             </>
           )}
+          <Link to={`/schedule/${b.id}/slip`} className={buttonClass('secondary', 'sm')}>
+            <FileText size={14} /> Slip
+          </Link>
           <Button size="sm" onClick={() => saveBooking({ ...b, status: 'done' })}>
             <Check size={14} /> Done
           </Button>
@@ -264,6 +267,9 @@ function BookingModal({ booking, isNew, onClose }: { booking: Booking | null; is
               Cancel booking
             </Button>
           )}
+          <Link to={`/schedule/${form.id}/slip`} className={`${buttonClass('ghost', 'sm')} ml-auto`}>
+            <FileText size={14} /> Appointment slip
+          </Link>
         </div>
       )}
     </Modal>

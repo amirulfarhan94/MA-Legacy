@@ -18,6 +18,7 @@ import SplitPlans from './pages/SplitPlans'
 import Apply from './pages/Apply'
 import Stickers from './pages/Stickers'
 import Schedule from './pages/Schedule'
+import AppointmentSlipPage from './pages/AppointmentSlipPage'
 import { cleanUpPhotos } from './lib/photos'
 import { useStore } from './lib/store'
 import { requestPersistentStorage } from './lib/storage'
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="schedule" element={<Schedule />} />
+            <Route path="schedule/:id/slip" element={<AppointmentSlipPage />} />
             <Route path="stickers" element={<Stickers />} />
             <Route path="stickers/:docId" element={<Stickers />} />
             <Route path="*" element={<Navigate to="/" replace />} />

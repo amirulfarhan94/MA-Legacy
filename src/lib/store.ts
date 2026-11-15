@@ -64,6 +64,9 @@ export const defaultSettings: Settings = {
   stampDataUrl: '',
   brandOnDocuments: true,
   reviewLink: 'https://g.page/r/CbWndWB3e2AeEBI/review',
+  slipPrefix: 'AP',
+  slipTerms:
+    'Please ensure someone is present at the premises at the appointment time.\nTo reschedule, please inform us at least 24 hours in advance.\nFinal charges will be confirmed after inspection.',
 }
 
 /** Fills settings keys added in later versions (new document types, QR…) from the defaults. */

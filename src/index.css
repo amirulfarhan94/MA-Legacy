@@ -500,6 +500,27 @@ body {
 .eng .photo-grid figcaption { font-size: 10px; color: var(--e-ink-2); }
 .eng .photo-grid figcaption b { font: 500 9px/1.5 var(--e-mono); color: var(--e-gold); }
 
+/* Appointment slip: one A5 page (148 × 210 mm = 559 × 794 px). */
+.sheet.eng.slip { width: 148mm; min-height: 210mm; padding: 34px 32px 26px; }
+.slip .eng-ruler { background-size: 37.8px 8px, 3.78px 3px; height: 9px; }
+.slip .eng-ruler::after { content: 'A5 · 148 × 210 MM'; top: 10px; }
+.slip .eng-head { gap: 14px; }
+.slip .eng-co img { height: 40px; max-width: 90px; }
+.slip .eng-co-name { font-size: 13px; }
+.slip .eng-co-info { font-size: 8px; }
+.slip .eng-title b.long { font-size: 13px; letter-spacing: .12em; }
+.slip .eng-block { margin-top: 14px; }
+.slip-party { margin-top: 14px; }
+.slip-when { margin-top: 14px; padding: 12px 14px 13px; background: var(--e-tint); border-left: 2px solid var(--e-gold); }
+.slip-date { margin-top: 8px; font: 500 16px/1.2 var(--e-display); letter-spacing: -.01em; }
+.slip-time { margin-top: 4px; font: 600 13px/1.2 var(--e-mono); color: var(--e-gold); }
+.slip-facts { display: grid; gap: 8px; margin: 12px 0 0; }
+.slip-facts dd { margin: 4px 0 0; font-size: 10px; line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
+.slip-terms { margin-top: 14px; }
+.slip-terms ol { margin: 6px 0 0; padding-left: 14px; list-style: decimal; font-size: 8.8px; line-height: 1.5; color: var(--e-ink-2); }
+.slip-contact { display: flex; align-items: baseline; gap: 10px; margin-top: 14px; }
+.slip-contact b { font: 600 10px/1.2 var(--e-mono); }
+
 /* HandalServ stickers on a 21-label A4 sheet (lib/sticker.ts has the layout). */
 .sheet.sticker-sheet { position: relative; padding: 0; height: 297mm; overflow: hidden; }
 .sticker-slot { position: absolute; width: 63.5mm; height: 38.1mm; }
@@ -516,6 +537,7 @@ body {
 
 /* Paper: page numbers and the running head come from @page rules each sheet writes for itself. */
 @page eng { size: A4; margin: 10mm 14mm 14mm; }
+@page slip { size: A5; margin: 0; }
 
 @media print {
   /* Paper is always light, even when the app is in dark mode. */
@@ -534,6 +556,7 @@ body {
   .sheet.photo-page { break-before: page; height: 296mm; }
   .sheet.next-page { break-before: page; }
   .sheet.eng.photo-page { height: 268mm; }
+  .sheet.eng.slip { page: slip; width: 148mm; min-height: 209mm; padding: 34px 32px 26px; }
   /* The phone preview scales the sheet down; paper always gets it at full size. */
   .sheet-fit { height: auto !important; overflow: visible !important; padding: 0 !important; }
   .sheet-fit > div { transform: none !important; margin: 0 !important; }

@@ -172,11 +172,20 @@ export const FIRST_DOC_NUMBER = 1101
  * (Documents made before this format, like INV-2026-0003, keep their numbers.)
  */
 export function nextDocNumber(type: DocType, prefix: string, date: string, docs: Document[]): string {
+  return nextNumber(
+    prefix,
+    date,
+    docs.filter((d) => d.type === type).map((d) => d.number),
+  )
+}
+
+/** Next number after those already `taken` for this prefix and year, e.g. AP/26/1102. */
+export function nextNumber(prefix: string, date: string, taken: string[]): string {
   const head = `${prefix}/${date.slice(2, 4)}/`
   let max = FIRST_DOC_NUMBER - 1
-  for (const d of docs) {
-    if (d.type !== type || !d.number.startsWith(head)) continue
-    const n = parseInt(d.number.slice(head.length), 10)
+  for (const no of taken) {
+    if (!no.startsWith(head)) continue
+    const n = parseInt(no.slice(head.length), 10)
     if (!Number.isNaN(n) && n > max) max = n
   }
   return `${head}${String(max + 1).padStart(4, '0')}`

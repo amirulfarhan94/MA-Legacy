@@ -1,5 +1,5 @@
 import { BRAND } from './brand'
-import { addDays } from './calc'
+import { addDays, nextNumber } from './calc'
 import type { Booking, Customer } from './types'
 
 /**
@@ -72,4 +72,37 @@ export function confirmMessage(b: Booking, c?: Customer): string {
 
 export function onTheWayMessage(c?: Customer): string {
   return `${hello(c)}, ini ${BRAND.name}. Kami sedang dalam perjalanan ke lokasi anda sekarang. Jumpa sebentar lagi!`
+}
+
+/* ---------------------------------------------------------------- Appointment slip (English, like the documents) */
+
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+/** "2026-11-20" → "Friday, 20 November 2026" */
+export function longDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  return `${DAYS[new Date(y, m - 1, d).getDay()]}, ${d} ${MONTHS[m - 1]} ${y}`
+}
+
+/** Number for a booking's first slip: the year it is issued, after every slip number already given. */
+export function nextSlipNumber(prefix: string, issued: string, bookings: Booking[]): string {
+  return nextNumber(prefix, issued, bookings.map((b) => b.slipNo ?? '').filter(Boolean))
+}
+
+/** The slip's terms from Settings, one per line, blank lines left out. */
+export const slipTermLines = (terms: string) =>
+  terms
+    .split('\n')
+    .map((t) => t.trim())
+    .filter(Boolean)
+
+/** Message sent with the slip PDF. */
+export function slipMessage(b: Booking, company: string, c?: Customer): string {
+  const when = [longDate(b.date), b.time ? time12(b.time) : ''].filter(Boolean).join(', ')
+  return [
+    `${c?.name.trim() ? `Hi ${c.name.trim()}` : 'Hi'}, here is your appointment slip ${b.slipNo ?? ''} from ${company}.`,
+    `Appointment: ${when}${b.title.trim() ? ` · ${b.title.trim()}` : ''}`,
+    'Please let us know if you need to reschedule. Thank you!',
+  ].join('\n')
 }

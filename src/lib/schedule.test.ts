@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { confirmMessage, groupBookings, masa, onTheWayMessage, tarikh, time12 } from './schedule'
+import { confirmMessage, groupBookings, longDate, masa, nextSlipNumber, onTheWayMessage, slipMessage, slipTermLines, tarikh, time12 } from './schedule'
 import type { Booking, Customer } from './types'
 
 const b = (over: Partial<Booking>): Booking => ({
@@ -66,5 +66,42 @@ describe('WhatsApp messages', () => {
   })
   it('says we are on the way', () => {
     expect(onTheWayMessage(c)).toBe('Salam Encik Hafiz, ini HandalServ. Kami sedang dalam perjalanan ke lokasi anda sekarang. Jumpa sebentar lagi!')
+  })
+})
+
+describe('appointment slip', () => {
+  const bk = (slipNo?: string): Booking => ({
+    id: Math.random().toString(36),
+    date: '2026-11-20',
+    time: '10:30',
+    customerId: '',
+    title: 'Elektrik trip, semak DB',
+    address: '',
+    notes: '',
+    status: 'booked',
+    createdAt: '2026-11-15T02:00:00.000Z',
+    updatedAt: '2026-11-15T02:00:00.000Z',
+    slipNo,
+  })
+
+  it('numbers slips per year from 1101, after the highest one given', () => {
+    expect(nextSlipNumber('AP', '2026-11-15', [])).toBe('AP/26/1101')
+    expect(nextSlipNumber('AP', '2026-11-15', [bk('AP/26/1101'), bk(), bk('AP/26/1104')])).toBe('AP/26/1105')
+    // Last year's slips and other prefixes do not count.
+    expect(nextSlipNumber('AP', '2027-01-02', [bk('AP/26/1180'), bk('XX/27/1300')])).toBe('AP/27/1101')
+  })
+
+  it('writes the date in full', () => {
+    expect(longDate('2026-11-20')).toBe('Friday, 20 November 2026')
+  })
+
+  it('reads one term per line and skips blank lines', () => {
+    expect(slipTermLines('  First term \n\n Second term\n')).toEqual(['First term', 'Second term'])
+  })
+
+  it('says what the slip is for in the message', () => {
+    const msg = slipMessage(bk('AP/26/1101'), 'MA Legacy Solutions', { name: 'Ahmad' } as Customer)
+    expect(msg).toContain('Hi Ahmad, here is your appointment slip AP/26/1101 from MA Legacy Solutions.')
+    expect(msg).toContain('Friday, 20 November 2026, 10:30 AM · Elektrik trip, semak DB')
   })
 })

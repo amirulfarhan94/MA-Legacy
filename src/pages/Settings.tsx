@@ -259,6 +259,9 @@ export default function SettingsPage() {
               />
             </Field>
           ))}
+          <Field label="Appointment slip">
+            <Input value={form.slipPrefix} onChange={(e) => set('slipPrefix', e.target.value.toUpperCase().replace(/[\s/]/g, ''))} />
+          </Field>
         </Section>
 
         <Section id="set-terms" title="Default terms" subtitle="Pre-filled on new documents; you can still edit each one.">
@@ -267,6 +270,9 @@ export default function SettingsPage() {
               <Textarea value={form.defaultTerms[t]} onChange={(e) => set('defaultTerms', { ...form.defaultTerms, [t]: e.target.value })} />
             </Field>
           ))}
+          <Field label="Appointment slip" hint="Printed on every appointment slip, one term per line." className="sm:col-span-2">
+            <Textarea value={form.slipTerms} onChange={(e) => set('slipTerms', e.target.value)} rows={4} />
+          </Field>
         </Section>
 
         <div className="lg:col-span-2">

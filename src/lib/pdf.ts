@@ -14,6 +14,8 @@ export interface PdfOptions {
   heading: string
   company: string
   engineering: boolean
+  /** A5 for one-page slips; A4 (cut into pages) otherwise. */
+  paper?: 'a4' | 'a5'
 }
 
 /** A4 at 96 dpi. */
@@ -122,6 +124,7 @@ export async function sheetsToPdf(box: HTMLElement, o: PdfOptions): Promise<File
   if (!sheet) throw new Error('Nothing to make a PDF of.')
   await document.fonts.ready
   await photosLoaded(box)
+  if (o.paper === 'a5') return a5Pdf(sheet, o, toCanvas, jsPDF)
   const pages = paginate(sheet)
   const total = pages.length + extras.length
   const long = total > 1
@@ -191,6 +194,27 @@ export async function sheetsToPdf(box: HTMLElement, o: PdfOptions): Promise<File
     place(await draw(el), 0, el.offsetHeight, 0, 0.85)
     pageNumber(pages.length + i)
   }
+  pdf.setProperties({ title: `${o.heading} ${o.docNo}`, author: o.company })
+  return new File([pdf.output('blob')], o.fileName, { type: 'application/pdf' })
+}
+
+/** One A5 page (148 × 210 mm): the sheet drawn whole, scaled to the page width. */
+async function a5Pdf(
+  sheet: HTMLElement,
+  o: PdfOptions,
+  toCanvas: typeof import('html-to-image').toCanvas,
+  JsPDF: typeof import('jspdf').jsPDF,
+): Promise<File> {
+  const canvas = await toCanvas(sheet, {
+    pixelRatio: 2.5,
+    backgroundColor: '#ffffff',
+    width: sheet.offsetWidth,
+    height: sheet.offsetHeight,
+    style: { margin: '0', boxShadow: 'none' },
+  })
+  const pdf = new JsPDF({ unit: 'mm', format: 'a5', compress: true })
+  const h = Math.min(210, (canvas.height / canvas.width) * 148)
+  pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 148, h)
   pdf.setProperties({ title: `${o.heading} ${o.docNo}`, author: o.company })
   return new File([pdf.output('blob')], o.fileName, { type: 'application/pdf' })
 }

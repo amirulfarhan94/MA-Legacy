@@ -285,6 +285,8 @@ export interface Booking {
   address: string
   notes: string
   status: BookingStatus
+  /** Appointment slip number, e.g. AP/26/1101; given the first time the slip is opened. */
+  slipNo?: string
   createdAt: string
   updatedAt: string
 }
@@ -359,6 +361,10 @@ export interface Settings {
   brandOnDocuments: boolean
   /** HandalServ's Google review link, for the Ask for review button. Blank hides the button. */
   reviewLink: string
+  /** Prefix of appointment slip numbers (AP/26/1101). */
+  slipPrefix: string
+  /** Terms printed on every appointment slip, one per line. */
+  slipTerms: string
 }
 
 export type DocumentStyle = 'classic' | 'engineering'
