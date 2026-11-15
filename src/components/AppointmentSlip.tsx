@@ -82,7 +82,7 @@ export default function AppointmentSlip({ booking: b, customer }: { booking: Boo
 
       {terms.length > 0 && (
         <div className="mt-4 text-[9.5px]">
-          <Label>Terms</Label>
+          <Label>Notes</Label>
           <ol className="list-decimal space-y-0.5 pl-4 text-stone-600">
             {terms.map((t, i) => (
               <li key={i}>{t}</li>
