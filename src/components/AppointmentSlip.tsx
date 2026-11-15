@@ -76,7 +76,7 @@ export default function AppointmentSlip({ booking: b, customer }: { booking: Boo
         <div className="grid gap-2.5 px-3.5 py-3">
           {b.title.trim() && <SlipRow label="Job" value={b.title.trim()} />}
           {b.address.trim() && <SlipRow label="Site address" value={b.address.trim()} />}
-          {b.notes.trim() && <SlipRow label="Notes" value={b.notes.trim()} />}
+          {b.notes.trim() && <SlipRow label="Remarks" value={b.notes.trim()} />}
         </div>
       </div>
 
