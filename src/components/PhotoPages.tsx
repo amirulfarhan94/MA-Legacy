@@ -1,23 +1,20 @@
 import type { ReactNode } from 'react'
 import { BEFORE_AFTER_TYPES, pairPhotos, type PhotoPair } from '../lib/beforeAfter'
 import { usePhotoUrls } from '../lib/photos'
-import { useStore } from '../lib/store'
 import { formatDate } from '../lib/calc'
 import { DOC_META, type Customer, type DocPhoto, type Document } from '../lib/types'
 import { SheetHeader } from './DocumentSheet'
-import { EngHeader, EngSheet } from './EngineeringSheet'
 
 const PER_PAGE = 4
 const PAIRS_PER_PAGE = 3
 const pad2 = (n: number) => String(n).padStart(2, '0')
 
 /**
- * Work photos as A4 report pages after the document, in the chosen document style: before &
+ * Work photos as A4 report pages after the document: before &
  * after pairs side by side, then the other photos four to a page. Photos that are not on this
  * device are left out.
  */
 export default function PhotoPages({ doc, customer }: { doc: Document; customer?: Customer }) {
-  const style = useStore((s) => s.settings.documentStyle)
   const all = doc.photos ?? []
   const urls = usePhotoUrls(all.map((p) => p.id))
   const photos = all.filter((p) => urls[p.id] !== null)
@@ -42,29 +39,6 @@ export default function PhotoPages({ doc, customer }: { doc: Document; customer?
   }
 
   return pages.map(({ title, label, range, body }, i) => {
-    if (style === 'engineering') {
-      return (
-        <EngSheet key={i} docNo={doc.number} title={DOC_META[doc.type].title} className="photo-page mt-6 print:mt-0">
-          <EngHeader
-            title={title}
-            kicker={`${DOC_META[doc.type].label} · ${doc.number}`}
-            cells={[
-              ['Document no.', doc.number],
-              ['Date', formatDate(doc.date)],
-              ['Customer', party],
-              [label, range],
-            ]}
-          />
-          {body}
-          <div className="eng-foot">
-            <span>
-              {label} {range}
-            </span>
-            <b>{doc.number}</b>
-          </div>
-        </EngSheet>
-      )
-    }
     return (
       <div key={i} className="sheet photo-page mx-auto mt-6 flex flex-col shadow-lg print:mt-0">
         <SheetHeader

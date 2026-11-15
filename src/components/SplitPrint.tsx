@@ -3,7 +3,7 @@ import { dmy, splitPaymentStates } from '../lib/split'
 import { useStore } from '../lib/store'
 import type { Document, SplitPlan } from '../lib/types'
 
-/** Printed pieces of a split payment (3×) invoice, in the Classic and Engineering styles. */
+/** Printed pieces of a split payment (3×) invoice, in the Classic style. */
 
 export const SPLIT_BADGE = 'SPLIT PAYMENT · 3×'
 export const SPLIT_TERMS_LINE =
@@ -54,38 +54,6 @@ export function SplitScheduleClassic({ doc }: { doc: Document }) {
         </tbody>
       </table>
       <div className="border-t border-stone-200 bg-gold-50 px-3 py-1.5 text-[10.5px] text-stone-700">{SPLIT_TERMS_LINE}</div>
-    </div>
-  )
-}
-
-export function SplitScheduleEng({ doc }: { doc: Document }) {
-  const rows = useRows(doc)
-  return (
-    <div className="eng-section">
-      <span className="eng-cap">Payment schedule</span>
-      <table className="eng-items eng-split">
-        <thead>
-          <tr>
-            <th>Payment</th>
-            <th>Share</th>
-            <th className="r">Amount (RM)</th>
-            <th>Due date</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.label}>
-              <td>{r.label}</td>
-              <td className="eng-mono">{r.share}</td>
-              <td className="r">{r.amount}</td>
-              <td className="eng-mono">{r.due}</td>
-              <td>{r.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="eng-note">{SPLIT_TERMS_LINE}</p>
     </div>
   )
 }

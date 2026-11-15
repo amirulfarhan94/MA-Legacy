@@ -78,7 +78,6 @@ export default function AppointmentSlipPage() {
                 docNo: booking.slipNo ?? '',
                 heading: 'APPOINTMENT SLIP',
                 company: settings.companyName,
-                engineering: true,
                 paper: 'a5',
               }}
             />

@@ -56,7 +56,6 @@ export const defaultSettings: Settings = {
   paymentQrDataUrl: '',
   paymentQrLabel: 'Scan to pay with DuitNow',
   greetingName: 'Bos Farhan',
-  documentStyle: 'engineering',
   maxActiveSplitPlans: 5,
   signerName: '',
   signerPosition: '',

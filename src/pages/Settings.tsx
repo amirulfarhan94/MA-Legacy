@@ -9,7 +9,7 @@ import { importPhotos } from '../lib/photos'
 import { useStorageInfo } from '../lib/storage'
 import { sampleData } from '../lib/sample'
 import { useStore, type BackupData } from '../lib/store'
-import { DOC_META, DOC_TYPES, type DocumentStyle, type Settings } from '../lib/types'
+import { DOC_META, DOC_TYPES, type Settings } from '../lib/types'
 import { Button, buttonClass, Card, CardHeader, Field, Input, NumberInput, PageHeader, Textarea } from '../components/ui'
 import OnlineAccount from '../components/OnlineAccount'
 
@@ -134,28 +134,8 @@ export default function SettingsPage() {
 
         <div className="space-y-5">
           <Card id="set-style" className="scroll-mt-36">
-            <CardHeader title="Document style" subtitle="How quotations, invoices, receipts, statements and every other printed document look." />
-            <div role="radiogroup" aria-label="Document style" className="grid grid-cols-2 gap-3 p-5">
-              {STYLES.map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={form.documentStyle === o.value}
-                  onClick={() => set('documentStyle', o.value)}
-                  className={`grid gap-2.5 rounded-2xl border-2 p-2.5 text-left transition-colors ${
-                    form.documentStyle === o.value ? 'border-gold-500' : 'border-[var(--btn-line)] hover:border-stone-300'
-                  }`}
-                >
-                  <StyleThumb style={o.value} />
-                  <span>
-                    <span className="block text-sm font-bold text-stone-900">{o.label}</span>
-                    <span className="mt-0.5 block text-xs text-stone-500">{o.hint}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-            <label className="flex items-start gap-3 border-t border-stone-200 px-5 py-4 text-sm">
+            <CardHeader title="Documents" subtitle="Extras on printed documents and for customers." />
+            <label className="flex items-start gap-3 px-5 py-4 text-sm">
               <input type="checkbox" className="mt-0.5 h-4 w-4 accent-gold-600" checked={form.brandOnDocuments} onChange={(e) => set('brandOnDocuments', e.target.checked)} />
               <span>
                 <span className="block font-semibold text-stone-900">Show the HandalServ logo on documents</span>
@@ -349,54 +329,9 @@ export default function SettingsPage() {
   )
 }
 
-const STYLES: { value: DocumentStyle; label: string; hint: string }[] = [
-  { value: 'engineering', label: 'Engineering', hint: 'Title block, mono figures, page numbers' },
-  { value: 'classic', label: 'Classic', hint: 'The original look' },
-]
-
-/** Small drawing of each style, so the choice is visible before printing. */
-function StyleThumb({ style }: { style: DocumentStyle }) {
-  const bar = (w: string, c = 'bg-stone-300') => <i className={`block h-[3px] rounded-full ${c}`} style={{ width: w }} />
-  return (
-    <span className="relative block aspect-[210/297] w-full overflow-hidden rounded-md bg-white p-[9%] shadow-[0_4px_14px_rgb(0_0_0/0.12)]">
-      {style === 'engineering' ? (
-        <>
-          <i className="absolute inset-x-0 top-0 h-[5px] bg-[repeating-linear-gradient(to_right,#9aa1ab_0_1px,transparent_1px_6px)]" />
-          <span className="flex items-start justify-between">
-            <span className="grid gap-1">{bar('34px', 'bg-[#14181f]')}{bar('26px')}</span>
-            {bar('30px', 'bg-[#9a6a12]')}
-          </span>
-          <span className="mt-[10%] grid grid-cols-4 border-y border-[#14181f] py-1">
-            {[0, 1, 2, 3].map((i) => (
-              <span key={i} className={`grid gap-0.5 px-0.5 ${i ? 'border-l border-[#d7dbe1]' : ''}`}>{bar('70%', 'bg-[#14181f]')}</span>
-            ))}
-          </span>
-          <span className="mt-[8%] flex justify-between">
-            <span className="grid gap-1">{bar('30px', 'bg-[#14181f]')}{bar('22px')}</span>
-            <span className="block h-4 w-12 border border-[#14181f]" />
-          </span>
-          <span className="mt-[8%] grid gap-1.5 border-t border-[#14181f] pt-1.5">{[0, 1, 2].map((i) => <span key={i}>{bar('100%', 'bg-[#e8ebef]')}</span>)}</span>
-          <span className="mt-[6%] ml-auto block w-1/2 border-t border-[#14181f] pt-1">{bar('100%', 'bg-[#f0e4cc]')}</span>
-        </>
-      ) : (
-        <>
-          <span className="flex items-start justify-between border-b border-[#a8741a] pb-1.5">
-            <span className="grid gap-1">{bar('34px', 'bg-[#a8741a]')}{bar('26px')}</span>
-            {bar('28px', 'bg-[#875b14]')}
-          </span>
-          <span className="mt-[10%] grid gap-1">{bar('30px', 'bg-[#1c1a16]')}{bar('22px')}</span>
-          <span className="mt-[8%] block h-2 bg-[#16140f]" />
-          <span className="mt-1.5 grid gap-1.5">{[0, 1, 2].map((i) => <span key={i}>{bar('100%', 'bg-[#ececea]')}</span>)}</span>
-          <span className="mt-[6%] ml-auto block w-1/2 border-t-2 border-[#a8741a] pt-1">{bar('100%', 'bg-[#e7e5e0]')}</span>
-        </>
-      )}
-    </span>
-  )
-}
-
 const SECTIONS: [string, string][] = [
   ['set-company', 'Company'],
-  ['set-style', 'Style'],
+  ['set-style', 'Documents'],
   ['set-payment', 'Payment'],
   ['set-tax', 'Tax'],
   ['set-signing', 'Signing'],

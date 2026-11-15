@@ -60,7 +60,7 @@ export default function Agreement() {
               <SharePdfButton
                 sheetBox={box}
                 text={`Split Payment Agreement ${plan.agreementNo} for invoice ${invoice.number} — ${settings.companyName}`}
-                options={{ fileName: `${plan.agreementNo}.pdf`, docNo: plan.agreementNo, heading: 'SPLIT PAYMENT AGREEMENT', company: settings.companyName, engineering: false }}
+                options={{ fileName: `${plan.agreementNo}.pdf`, docNo: plan.agreementNo, heading: 'SPLIT PAYMENT AGREEMENT', company: settings.companyName }}
               />
             </div>
           }

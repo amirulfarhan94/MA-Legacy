@@ -8,7 +8,6 @@ import { cloneItems, contactKind, customerLabel, useCustomer, useStore } from '.
 import { waHref, waNumber } from '../lib/contact'
 import { DOC_META, SIGN_TYPES, STATUS_OPTIONS, docTypeFromPath, isPurchaseDoc, type Document, type DocType } from '../lib/types'
 import DocumentSheet from '../components/DocumentSheet'
-import EngineeringSheet from '../components/EngineeringSheet'
 import SheetPreview from '../components/SheetPreview'
 import SharePdfButton from '../components/SharePdfButton'
 import PhotoPages from '../components/PhotoPages'
@@ -136,7 +135,6 @@ export default function DocumentView() {
     docNo: doc.number,
     heading: meta.title,
     company: settings.companyName,
-    engineering: settings.documentStyle === 'engineering',
   }
 
   const canRemind = doc.type === 'invoice' && doc.status !== 'draft' && doc.status !== 'cancelled' && balance > 0
@@ -286,7 +284,7 @@ export default function DocumentView() {
         <div className="order-2 min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-span-2 min-[1440px]:row-start-1">
           <div ref={sheetBox}>
             <SheetPreview>
-              {settings.documentStyle === 'engineering' ? <EngineeringSheet doc={doc} customer={customer} /> : <DocumentSheet doc={doc} customer={customer} />}
+              <DocumentSheet doc={doc} customer={customer} />
               <PhotoPages doc={doc} customer={customer} />
             </SheetPreview>
           </div>

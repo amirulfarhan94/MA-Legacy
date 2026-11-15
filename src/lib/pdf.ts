@@ -13,7 +13,6 @@ export interface PdfOptions {
   /** Document title as printed, e.g. INVOICE. */
   heading: string
   company: string
-  engineering: boolean
   /** A5 for one-page slips; A4 (cut into pages) otherwise. */
   paper?: 'a4' | 'a5'
 }
@@ -136,8 +135,6 @@ export async function sheetsToPdf(box: HTMLElement, o: PdfOptions): Promise<File
       width: el.offsetWidth,
       height: el.offsetHeight,
       style: { margin: '0', boxShadow: 'none' },
-      // On long documents the page number takes over from the document number in the footer.
-      filter: (node) => !(long && node instanceof HTMLElement && node.matches('.eng-foot b')),
     })
   const canvas = await draw(sheet)
   const ratio = canvas.width / width
@@ -159,23 +156,13 @@ export async function sheetsToPdf(box: HTMLElement, o: PdfOptions): Promise<File
   const left = pad * mm
   const right = 210 - pad * mm
   const note = (text: string, x: number, y: number, align: 'left' | 'right') => {
-    if (o.engineering) {
-      pdf.setFont('courier', 'normal')
-      pdf.setFontSize(6.5)
-      pdf.setTextColor('#7c8491')
-      // jsPDF's right alignment ignores letter spacing, so measure it here.
-      const caps = text.toUpperCase()
-      const w = pdf.getTextWidth(caps) + 0.25 * caps.length
-      pdf.text(caps, align === 'right' ? x - w : x, y * mm, { charSpace: 0.25 })
-    } else {
-      pdf.setFont('helvetica', 'normal')
-      pdf.setFontSize(7.5)
-      pdf.setTextColor('#78716c')
-      pdf.text(text, x, y * mm, { align })
-    }
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(7.5)
+    pdf.setTextColor('#78716c')
+    pdf.text(text, x, y * mm, { align })
   }
   const pageNumber = (i: number) => {
-    if (long) note(o.engineering ? `${o.docNo} · Page ${i + 1} / ${total}` : `Page ${i + 1} of ${total}`, right, PAGE_H - 22, 'right')
+    if (long) note(`Page ${i + 1} of ${total}`, right, PAGE_H - 22, 'right')
   }
 
   pages.forEach((p, i) => {
@@ -185,7 +172,7 @@ export async function sheetsToPdf(box: HTMLElement, o: PdfOptions): Promise<File
     pageNumber(i)
     if (i) {
       note(o.company, left, CONTINUED_TOP - 16, 'left')
-      note(o.engineering ? `${o.heading} ${o.docNo} · Continued` : `${o.heading} ${o.docNo} (continued)`, right, CONTINUED_TOP - 16, 'right')
+      note(`${o.heading} ${o.docNo} (continued)`, right, CONTINUED_TOP - 16, 'right')
     }
   })
   for (const [i, el] of extras.entries()) {

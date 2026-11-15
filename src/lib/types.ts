@@ -347,8 +347,6 @@ export interface Settings {
   paymentQrLabel: string
   /** Name in the dashboard greeting ("Good morning, Bos Farhan"). Blank shows no name. */
   greetingName: string
-  /** Look of printed documents and statements. */
-  documentStyle: DocumentStyle
   /** Most split payment plans that may be active at once. */
   maxActiveSplitPlans: number
   /** Printed for the company on split payment agreements. */
@@ -367,4 +365,3 @@ export interface Settings {
   slipTerms: string
 }
 
-export type DocumentStyle = 'classic' | 'engineering'

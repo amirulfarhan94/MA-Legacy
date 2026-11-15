@@ -6,7 +6,6 @@ import { AGING_BUCKETS, customerStatement } from '../lib/finance'
 import { waNumber } from '../lib/contact'
 import { customerLabel, useCustomer, useStore } from '../lib/store'
 import { ComputerGeneratedNote, PartyBlock, PaymentBlock, SheetHeader } from '../components/DocumentSheet'
-import { EngAmountBox, EngFooter, EngHeader, EngParty, EngPayment, EngSheet, EngTerms, KICKER } from '../components/EngineeringSheet'
 import SheetPreview from '../components/SheetPreview'
 import SharePdfButton from '../components/SharePdfButton'
 import { Button, buttonClass, Card, ChipGroup, EmptyState, Field, Input } from '../components/ui'
@@ -87,7 +86,6 @@ export default function Statement() {
                 docNo: `SOA ${formatDate(to)}`,
                 heading: 'STATEMENT OF ACCOUNT',
                 company: settings.companyName,
-                engineering: settings.documentStyle === 'engineering',
               }}
             />
             {customer.phone && (
@@ -129,15 +127,6 @@ export default function Statement() {
 
       <div ref={sheetBox}>
         <SheetPreview>
-          {settings.documentStyle === 'engineering' ? (
-            <EngineeringStatement
-              st={st}
-              customer={customer}
-              from={from}
-              to={to}
-              currency={cur}
-            />
-          ) : (
             <div className="sheet mx-auto flex flex-col shadow-lg">
               <SheetHeader
                 title="STATEMENT OF ACCOUNT"
@@ -250,7 +239,6 @@ export default function Statement() {
               </div>
               <ComputerGeneratedNote />
             </div>
-          )}
         </SheetPreview>
       </div>
     </>
@@ -268,136 +256,3 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-const STATEMENT_NOTE =
-  'Please check this statement and let us know of any difference within 14 days. If payment has been made recently, kindly ignore any amount already settled.'
-
-/** Statement of account in the Engineering document style. */
-function EngineeringStatement({
-  st,
-  customer,
-  from,
-  to,
-  currency,
-}: {
-  st: ReturnType<typeof customerStatement>
-  customer: NonNullable<ReturnType<typeof useCustomer>>
-  from: string
-  to: string
-  currency: string
-}) {
-  const allTime = from <= '1900-01-01'
-  const docNo = `SOA ${formatDate(to)}`
-  const agingTotal = st.aging.reduce((s, v) => s + v, 0)
-  return (
-    <EngSheet docNo={docNo} title="STATEMENT OF ACCOUNT">
-      <EngHeader
-        title="STATEMENT OF ACCOUNT"
-        kicker={KICKER.statement}
-        cells={[
-          ['Statement date', formatDate(to)],
-          ['Period from', allTime ? 'Beginning' : formatDate(from)],
-          ['Period to', formatDate(to)],
-          ['Entries', String(st.lines.length)],
-        ]}
-      />
-      <div className="eng-parties">
-        <EngParty label="Customer" party={customer} />
-        <EngAmountBox label="Balance due" amount={st.closing} currency={currency} sub={`As at ${formatDate(to)}`} />
-      </div>
-
-      <table className="eng-items">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Ref. no.</th>
-            <th>Description</th>
-            <th className="r">Debit</th>
-            <th className="r">Credit</th>
-            <th className="r">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="eng-mono whitespace-nowrap">{allTime ? '' : formatDate(addDays(from, -1))}</td>
-            <td />
-            <td className="font-semibold">Balance brought forward</td>
-            <td />
-            <td />
-            <td className="r">{money(st.opening)}</td>
-          </tr>
-          {st.lines.map((l, i) => (
-            <tr key={i}>
-              <td className="eng-mono whitespace-nowrap">{formatDate(l.date)}</td>
-              <td className="eng-mono whitespace-nowrap">{l.number}</td>
-              <td>{l.description}</td>
-              <td className="r">{l.debit ? money(l.debit) : ''}</td>
-              <td className="r">{l.credit ? money(l.credit) : ''}</td>
-              <td className="r">{money(l.balance)}</td>
-            </tr>
-          ))}
-          {st.lines.length === 0 && (
-            <tr className="empty">
-              <td colSpan={6}>No transactions in this period.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      <div className="eng-sum">
-        <div className="eng-left">
-          <div className="eng-box">
-            <span className="eng-lab">Unpaid invoices by age</span>
-            <table className="mt-2 w-full border-collapse text-[9.6px]">
-              <thead>
-                <tr>
-                  {AGING_BUCKETS.map((b) => (
-                    <th key={b} className="eng-lab table-cell! pb-1.5 text-right font-medium">
-                      {b}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  {st.aging.map((v, i) => (
-                    <td key={i} className={`eng-mono text-right ${i >= 3 && v > 0 ? 'font-semibold text-[#b42318]' : ''}`}>
-                      {money(v)}
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-            {st.unapplied > 0 && <p>Includes {formatMoney(st.unapplied, currency)} of payments or credits not yet matched to a specific invoice.</p>}
-          </div>
-          <EngPayment />
-        </div>
-        <div className="eng-totals">
-          <div className="row">
-            <span>Opening balance</span>
-            <span>{money(st.opening)}</span>
-          </div>
-          <div className="row">
-            <span>Invoiced</span>
-            <span>{money(st.totalDebit)}</span>
-          </div>
-          <div className="row">
-            <span>Payments &amp; credits</span>
-            <span>− {money(st.totalCredit)}</span>
-          </div>
-          <div className="row total">
-            <span>BALANCE ({currency})</span>
-            <span>{money(st.closing)}</span>
-          </div>
-          <div className="row bal">
-            <span>Unpaid by age</span>
-            <span>{formatMoney(agingTotal, currency)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="eng-grow" />
-      <EngTerms label="Note" text={STATEMENT_NOTE} />
-      <EngFooter docNo={docNo} />
-    </EngSheet>
-  )
-}
